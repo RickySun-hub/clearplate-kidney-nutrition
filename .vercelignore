@@ -1,0 +1,6 @@
+.env
+.env.*
+output
+.playwright-cli
+node_modules
+scripts/__pycache__

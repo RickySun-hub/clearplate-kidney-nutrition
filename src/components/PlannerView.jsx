@@ -58,7 +58,8 @@ export default function PlannerView({ recipes, recipeDetails, profile, todayEntr
         <div className="meal-planning-control">
           <span className="control-label">Meals to plan</span>
           <div className="meal-selector" role="group" aria-label="Meals to plan">
-            {mealOptions.map((meal) => <button className={selectedMeals.includes(meal) ? "selected" : ""} type="button" key={meal} onClick={() => toggleMeal(meal)}>{meal}</button>)}
+            {mealOptions.map((meal) => <button className={selectedMeals.includes(meal) ? "selected" : ""} type="button" aria-pressed={selectedMeals.includes(meal)} key={meal} onClick={() => toggleMeal(meal)}><span aria-hidden="true" className="meal-selection-mark">{selectedMeals.includes(meal) ? "✓" : "+"}</span>{meal}</button>)}
+            <button type="button" className="smoothie-pending" disabled><span>Smoothies</span><small>Recipes coming soon</small></button>
           </div>
         </div>
         <label><span>Approx. calories per meal</span><div className="inline-unit"><input type="number" min="100" max="1500" step="50" value={caloriesPerMeal} onChange={(event) => onPlannerSessionChange((current) => ({ ...current, caloriesPerMeal: event.target.value }))} /><span>kcal</span></div></label>

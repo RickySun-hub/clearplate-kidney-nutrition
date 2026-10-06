@@ -1,0 +1,1634 @@
+{
+  "1 large ripe mango, peeled, pitted and diced": {
+    "fdcId": 169910,
+    "matchNote": "Draft computational correspondence, unreviewed. Mangos, raw. Raw mango edible flesh; generic fruit yield, source large size not resolved. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 small cucumber, peeled, seeded and diced": {
+    "fdcId": 169225,
+    "matchNote": "Draft computational correspondence, unreviewed. Cucumber, peeled, raw. Raw peeled cucumber selected only when explicitly peeled; seeds removal not separately quantified. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84470"
+  },
+  "1/2 medium red onion, finely diced": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85860"
+  },
+  "2 to 3 tablespoons fresh lime juice": {
+    "fdcId": 168156,
+    "matchNote": "Draft computational correspondence, unreviewed. Lime juice, raw. Raw lime juice, not whole lime. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 tablespoon olive oil": {
+    "fdcId": 171413,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, olive, salad or cooking. Generic olive oil approximation; extra-virgin/light qualifiers affect composition. SR household portions retained because Foundation oil has no normalized nutrient totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "Pinch of cayenne pepper": {
+    "fdcId": 170932,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, red or cayenne. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 to 3 tablespoons chopped fresh cilantro (or more to taste)": {
+    "fdcId": 169997,
+    "matchNote": "Draft computational correspondence, unreviewed. Coriander (cilantro) leaves, raw. Fresh cilantro leaves; chopped volume approximated by USDA raw leaves cup. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 cup low-fat mayonnaise": {
+    "fdcId": 173594,
+    "matchNote": "Draft computational correspondence, unreviewed. Salad dressing, mayonnaise, light. Light mayonnaise approximation; exact low-fat formulation unspecified. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 cup low-fat sour cream": {
+    "fdcId": 171256,
+    "matchNote": "Draft computational correspondence, unreviewed. Cream, sour, reduced fat, cultured. Reduced-fat cultured sour cream approximation for low-fat/light label. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons light or low-fat cream cheese": {
+    "fdcId": 169079,
+    "matchNote": "Draft computational correspondence, unreviewed. Cheese, cream, low fat. Low-fat cream cheese approximation; exact light product unspecified. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 large garlic clove, crushed": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84480"
+  },
+  "2 teaspoons hot sauce": {
+    "fdcId": 174527,
+    "matchNote": "Draft computational correspondence, unreviewed. Sauce, ready-to-serve, pepper or hot. Generic pepper/hot sauce; brand unspecified, sodium varies. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 tablespoon Parmesan cheese": {
+    "fdcId": 171247,
+    "matchNote": "Draft computational correspondence, unreviewed. Cheese, parmesan, grated. Generic grated Parmesan; freshly grated source approximated by USDA grated cheese. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "88262"
+  },
+  "1 large cucumber, peeled and finely chopped": {
+    "fdcId": 169225,
+    "matchNote": "Draft computational correspondence, unreviewed. Cucumber, peeled, raw. Raw peeled cucumber selected only when explicitly peeled; seeds removal not separately quantified. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84467"
+  },
+  "1 cup plain nonfat yogurt": {
+    "fdcId": 170887,
+    "matchNote": "Draft computational correspondence, unreviewed. Yogurt, plain, skim milk. Plain skim-milk yogurt; SR cup portion, not sweetened or flavored yogurt. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 teaspoon dried dill weed": {
+    "fdcId": 171322,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, dill weed, dried. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "4 large cloves of garlic, minced": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84480"
+  },
+  "1 tablespoon fresh lemon juice": {
+    "fdcId": 167747,
+    "matchNote": "Draft computational correspondence, unreviewed. Lemon juice, raw. Raw lemon juice, not whole fruit. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "Pinch of salt": {
+    "fdcId": 173468,
+    "matchNote": "Draft computational correspondence, unreviewed. Salt, table. Table salt composition approximation; sea/kosher salt density differs, so volume for those qualifiers is unresolved. Pinch/to-taste has no invented gram weight. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "4 medium carrots, peeled and finely diced": {
+    "fdcId": 170393,
+    "matchNote": "Draft computational correspondence, unreviewed. Carrots, raw. Raw carrot, before recipe cooking. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86559"
+  },
+  "2 large (11 to 12 inches) stalks of celery, finely diced": {
+    "fdcId": 169988,
+    "matchNote": "Draft computational correspondence, unreviewed. Celery, raw. Raw celery stalks; leaves-only or alternative ingredient excluded. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85827"
+  },
+  "1 large red bell pepper, seeded and finely diced": {
+    "fdcId": 170108,
+    "matchNote": "Draft computational correspondence, unreviewed. Peppers, sweet, red, raw. Raw red sweet pepper. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86065"
+  },
+  "3 medium scallions (white and green parts), thinly sliced": {
+    "fdcId": 170005,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, spring or scallions (includes tops and bulb), raw. Raw scallions including white and green parts. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85881"
+  },
+  "2 tablespoons fresh ginger, grated or finely minced": {
+    "fdcId": 169231,
+    "matchNote": "Draft computational correspondence, unreviewed. Ginger root, raw. Raw fresh ginger root; chopped/grated bulk density approximated by generic teaspoon. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "4 cloves garlic, minced": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84480"
+  },
+  "1/4 teaspoon black pepper": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87560"
+  },
+  "1/3 cup Chinese plum sauce": {
+    "fdcId": 172879,
+    "matchNote": "Draft computational correspondence, unreviewed. Sauce, plum, ready-to-serve. Generic prepared plum sauce. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons reduced-sodium soy sauce": {
+    "fdcId": 172473,
+    "matchNote": "Draft computational correspondence, unreviewed. Soy sauce made from soy and wheat (shoyu), low sodium. Generic low-sodium shoyu; product-specific reduction varies, not regular soy sauce. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 teaspoon hot pepper sauce (or to taste)": {
+    "fdcId": 174527,
+    "matchNote": "Draft computational correspondence, unreviewed. Sauce, ready-to-serve, pepper or hot. Generic pepper/hot sauce; brand unspecified, sodium varies. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 cup minced fresh cilantro, plus extra for garnish": {
+    "fdcId": 169997,
+    "matchNote": "Draft computational correspondence, unreviewed. Coriander (cilantro) leaves, raw. Fresh cilantro leaves; chopped volume approximated by USDA raw leaves cup. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 cup onion, chopped": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85855"
+  },
+  "1 pound 85 percent or leaner ground beef": {
+    "fdcId": 171796,
+    "matchNote": "Draft computational correspondence, unreviewed. Beef, ground, 85% lean meat / 15% fat, raw (Includes foods for USDA's Food Distribution Program). Raw 85% lean / 15% fat selected at stated lower lean bound; leaner choice changes totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/3 cup fine dry breadcrumbs": {
+    "fdcId": 174928,
+    "matchNote": "Draft computational correspondence, unreviewed. Bread, crumbs, dry, grated, plain. Dry grated plain bread crumbs approximation. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 cup fresh parsley, chopped": {
+    "fdcId": 170416,
+    "matchNote": "Draft computational correspondence, unreviewed. Parsley, fresh. Fresh parsley chopped; flat-leaf subtype approximated by generic fresh parsley. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/8 teaspoon nutmeg": {
+    "fdcId": 171326,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, nutmeg, ground. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 large egg white, beaten": {
+    "fdcId": 172183,
+    "matchNote": "Draft computational correspondence, unreviewed. Egg, white, raw, fresh. Fresh raw egg white; whole-egg shell and yolk excluded. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "90043"
+  },
+  "2 teaspoons dry mustard": {
+    "fdcId": 170929,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, mustard seed, ground. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/8 teaspoon cayenne pepper": {
+    "fdcId": 170932,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, red or cayenne. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 cup grape jelly": {
+    "fdcId": 169642,
+    "matchNote": "Draft computational correspondence, unreviewed. Jellies. Generic sugar-sweetened jelly; grape flavor approximated by generic jellies. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 teaspoon fresh lemon juice": {
+    "fdcId": 167747,
+    "matchNote": "Draft computational correspondence, unreviewed. Lemon juice, raw. Raw lemon juice, not whole fruit. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 package (8 ounces) light or low-fat cream cheese, softened": {
+    "fdcId": 169079,
+    "matchNote": "Draft computational correspondence, unreviewed. Cheese, cream, low fat. Low-fat cream cheese approximation; exact light product unspecified. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 tablespoon onion, finely minced": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85855"
+  },
+  "3 ripe avocados, peeled and pitted": {
+    "fdcId": 171705,
+    "matchNote": "Draft computational correspondence, unreviewed. Avocados, raw, all commercial varieties. Raw avocado all varieties; USDA average edible fruit approximation. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "89226"
+  },
+  "1 tablespoon light mayonnaise": {
+    "fdcId": 173594,
+    "matchNote": "Draft computational correspondence, unreviewed. Salad dressing, mayonnaise, light. Light mayonnaise approximation; exact low-fat formulation unspecified. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 cup low-fat sour cream": {
+    "fdcId": 171256,
+    "matchNote": "Draft computational correspondence, unreviewed. Cream, sour, reduced fat, cultured. Reduced-fat cultured sour cream approximation for low-fat/light label. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons fresh cilantro, chopped": {
+    "fdcId": 169997,
+    "matchNote": "Draft computational correspondence, unreviewed. Coriander (cilantro) leaves, raw. Fresh cilantro leaves; chopped volume approximated by USDA raw leaves cup. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 to 3 cups shredded lettuce": {
+    "fdcId": 169249,
+    "matchNote": "Draft computational correspondence, unreviewed. Lettuce, green leaf, raw. Unspecified lettuce subtype approximated by green-leaf lettuce. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 cup diced onion": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85855"
+  },
+  "Juice from 1 lemon": {
+    "fdcId": 167747,
+    "matchNote": "Draft computational correspondence, unreviewed. Lemon juice, raw. Raw lemon juice, not whole fruit. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "81889"
+  },
+  "2 cloves garlic, minced": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84480"
+  },
+  "2 tablespoons onion, minced": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85855"
+  },
+  "2 tablespoons fresh parsley, minced": {
+    "fdcId": 170416,
+    "matchNote": "Draft computational correspondence, unreviewed. Parsley, fresh. Fresh parsley chopped; flat-leaf subtype approximated by generic fresh parsley. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 clove garlic, minced": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84480"
+  },
+  "1 teaspoon chili powder": {
+    "fdcId": 171319,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, chili powder. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 lime, cut into wedges": {
+    "fdcId": 168155,
+    "matchNote": "Draft computational correspondence, unreviewed. Limes, raw. Whole edible lime; garnish amount consumed is unresolved. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "82570"
+  },
+  "1/2 cup red bell pepper, chopped": {
+    "fdcId": 170108,
+    "matchNote": "Draft computational correspondence, unreviewed. Peppers, sweet, red, raw. Raw red sweet pepper. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86062"
+  },
+  "1/2 cup dry-packed, sun-dried tomatoes, chopped": {
+    "fdcId": 168567,
+    "matchNote": "Draft computational correspondence, unreviewed. Tomatoes, sun-dried. Dry-packed sun-dried tomatoes, not fresh and not oil-packed. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons grated Romano cheese": {
+    "fdcId": 171249,
+    "matchNote": "Draft computational correspondence, unreviewed. Cheese, romano. Generic Romano; no USDA grated household tablespoon weight, so volume remains unresolved. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons grated Parmesan cheese": {
+    "fdcId": 171247,
+    "matchNote": "Draft computational correspondence, unreviewed. Cheese, parmesan, grated. Generic grated Parmesan; freshly grated source approximated by USDA grated cheese. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "88262"
+  },
+  "1 tablespoon minced garlic": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84479"
+  },
+  "1 1/2 teaspoons dried basil leaves": {
+    "fdcId": 171317,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, basil, dried. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 1/2 teaspoons dried oregano leaves": {
+    "fdcId": 171328,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, oregano, dried. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 pound 93 percent lean ground turkey": {
+    "fdcId": 172850,
+    "matchNote": "Draft computational correspondence, unreviewed. Turkey, ground, 93% lean, 7% fat, raw. 93% lean / 7% fat raw ground turkey. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 cup onion, chopped": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85855"
+  },
+  "1/2 cup celery, chopped": {
+    "fdcId": 169988,
+    "matchNote": "Draft computational correspondence, unreviewed. Celery, raw. Raw celery stalks; leaves-only or alternative ingredient excluded. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85824"
+  },
+  "1/2 cup carrots, chopped": {
+    "fdcId": 170393,
+    "matchNote": "Draft computational correspondence, unreviewed. Carrots, raw. Raw carrot, before recipe cooking. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86555"
+  },
+  "1 medium eggplant, peeled and cubed": {
+    "fdcId": 169228,
+    "matchNote": "Draft computational correspondence, unreviewed. Eggplant, raw. Raw eggplant before cooking; source medium count has no compatible size-specific USDA portion. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 teaspoon salt": {
+    "fdcId": 173468,
+    "matchNote": "Draft computational correspondence, unreviewed. Salt, table. Table salt composition approximation; sea/kosher salt density differs, so volume for those qualifiers is unresolved. Pinch/to-taste has no invented gram weight. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 1/2 teaspoon ground nutmeg": {
+    "fdcId": 171326,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, nutmeg, ground. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 cup dry macaroni": {
+    "fdcId": 169736,
+    "matchNote": "Draft computational correspondence, unreviewed. Pasta, dry, enriched. Dry enriched macaroni approximation. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85414"
+  },
+  "2 teaspoons dried parsley": {
+    "fdcId": 170930,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, parsley, dried. Dried parsley, not fresh parsley. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "Pepper to taste": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87560"
+  },
+  "3/4 cup grated Parmesan cheese for garnish": {
+    "fdcId": 171247,
+    "matchNote": "Draft computational correspondence, unreviewed. Cheese, parmesan, grated. Generic grated Parmesan; freshly grated source approximated by USDA grated cheese. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "88261"
+  },
+  "1/4 cup unsalted butter": {
+    "fdcId": 173430,
+    "matchNote": "Draft computational correspondence, unreviewed. Butter, without salt. Unsalted butter, not salted. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 medium onions, chopped": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85860"
+  },
+  "2 tablespoons flour": {
+    "fdcId": 168936,
+    "matchNote": "Draft computational correspondence, unreviewed. Wheat flour, white, all-purpose, enriched, unbleached. All-purpose white enriched unbleached wheat flour approximation; brand/enrichment unspecified. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons fresh parsley, chopped": {
+    "fdcId": 170416,
+    "matchNote": "Draft computational correspondence, unreviewed. Parsley, fresh. Fresh parsley chopped; flat-leaf subtype approximated by generic fresh parsley. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 pounds cooked 93 percent lean ground turkey": {
+    "fdcId": 746785,
+    "matchNote": "Draft computational correspondence, unreviewed. Turkey, ground, 93% lean, 7% fat, pan-broiled crumbles. 93% lean turkey cooked pan-broiled crumbles approximation; direct pound weight. Foundation snapshot 2026-04; release age must be considered."
+  },
+  "10 ounces frozen chopped spinach": {
+    "fdcId": 169287,
+    "matchNote": "Draft computational correspondence, unreviewed. Spinach, frozen, chopped or leaf, unprepared (Includes foods for USDA's Food Distribution Program). Frozen spinach unprepared, not cooked drained spinach. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 cups shiitake mushrooms, sliced": {
+    "fdcId": 169242,
+    "matchNote": "Draft computational correspondence, unreviewed. Mushrooms, shiitake, raw. Raw shiitake mushrooms; sliced cup has no compatible USDA portion. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons dry sherry": {
+    "fdcId": 175112,
+    "matchNote": "Draft computational correspondence, unreviewed. Alcoholic beverage, wine, dessert, dry. Dry dessert wine approximation for dry sherry. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons low-sodium soy sauce": {
+    "fdcId": 172473,
+    "matchNote": "Draft computational correspondence, unreviewed. Soy sauce made from soy and wheat (shoyu), low sodium. Generic low-sodium shoyu; product-specific reduction varies, not regular soy sauce. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 teaspoons fresh ginger": {
+    "fdcId": 169231,
+    "matchNote": "Draft computational correspondence, unreviewed. Ginger root, raw. Raw fresh ginger root; chopped/grated bulk density approximated by generic teaspoon. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 scallion, thinly sliced": {
+    "fdcId": 170005,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, spring or scallions (includes tops and bulb), raw. Raw scallions including white and green parts. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 sprigs fresh thyme": {
+    "fdcId": 173470,
+    "matchNote": "Draft computational correspondence, unreviewed. Thyme, fresh. Fresh thyme; source sprigs have no compatible USDA mass. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 teaspoon ground ginger": {
+    "fdcId": 170926,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, ginger, ground. Dried ground ginger, not fresh root. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/3 cup honey": {
+    "fdcId": 169640,
+    "matchNote": "Draft computational correspondence, unreviewed. Honey. Honey; source unspecified honey variety. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/3 cup heavy cream": {
+    "fdcId": 170859,
+    "matchNote": "Draft computational correspondence, unreviewed. Cream, fluid, heavy whipping. Fluid heavy whipping cream. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87433"
+  },
+  "1 large (11 to 12 inches) stalk of celery": {
+    "fdcId": 169988,
+    "matchNote": "Draft computational correspondence, unreviewed. Celery, raw. Raw celery stalks; leaves-only or alternative ingredient excluded. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85827"
+  },
+  "1/2 cup green bell pepper, chopped": {
+    "fdcId": 170427,
+    "matchNote": "Draft computational correspondence, unreviewed. Peppers, sweet, green, raw. Raw green sweet pepper. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86623"
+  },
+  "1 1/2 pounds 85 percent or leaner ground beef": {
+    "fdcId": 171796,
+    "matchNote": "Draft computational correspondence, unreviewed. Beef, ground, 85% lean meat / 15% fat, raw (Includes foods for USDA's Food Distribution Program). Raw 85% lean / 15% fat selected at stated lower lean bound; leaner choice changes totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 tablespoon canola oil": {
+    "fdcId": 172336,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, canola. Generic commodity approximation; cultivar, brand and batch can vary. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons chili powder": {
+    "fdcId": 171319,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, chili powder. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 1/2 cup water": {
+    "fdcId": 174158,
+    "matchNote": "Draft computational correspondence, unreviewed. Water, bottled, generic. Plain water; generic bottled water mineral composition is an approximation. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "6-ounce package of pre-washed spinach": {
+    "fdcId": 168462,
+    "matchNote": "Draft computational correspondence, unreviewed. Spinach, raw. Raw spinach; baby leaves approximated by generic raw spinach household cup. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 cup fresh strawberries, finely sliced": {
+    "fdcId": 167762,
+    "matchNote": "Draft computational correspondence, unreviewed. Strawberries, raw. Raw strawberries edible fruit. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "81921"
+  },
+  "1 tablespoon red wine vinegar": {
+    "fdcId": 172240,
+    "matchNote": "Draft computational correspondence, unreviewed. Vinegar, red wine. Red wine vinegar. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons honey": {
+    "fdcId": 169640,
+    "matchNote": "Draft computational correspondence, unreviewed. Honey. Honey; source unspecified honey variety. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/8 teaspoon dry mustard": {
+    "fdcId": 170929,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, mustard seed, ground. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "3 tablespoons olive oil": {
+    "fdcId": 171413,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, olive, salad or cooking. Generic olive oil approximation; extra-virgin/light qualifiers affect composition. SR household portions retained because Foundation oil has no normalized nutrient totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 cup red onion, chopped": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85855"
+  },
+  "1/4 cup red bell pepper, diced small": {
+    "fdcId": 170108,
+    "matchNote": "Draft computational correspondence, unreviewed. Peppers, sweet, red, raw. Raw red sweet pepper. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86062"
+  },
+  "1 tablespoon fresh cilantro, finely chopped": {
+    "fdcId": 169997,
+    "matchNote": "Draft computational correspondence, unreviewed. Coriander (cilantro) leaves, raw. Fresh cilantro leaves; chopped volume approximated by USDA raw leaves cup. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 1/2 teaspoon ginger, finely chopped or grated": {
+    "fdcId": 169231,
+    "matchNote": "Draft computational correspondence, unreviewed. Ginger root, raw. Raw fresh ginger root; chopped/grated bulk density approximated by generic teaspoon. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/8 teaspoon salt": {
+    "fdcId": 173468,
+    "matchNote": "Draft computational correspondence, unreviewed. Salt, table. Table salt composition approximation; sea/kosher salt density differs, so volume for those qualifiers is unresolved. Pinch/to-taste has no invented gram weight. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/8 teaspoon freshly ground black pepper": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87560"
+  },
+  "2 cups seedless grapes, halved": {
+    "fdcId": 174683,
+    "matchNote": "Draft computational correspondence, unreviewed. Grapes, red or green (European type, such as Thompson seedless), raw. Raw European red/green seedless grapes; halved cup approximated by whole-fruit cup. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 avocado, peeled, pitted and diced": {
+    "fdcId": 171705,
+    "matchNote": "Draft computational correspondence, unreviewed. Avocados, raw, all commercial varieties. Raw avocado all varieties; USDA average edible fruit approximation. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "89226"
+  },
+  "3 tablespoons apple cider vinegar": {
+    "fdcId": 173469,
+    "matchNote": "Draft computational correspondence, unreviewed. Vinegar, cider. Apple cider vinegar, not apple juice. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "¼ cup sugar": {
+    "fdcId": 746784,
+    "matchNote": "Draft computational correspondence, unreviewed. Sugars, granulated. Foundation granulated sugar; source ordinary sugar assumed granulated. Foundation snapshot 2026-04; release age must be considered."
+  },
+  "1 tablespoon onion, finely chopped": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85855"
+  },
+  "¼ cup red onion, thinly sliced": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "3 tablespoons light mayonnaise": {
+    "fdcId": 173594,
+    "matchNote": "Draft computational correspondence, unreviewed. Salad dressing, mayonnaise, light. Light mayonnaise approximation; exact low-fat formulation unspecified. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 tablespoon freshly squeezed orange juice": {
+    "fdcId": 169098,
+    "matchNote": "Draft computational correspondence, unreviewed. Orange juice, raw (Includes foods for USDA's Food Distribution Program). Raw orange juice approximation; source generic juice is treated as unfortified raw juice. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "½ teaspoon poppy seeds": {
+    "fdcId": 171330,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, poppy seed. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 medium zucchini": {
+    "fdcId": 169291,
+    "matchNote": "Draft computational correspondence, unreviewed. Squash, summer, zucchini, includes skin, raw. Raw zucchini including skin. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84610"
+  },
+  "2 medium yellow squash": {
+    "fdcId": 168464,
+    "matchNote": "Draft computational correspondence, unreviewed. Squash, summer, crookneck and straightneck, raw. Raw yellow crookneck/straightneck summer squash; count size not resolved by USDA. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "3 tablespoons low-sodium soy sauce": {
+    "fdcId": 172473,
+    "matchNote": "Draft computational correspondence, unreviewed. Soy sauce made from soy and wheat (shoyu), low sodium. Generic low-sodium shoyu; product-specific reduction varies, not regular soy sauce. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 tablespoon sesame oil": {
+    "fdcId": 171016,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, sesame, salad or cooking. Sesame salad/cooking oil, not sesame seeds. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 teaspoon sugar": {
+    "fdcId": 746784,
+    "matchNote": "Draft computational correspondence, unreviewed. Sugars, granulated. Foundation granulated sugar; source ordinary sugar assumed granulated. Foundation snapshot 2026-04; release age must be considered."
+  },
+  "1/2 teaspoon sesame seeds": {
+    "fdcId": 169412,
+    "matchNote": "Draft computational correspondence, unreviewed. Seeds, sesame seed kernels, dried (decorticated). Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 medium apples, sliced": {
+    "fdcId": 171688,
+    "matchNote": "Draft computational correspondence, unreviewed. Apples, raw, with skin (Includes foods for USDA's Food Distribution Program). Raw apple with skin; cultivar unspecified. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "89193"
+  },
+  "2 tablespoons apple cider vinegar": {
+    "fdcId": 173469,
+    "matchNote": "Draft computational correspondence, unreviewed. Vinegar, cider. Apple cider vinegar, not apple juice. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 cup toasted almonds": {
+    "fdcId": 170158,
+    "matchNote": "Draft computational correspondence, unreviewed. Nuts, almonds, dry roasted, without salt added. Dry-roasted unsalted almonds approximation for toasted almonds; generic whole-kernel cup. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 teaspoon salt": {
+    "fdcId": 173468,
+    "matchNote": "Draft computational correspondence, unreviewed. Salt, table. Table salt composition approximation; sea/kosher salt density differs, so volume for those qualifiers is unresolved. Pinch/to-taste has no invented gram weight. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons water": {
+    "fdcId": 174158,
+    "matchNote": "Draft computational correspondence, unreviewed. Water, bottled, generic. Plain water; generic bottled water mineral composition is an approximation. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons olive oil": {
+    "fdcId": 171413,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, olive, salad or cooking. Generic olive oil approximation; extra-virgin/light qualifiers affect composition. SR household portions retained because Foundation oil has no normalized nutrient totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 cups cooked chicken, shredded": {
+    "fdcId": 171477,
+    "matchNote": "Draft computational correspondence, unreviewed. Chicken, broilers or fryers, breast, meat only, cooked, roasted. Cooked roasted breast meat only approximates unspecified cooked chicken; excludes skin and bone. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "88817"
+  },
+  "1 cup celery, chopped": {
+    "fdcId": 169988,
+    "matchNote": "Draft computational correspondence, unreviewed. Celery, raw. Raw celery stalks; leaves-only or alternative ingredient excluded. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85824"
+  },
+  "1/4 cup red onions, diced": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85855"
+  },
+  "1/8 teaspoon black pepper": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87560"
+  },
+  "¼ cup fresh lemon juice": {
+    "fdcId": 167747,
+    "matchNote": "Draft computational correspondence, unreviewed. Lemon juice, raw. Raw lemon juice, not whole fruit. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "8 cups (2 5-ounce packages) baby spinach leaves": {
+    "fdcId": 168462,
+    "matchNote": "Draft computational correspondence, unreviewed. Spinach, raw. Raw spinach; baby leaves approximated by generic raw spinach household cup. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "3 tablespoons extra-virgin olive oil": {
+    "fdcId": 171413,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, olive, salad or cooking. Generic olive oil approximation; extra-virgin/light qualifiers affect composition. SR household portions retained because Foundation oil has no normalized nutrient totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 tablespoon apple cider vinegar": {
+    "fdcId": 173469,
+    "matchNote": "Draft computational correspondence, unreviewed. Vinegar, cider. Apple cider vinegar, not apple juice. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 medium tomatoes, seeded and chopped": {
+    "fdcId": 170457,
+    "matchNote": "Draft computational correspondence, unreviewed. Tomatoes, red, ripe, raw, year round average. Raw ripe red tomatoes year-round average. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86686"
+  },
+  "1 cucumber, cut into bite-size chunks": {
+    "fdcId": 168409,
+    "matchNote": "Draft computational correspondence, unreviewed. Cucumber, with peel, raw. Raw cucumber with peel when peeling is not specified. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 medium red onion, chopped": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85860"
+  },
+  "1 medium red bell pepper, cut into chunks": {
+    "fdcId": 170108,
+    "matchNote": "Draft computational correspondence, unreviewed. Peppers, sweet, red, raw. Raw red sweet pepper. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86066"
+  },
+  "2 large (11 to 12 inches) stalks of celery, chopped": {
+    "fdcId": 169988,
+    "matchNote": "Draft computational correspondence, unreviewed. Celery, raw. Raw celery stalks; leaves-only or alternative ingredient excluded. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85827"
+  },
+  "1 jalapeño, seeded and finely chopped": {
+    "fdcId": 168576,
+    "matchNote": "Draft computational correspondence, unreviewed. Peppers, jalapeno, raw. Raw jalapeno; seeded source uses edible-pepper approximation. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "83357"
+  },
+  "2 tablespoons fresh cilantro": {
+    "fdcId": 169997,
+    "matchNote": "Draft computational correspondence, unreviewed. Coriander (cilantro) leaves, raw. Fresh cilantro leaves; chopped volume approximated by USDA raw leaves cup. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 teaspoons Tabasco": {
+    "fdcId": 174528,
+    "matchNote": "Draft computational correspondence, unreviewed. Sauce, ready-to-serve, pepper, TABASCO. Explicit Tabasco pepper sauce ingredient matches SR product entry. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 limes, juiced": {
+    "fdcId": 168156,
+    "matchNote": "Draft computational correspondence, unreviewed. Lime juice, raw. Raw lime juice, not whole lime. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "82574"
+  },
+  "2 cups apple, diced": {
+    "fdcId": 171688,
+    "matchNote": "Draft computational correspondence, unreviewed. Apples, raw, with skin (Includes foods for USDA's Food Distribution Program). Raw apple with skin; cultivar unspecified. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "89190"
+  },
+  "1/4 cup extra-virgin olive oil": {
+    "fdcId": 171413,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, olive, salad or cooking. Generic olive oil approximation; extra-virgin/light qualifiers affect composition. SR household portions retained because Foundation oil has no normalized nutrient totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 cup fresh lemon juice": {
+    "fdcId": 167747,
+    "matchNote": "Draft computational correspondence, unreviewed. Lemon juice, raw. Raw lemon juice, not whole fruit. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 teaspoon freshly ground black pepper": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87560"
+  },
+  "2 tablespoons fresh basil, chopped": {
+    "fdcId": 172232,
+    "matchNote": "Draft computational correspondence, unreviewed. Basil, fresh. Fresh basil chopped, not dried basil. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "90126"
+  },
+  "1/2 cup crumbled blue cheese": {
+    "fdcId": 172175,
+    "matchNote": "Draft computational correspondence, unreviewed. Cheese, blue. Generic blue cheese crumbled, not packed. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "90019"
+  },
+  "1/4 cup blanched almonds, chopped": {
+    "fdcId": 170568,
+    "matchNote": "Draft computational correspondence, unreviewed. Nuts, almonds, blanched. Blanched almonds; source chopped volume has no directly corresponding USDA chopped cup. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 cup fresh kale leaves, packed": {
+    "fdcId": 168421,
+    "matchNote": "Draft computational correspondence, unreviewed. Kale, raw. Raw kale leaves; packed cup approximated by USDA unqualified cup. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 teaspoon dried thyme": {
+    "fdcId": 170938,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, thyme, dried. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 teaspoons sugar": {
+    "fdcId": 746784,
+    "matchNote": "Draft computational correspondence, unreviewed. Sugars, granulated. Foundation granulated sugar; source ordinary sugar assumed granulated. Foundation snapshot 2026-04; release age must be considered."
+  },
+  "1/2 teaspoon salt (optional)": {
+    "fdcId": 173468,
+    "matchNote": "Draft computational correspondence, unreviewed. Salt, table. Table salt composition approximation; sea/kosher salt density differs, so volume for those qualifiers is unresolved. Pinch/to-taste has no invented gram weight. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 teaspoon ground red pepper": {
+    "fdcId": 170932,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, red or cayenne. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 pounds Yukon Gold potatoes (about 6), peeled and cut into 2-inch pieces": {
+    "fdcId": 2346403,
+    "matchNote": "Draft computational correspondence, unreviewed. Potatoes, gold, without skin, raw. Foundation gold potatoes peeled raw; exact Yukon Gold cultivar approximated. Only direct pound weight, no RACC/count substitution. Foundation snapshot 2026-04; release age must be considered."
+  },
+  "2 garlic cloves, peeled": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84480"
+  },
+  "1/4 cup fresh flat-leaf parsley, chopped": {
+    "fdcId": 170416,
+    "matchNote": "Draft computational correspondence, unreviewed. Parsley, fresh. Fresh parsley chopped; flat-leaf subtype approximated by generic fresh parsley. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "3 medium scallions, trimmed and chopped": {
+    "fdcId": 170005,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, spring or scallions (includes tops and bulb), raw. Raw scallions including white and green parts. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85881"
+  },
+  "1/2 cup grated Parmesan cheese": {
+    "fdcId": 171247,
+    "matchNote": "Draft computational correspondence, unreviewed. Cheese, parmesan, grated. Generic grated Parmesan; freshly grated source approximated by USDA grated cheese. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "88261"
+  },
+  "5 medium tomatoes, chopped": {
+    "fdcId": 170457,
+    "matchNote": "Draft computational correspondence, unreviewed. Tomatoes, red, ripe, raw, year round average. Raw ripe red tomatoes year-round average. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86686"
+  },
+  "8 medium scallions, sliced": {
+    "fdcId": 170005,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, spring or scallions (includes tops and bulb), raw. Raw scallions including white and green parts. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85881"
+  },
+  "3/4 cup olive oil, divided": {
+    "fdcId": 171413,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, olive, salad or cooking. Generic olive oil approximation; extra-virgin/light qualifiers affect composition. SR household portions retained because Foundation oil has no normalized nutrient totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 cup apple cider vinegar": {
+    "fdcId": 173469,
+    "matchNote": "Draft computational correspondence, unreviewed. Vinegar, cider. Apple cider vinegar, not apple juice. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 cup balsamic vinegar": {
+    "fdcId": 172241,
+    "matchNote": "Draft computational correspondence, unreviewed. Vinegar, balsamic. Balsamic vinegar. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 teaspoons honey": {
+    "fdcId": 169640,
+    "matchNote": "Draft computational correspondence, unreviewed. Honey. Honey; source unspecified honey variety. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "Freshly ground pepper": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87560"
+  },
+  "1/4 cup fresh flat-leaf parsley, coarsely chopped": {
+    "fdcId": 170416,
+    "matchNote": "Draft computational correspondence, unreviewed. Parsley, fresh. Fresh parsley chopped; flat-leaf subtype approximated by generic fresh parsley. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 pound Brussels sprouts, rinsed, ends trimmed, rough outer leaves of larger sprouts removed": {
+    "fdcId": 2685575,
+    "matchNote": "Draft computational correspondence, unreviewed. Brussels sprouts, raw. Foundation raw Brussels sprouts before roasting; direct pound weight. Foundation snapshot 2026-04; release age must be considered."
+  },
+  "1 tablespoon garlic, minced (about 3 cloves)": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84479"
+  },
+  "Salt": {
+    "fdcId": 173468,
+    "matchNote": "Draft computational correspondence, unreviewed. Salt, table. Table salt composition approximation; sea/kosher salt density differs, so volume for those qualifiers is unresolved. Pinch/to-taste has no invented gram weight. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "Freshly ground black pepper": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87560"
+  },
+  "1/4 cup Parmesan cheese, freshly grated (optional)": {
+    "fdcId": 171247,
+    "matchNote": "Draft computational correspondence, unreviewed. Cheese, parmesan, grated. Generic grated Parmesan; freshly grated source approximated by USDA grated cheese. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "88261"
+  },
+  "20 large asparagus stalks, peeled": {
+    "fdcId": 168389,
+    "matchNote": "Draft computational correspondence, unreviewed. Asparagus, raw. Raw asparagus spear approximation, source large count. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "83015"
+  },
+  "4 tablespoons fresh lemon juice": {
+    "fdcId": 167747,
+    "matchNote": "Draft computational correspondence, unreviewed. Lemon juice, raw. Raw lemon juice, not whole fruit. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 small shallot, finely chopped": {
+    "fdcId": 170499,
+    "matchNote": "Draft computational correspondence, unreviewed. Shallots, raw. Raw shallot; source whole small/unspecified count has no USDA count portion. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 tablespoon fresh parsley, finely chopped": {
+    "fdcId": 170416,
+    "matchNote": "Draft computational correspondence, unreviewed. Parsley, fresh. Fresh parsley chopped; flat-leaf subtype approximated by generic fresh parsley. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 teaspoon dried oregano": {
+    "fdcId": 171328,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, oregano, dried. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 cup olive oil": {
+    "fdcId": 171413,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, olive, salad or cooking. Generic olive oil approximation; extra-virgin/light qualifiers affect composition. SR household portions retained because Foundation oil has no normalized nutrient totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "Freshly ground pepper to taste": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87560"
+  },
+  "1 medium onion, cut into large chunks": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85860"
+  },
+  "1 medium zucchini, cut into thick slices": {
+    "fdcId": 169291,
+    "matchNote": "Draft computational correspondence, unreviewed. Squash, summer, zucchini, includes skin, raw. Raw zucchini including skin. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84610"
+  },
+  "1 medium yellow squash, cut into thick slices": {
+    "fdcId": 168464,
+    "matchNote": "Draft computational correspondence, unreviewed. Squash, summer, crookneck and straightneck, raw. Raw yellow crookneck/straightneck summer squash; count size not resolved by USDA. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 cup unsalted butter (divided)": {
+    "fdcId": 173430,
+    "matchNote": "Draft computational correspondence, unreviewed. Butter, without salt. Unsalted butter, not salted. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons dried parsley": {
+    "fdcId": 170930,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, parsley, dried. Dried parsley, not fresh parsley. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 teaspoon dried basil": {
+    "fdcId": 171317,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, basil, dried. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "6 ounces light or reduced-fat cream cheese": {
+    "fdcId": 169079,
+    "matchNote": "Draft computational correspondence, unreviewed. Cheese, cream, low fat. Low-fat cream cheese approximation; exact light product unspecified. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/8 teaspoon pepper": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87560"
+  },
+  "8 ounces whole wheat spaghetti": {
+    "fdcId": 169738,
+    "matchNote": "Draft computational correspondence, unreviewed. Pasta, whole-wheat, dry (Includes foods for USDA's Food Distribution Program). Whole-wheat dry pasta, not cooked pasta; explicit ounce mass. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 garlic clove": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84480"
+  },
+  "3/4 cup Parmesan cheese": {
+    "fdcId": 171247,
+    "matchNote": "Draft computational correspondence, unreviewed. Cheese, parmesan, grated. Generic grated Parmesan; freshly grated source approximated by USDA grated cheese. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "88261"
+  },
+  "1 cup dry quinoa, rinsed": {
+    "fdcId": 168874,
+    "matchNote": "Draft computational correspondence, unreviewed. Quinoa, uncooked. Dry uncooked quinoa. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 3/4 cups water": {
+    "fdcId": 174158,
+    "matchNote": "Draft computational correspondence, unreviewed. Water, bottled, generic. Plain water; generic bottled water mineral composition is an approximation. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 avocado, chopped into chunks": {
+    "fdcId": 171705,
+    "matchNote": "Draft computational correspondence, unreviewed. Avocados, raw, all commercial varieties. Raw avocado all varieties; USDA average edible fruit approximation. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "89226"
+  },
+  "1 lime, juiced": {
+    "fdcId": 168156,
+    "matchNote": "Draft computational correspondence, unreviewed. Lime juice, raw. Raw lime juice, not whole lime. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "82574"
+  },
+  "1/2 tablespoon olive oil": {
+    "fdcId": 171413,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, olive, salad or cooking. Generic olive oil approximation; extra-virgin/light qualifiers affect composition. SR household portions retained because Foundation oil has no normalized nutrient totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "3/4 cup cherry tomatoes, quartered": {
+    "fdcId": 170457,
+    "matchNote": "Draft computational correspondence, unreviewed. Tomatoes, red, ripe, raw, year round average. Raw ripe red tomatoes year-round average. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86681"
+  },
+  "1/2 medium red onion, diced": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85860"
+  },
+  "1 small garlic clove, minced": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84480"
+  },
+  "1 medium red bell pepper, chopped into chunks": {
+    "fdcId": 170108,
+    "matchNote": "Draft computational correspondence, unreviewed. Peppers, sweet, red, raw. Raw red sweet pepper. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86066"
+  },
+  "1/4 cup fresh cilantro, chopped": {
+    "fdcId": 169997,
+    "matchNote": "Draft computational correspondence, unreviewed. Coriander (cilantro) leaves, raw. Fresh cilantro leaves; chopped volume approximated by USDA raw leaves cup. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 teaspoon cumin": {
+    "fdcId": 170923,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, cumin seed. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 small butternut squash, cubed": {
+    "fdcId": 169295,
+    "matchNote": "Draft computational correspondence, unreviewed. Squash, winter, butternut, raw. Raw butternut squash; small whole-squash count has no compatible USDA portion. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 medium red bell peppers, seeded and diced": {
+    "fdcId": 170108,
+    "matchNote": "Draft computational correspondence, unreviewed. Peppers, sweet, red, raw. Raw red sweet pepper. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86066"
+  },
+  "1 medium red onion, quartered": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85860"
+  },
+  "1 tablespoon fresh thyme, chopped": {
+    "fdcId": 173470,
+    "matchNote": "Draft computational correspondence, unreviewed. Thyme, fresh. Fresh thyme; source sprigs have no compatible USDA mass. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons fresh rosemary, chopped": {
+    "fdcId": 173473,
+    "matchNote": "Draft computational correspondence, unreviewed. Rosemary, fresh. Fresh rosemary; extra sprigs unspecified and no sprig-to-gram conversion. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 1/2 tablespoons balsamic vinegar": {
+    "fdcId": 172241,
+    "matchNote": "Draft computational correspondence, unreviewed. Vinegar, balsamic. Balsamic vinegar. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "Salt to taste": {
+    "fdcId": 173468,
+    "matchNote": "Draft computational correspondence, unreviewed. Salt, table. Table salt composition approximation; sea/kosher salt density differs, so volume for those qualifiers is unresolved. Pinch/to-taste has no invented gram weight. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2/3 cup couscous": {
+    "fdcId": 169699,
+    "matchNote": "Draft computational correspondence, unreviewed. Couscous, dry. Dry uncooked couscous. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 1/4 tablespoon olive oil": {
+    "fdcId": 171413,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, olive, salad or cooking. Generic olive oil approximation; extra-virgin/light qualifiers affect composition. SR household portions retained because Foundation oil has no normalized nutrient totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "6 ounces zucchini, quartered lengthwise, then sliced across thinly": {
+    "fdcId": 169291,
+    "matchNote": "Draft computational correspondence, unreviewed. Squash, summer, zucchini, includes skin, raw. Raw zucchini including skin. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "6 ounces yellow squash, quartered lengthwise, then sliced across thinly": {
+    "fdcId": 168464,
+    "matchNote": "Draft computational correspondence, unreviewed. Squash, summer, crookneck and straightneck, raw. Raw yellow crookneck/straightneck summer squash; count size not resolved by USDA. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 teaspoon fennel seeds": {
+    "fdcId": 171323,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, fennel seed. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 teaspoon dried oregano": {
+    "fdcId": 171328,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, oregano, dried. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 cup cherry tomatoes, cut in half": {
+    "fdcId": 170457,
+    "matchNote": "Draft computational correspondence, unreviewed. Tomatoes, red, ripe, raw, year round average. Raw ripe red tomatoes year-round average. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86681"
+  },
+  "1/4 cup papaya, peeled and chopped": {
+    "fdcId": 169926,
+    "matchNote": "Draft computational correspondence, unreviewed. Papayas, raw. Raw papaya edible flesh chopped. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 cup yellow bell pepper, chopped": {
+    "fdcId": 169383,
+    "matchNote": "Draft computational correspondence, unreviewed. Peppers, sweet, yellow, raw. Raw yellow sweet pepper; USDA only large count portion exists so unspecified/medium count remains unresolved. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 cup green onion, thinly sliced": {
+    "fdcId": 170005,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, spring or scallions (includes tops and bulb), raw. Raw scallions including white and green parts. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85878"
+  },
+  "1 tablespoon pimiento, chopped": {
+    "fdcId": 168559,
+    "matchNote": "Draft computational correspondence, unreviewed. Pimento, canned. Canned pimento approximation for unspecified pimiento. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 tablespoon fresh mint, chopped": {
+    "fdcId": 173475,
+    "matchNote": "Draft computational correspondence, unreviewed. Spearmint, fresh. Fresh spearmint approximation for unspecified fresh mint. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 tablespoon fresh lime juice": {
+    "fdcId": 168156,
+    "matchNote": "Draft computational correspondence, unreviewed. Lime juice, raw. Raw lime juice, not whole lime. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 teaspoon fresh ginger, grated": {
+    "fdcId": 169231,
+    "matchNote": "Draft computational correspondence, unreviewed. Ginger root, raw. Raw fresh ginger root; chopped/grated bulk density approximated by generic teaspoon. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 teaspoon jalapeño pepper, seeded and minced": {
+    "fdcId": 168576,
+    "matchNote": "Draft computational correspondence, unreviewed. Peppers, jalapeno, raw. Raw jalapeno; seeded source uses edible-pepper approximation. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "6 ounces 90 percent extra-lean ground round beef": {
+    "fdcId": 2514743,
+    "matchNote": "Draft computational correspondence, unreviewed. Beef, ground, 90% lean meat / 10% fat, raw. Foundation raw 90% lean ground beef; ground round subtype approximation, direct ounce weight. Foundation snapshot 2026-04; release age must be considered."
+  },
+  "1 tablespoon fresh rosemary, chopped": {
+    "fdcId": 173473,
+    "matchNote": "Draft computational correspondence, unreviewed. Rosemary, fresh. Fresh rosemary; extra sprigs unspecified and no sprig-to-gram conversion. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 cup nonfat sour cream": {
+    "fdcId": 173444,
+    "matchNote": "Draft computational correspondence, unreviewed. Sour cream, fat free. Fat-free sour cream. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons chives, chopped": {
+    "fdcId": 169994,
+    "matchNote": "Draft computational correspondence, unreviewed. Chives, raw. Raw chives chopped. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "3 medium green apples, peeled, cored and grated": {
+    "fdcId": 171689,
+    "matchNote": "Draft computational correspondence, unreviewed. Apples, raw, without skin. Raw apple without skin; source green apple subtype approximated by generic peeled apple. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "89199"
+  },
+  "1 teaspoon ground sage": {
+    "fdcId": 170935,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, sage, ground. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 cup baby spinach leaves": {
+    "fdcId": 168462,
+    "matchNote": "Draft computational correspondence, unreviewed. Spinach, raw. Raw spinach; baby leaves approximated by generic raw spinach household cup. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 dash salt": {
+    "fdcId": 173468,
+    "matchNote": "Draft computational correspondence, unreviewed. Salt, table. Table salt composition approximation; sea/kosher salt density differs, so volume for those qualifiers is unresolved. Pinch/to-taste has no invented gram weight. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 dash pepper": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87563"
+  },
+  "2 teaspoons extra-virgin olive oil": {
+    "fdcId": 171413,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, olive, salad or cooking. Generic olive oil approximation; extra-virgin/light qualifiers affect composition. SR household portions retained because Foundation oil has no normalized nutrient totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 pork tenderloins (1 pound each), trimmed": {
+    "fdcId": 168249,
+    "matchNote": "Draft computational correspondence, unreviewed. Pork, fresh, loin, tenderloin, separable lean only, raw. Raw trimmed pork tenderloin separable lean only; explicit pound mass. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 teaspoon olive oil": {
+    "fdcId": 171413,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, olive, salad or cooking. Generic olive oil approximation; extra-virgin/light qualifiers affect composition. SR household portions retained because Foundation oil has no normalized nutrient totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "3 medium peaches (firm but ripe), pitted and wedged": {
+    "fdcId": 325430,
+    "matchNote": "Draft computational correspondence, unreviewed. Peaches, yellow, raw. Foundation yellow peach edible fruit, generic yellow peach approximation. Foundation snapshot 2026-04; release age must be considered.",
+    "portionId": 119284
+  },
+  "1/3 cup packed light brown sugar": {
+    "fdcId": 168833,
+    "matchNote": "Draft computational correspondence, unreviewed. Sugars, brown. Brown sugar; light subtype approximated by generic brown sugar. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "83855"
+  },
+  "1/2 cup water": {
+    "fdcId": 174158,
+    "matchNote": "Draft computational correspondence, unreviewed. Water, bottled, generic. Plain water; generic bottled water mineral composition is an approximation. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 lemon, juiced": {
+    "fdcId": 167747,
+    "matchNote": "Draft computational correspondence, unreviewed. Lemon juice, raw. Raw lemon juice, not whole fruit. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "81889"
+  },
+  "1/4 teaspoon pepper": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87560"
+  },
+  "1/4 teaspoon fresh rosemary, chopped plus 1 to 2 additional springs": {
+    "fdcId": 173473,
+    "matchNote": "Draft computational correspondence, unreviewed. Rosemary, fresh. Fresh rosemary; extra sprigs unspecified and no sprig-to-gram conversion. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 clove garlic, minced": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84480"
+  },
+  "1/4 teaspoon ground ginger": {
+    "fdcId": 170926,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, ginger, ground. Dried ground ginger, not fresh root. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons brown sugar": {
+    "fdcId": 168833,
+    "matchNote": "Draft computational correspondence, unreviewed. Sugars, brown. Brown sugar; light subtype approximated by generic brown sugar. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 cup red bell pepper, finely chopped": {
+    "fdcId": 170108,
+    "matchNote": "Draft computational correspondence, unreviewed. Peppers, sweet, red, raw. Raw red sweet pepper. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86062"
+  },
+  "2 tablespoons fresh cilantro, finely chopped": {
+    "fdcId": 169997,
+    "matchNote": "Draft computational correspondence, unreviewed. Coriander (cilantro) leaves, raw. Fresh cilantro leaves; chopped volume approximated by USDA raw leaves cup. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 cup unsweetened pineapple juice": {
+    "fdcId": 169947,
+    "matchNote": "Draft computational correspondence, unreviewed. Pineapple juice, canned or bottled, unsweetened, without added ascorbic acid. Canned/bottled unsweetened pineapple juice, without added ascorbic acid selected. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 1/2 tablespoons apple cider vinegar": {
+    "fdcId": 173469,
+    "matchNote": "Draft computational correspondence, unreviewed. Vinegar, cider. Apple cider vinegar, not apple juice. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons red onion, finely chopped": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85855"
+  },
+  "1 cup fresh pineapple, chopped": {
+    "fdcId": 169124,
+    "matchNote": "Draft computational correspondence, unreviewed. Pineapple, raw, all varieties. Raw pineapple all varieties chopped. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "3/4 teaspoon apple cider vinegar": {
+    "fdcId": 173469,
+    "matchNote": "Draft computational correspondence, unreviewed. Vinegar, cider. Apple cider vinegar, not apple juice. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 teaspoon garlic powder": {
+    "fdcId": 171325,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, garlic powder. Dried garlic powder, not fresh garlic. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 teaspoon chili powder": {
+    "fdcId": 171319,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, chili powder. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/3 cup all-purpose flour": {
+    "fdcId": 168936,
+    "matchNote": "Draft computational correspondence, unreviewed. Wheat flour, white, all-purpose, enriched, unbleached. All-purpose white enriched unbleached wheat flour approximation; brand/enrichment unspecified. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "3 tablespoons light olive oil": {
+    "fdcId": 171413,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, olive, salad or cooking. Generic olive oil approximation; extra-virgin/light qualifiers affect composition. SR household portions retained because Foundation oil has no normalized nutrient totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "Pinch of salt (optional)": {
+    "fdcId": 173468,
+    "matchNote": "Draft computational correspondence, unreviewed. Salt, table. Table salt composition approximation; sea/kosher salt density differs, so volume for those qualifiers is unresolved. Pinch/to-taste has no invented gram weight. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 teaspoon ground black pepper": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87560"
+  },
+  "1/2 tablespoon fresh lemon juice": {
+    "fdcId": 167747,
+    "matchNote": "Draft computational correspondence, unreviewed. Lemon juice, raw. Raw lemon juice, not whole fruit. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 tablespoon fresh parsley, chopped": {
+    "fdcId": 170416,
+    "matchNote": "Draft computational correspondence, unreviewed. Parsley, fresh. Fresh parsley chopped; flat-leaf subtype approximated by generic fresh parsley. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 1/2 cups onion, diced": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85855"
+  },
+  "1 clove garlic, chopped": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84480"
+  },
+  "4 cups water (divided use)": {
+    "fdcId": 174158,
+    "matchNote": "Draft computational correspondence, unreviewed. Water, bottled, generic. Plain water; generic bottled water mineral composition is an approximation. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "8 ounces uncooked fresh shrimp": {
+    "fdcId": 175179,
+    "matchNote": "Draft computational correspondence, unreviewed. Crustaceans, shrimp, raw. Raw shrimp edible meat; excludes shell. Count size not resolved by USDA ounce portion. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 cup green onion tops, diced": {
+    "fdcId": 170006,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, young green, tops only. Raw green onion tops only. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 teaspoon hot sauce (optional)": {
+    "fdcId": 174527,
+    "matchNote": "Draft computational correspondence, unreviewed. Sauce, ready-to-serve, pepper or hot. Generic pepper/hot sauce; brand unspecified, sodium varies. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "6 cups cooked white rice (1 cup mixed in; 5 cups for serving gumbo over)": {
+    "fdcId": 169757,
+    "matchNote": "Draft computational correspondence, unreviewed. Rice, white, long-grain, regular, unenriched, cooked without salt. Cooked unenriched long-grain white rice without salt; source grain/enrichment not specified. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 cup onions, chopped": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85855"
+  },
+  "3/4 cup green pepper, chopped": {
+    "fdcId": 170427,
+    "matchNote": "Draft computational correspondence, unreviewed. Peppers, sweet, green, raw. Raw green sweet pepper. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86623"
+  },
+  "1 teaspoon fresh parsley, chopped": {
+    "fdcId": 170416,
+    "matchNote": "Draft computational correspondence, unreviewed. Parsley, fresh. Fresh parsley chopped; flat-leaf subtype approximated by generic fresh parsley. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 teaspoon black pepper": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87560"
+  },
+  "1/4 teaspoon garlic, minced": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84479"
+  },
+  "5 cups cooked brown rice (cooked in unsalted water)": {
+    "fdcId": 169704,
+    "matchNote": "Draft computational correspondence, unreviewed. Rice, brown, long-grain, cooked (Includes foods for USDA's Food Distribution Program). Cooked long-grain brown rice, no added salt; grain length approximation. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 1/2 cups chicken breasts, cooked, skin and bone removed, diced": {
+    "fdcId": 171477,
+    "matchNote": "Draft computational correspondence, unreviewed. Chicken, broilers or fryers, breast, meat only, cooked, roasted. Cooked roasted breast meat only approximates unspecified cooked chicken; excludes skin and bone. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "88817"
+  },
+  "4 4-ounce chicken breasts, skinless": {
+    "fdcId": 2646170,
+    "matchNote": "Draft computational correspondence, unreviewed. Chicken, breast, boneless, skinless, raw. Foundation raw boneless skinless breast; source gives explicit ounce mass. Foundation snapshot 2026-04; release age must be considered."
+  },
+  "1 medium yellow bell pepper, sliced": {
+    "fdcId": 169383,
+    "matchNote": "Draft computational correspondence, unreviewed. Peppers, sweet, yellow, raw. Raw yellow sweet pepper; USDA only large count portion exists so unspecified/medium count remains unresolved. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 medium red bell pepper, sliced": {
+    "fdcId": 170108,
+    "matchNote": "Draft computational correspondence, unreviewed. Peppers, sweet, red, raw. Raw red sweet pepper. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86066"
+  },
+  "1 medium onion, sliced": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85860"
+  },
+  "1 shallot sliced": {
+    "fdcId": 170499,
+    "matchNote": "Draft computational correspondence, unreviewed. Shallots, raw. Raw shallot; source whole small/unspecified count has no USDA count portion. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "3 cloves garlic, minced": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84480"
+  },
+  "1/2 teaspoon black ground pepper": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87560"
+  },
+  "2 cloves garlic, smashed": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84480"
+  },
+  "2 teaspoons fresh lime juice": {
+    "fdcId": 168156,
+    "matchNote": "Draft computational correspondence, unreviewed. Lime juice, raw. Raw lime juice, not whole lime. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 small red onion": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85862"
+  },
+  "1/4 teaspoon freshly ground black pepper": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87560"
+  },
+  "16 serrano chilies": {
+    "fdcId": 169395,
+    "matchNote": "Draft computational correspondence, unreviewed. Peppers, serrano, raw. Raw serrano pepper; edible generic count portion. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84788"
+  },
+  "1 teaspoon cornstarch": {
+    "fdcId": 169698,
+    "matchNote": "Draft computational correspondence, unreviewed. Cornstarch. Dry cornstarch. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 1/2 teaspoons water": {
+    "fdcId": 174158,
+    "matchNote": "Draft computational correspondence, unreviewed. Water, bottled, generic. Plain water; generic bottled water mineral composition is an approximation. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "8 ounces button mushrooms, washed and sliced": {
+    "fdcId": 1999629,
+    "matchNote": "Draft computational correspondence, unreviewed. Mushrooms, white button. Foundation raw white button mushrooms; direct ounce mass. Foundation snapshot 2026-04; release age must be considered."
+  },
+  "1/2 medium onion, diced": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85860"
+  },
+  "1/4 pound broccoli florets, cut into bite-size pieces": {
+    "fdcId": 169330,
+    "matchNote": "Draft computational correspondence, unreviewed. Broccoli, flower clusters, raw. Raw broccoli flower clusters, not stalks. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "⅓ cup white wine": {
+    "fdcId": 174837,
+    "matchNote": "Draft computational correspondence, unreviewed. Alcoholic beverage, wine, table, white. Generic table white wine approximation; dryness unspecified. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons Parmesan cheese, grated": {
+    "fdcId": 171247,
+    "matchNote": "Draft computational correspondence, unreviewed. Cheese, parmesan, grated. Generic grated Parmesan; freshly grated source approximated by USDA grated cheese. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "88262"
+  },
+  "1 pint fresh strawberries, stemmed and sliced": {
+    "fdcId": 167762,
+    "matchNote": "Draft computational correspondence, unreviewed. Strawberries, raw. Raw strawberries edible fruit. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "81921"
+  },
+  "2 tablespoons granulated sugar or to taste": {
+    "fdcId": 746784,
+    "matchNote": "Draft computational correspondence, unreviewed. Sugars, granulated. Foundation granulated sugar; source ordinary sugar assumed granulated. Foundation snapshot 2026-04; release age must be considered."
+  },
+  "2 tablespoons orange juice": {
+    "fdcId": 169098,
+    "matchNote": "Draft computational correspondence, unreviewed. Orange juice, raw (Includes foods for USDA's Food Distribution Program). Raw orange juice approximation; source generic juice is treated as unfortified raw juice. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 teaspoons orange rind, grated": {
+    "fdcId": 169103,
+    "matchNote": "Draft computational correspondence, unreviewed. Orange peel, raw. Raw orange peel used as grated zest; white pith amount varies. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/8 teaspoon baking soda": {
+    "fdcId": 175040,
+    "matchNote": "Draft computational correspondence, unreviewed. Leavening agents, baking soda. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 teaspoon cinnamon": {
+    "fdcId": 171320,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, cinnamon, ground. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "3 tablespoons melted coconut oil": {
+    "fdcId": 171412,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, coconut. Unsweetened coconut oil; liquid melted form, SR tablespoon portion retained. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 1/2 teaspoons vanilla": {
+    "fdcId": 173471,
+    "matchNote": "Draft computational correspondence, unreviewed. Vanilla extract. Pure vanilla extract approximation; excludes vanilla flavor desserts. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "4 cups fresh strawberries, remove stems and quarter": {
+    "fdcId": 167762,
+    "matchNote": "Draft computational correspondence, unreviewed. Strawberries, raw. Raw strawberries edible fruit. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 cup whipping cream": {
+    "fdcId": 170858,
+    "matchNote": "Draft computational correspondence, unreviewed. Cream, fluid, light whipping. Fluid light whipping cream before whipping; source unspecified fat percentage. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87430"
+  },
+  "1 tablespoon sugar": {
+    "fdcId": 746784,
+    "matchNote": "Draft computational correspondence, unreviewed. Sugars, granulated. Foundation granulated sugar; source ordinary sugar assumed granulated. Foundation snapshot 2026-04; release age must be considered."
+  },
+  "1 lime, cut into 6 to 8 wedges N": {
+    "fdcId": 168155,
+    "matchNote": "Draft computational correspondence, unreviewed. Limes, raw. Whole edible lime; garnish amount consumed is unresolved. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "82570"
+  },
+  "8 ounces light sour cream": {
+    "fdcId": 171256,
+    "matchNote": "Draft computational correspondence, unreviewed. Cream, sour, reduced fat, cultured. Reduced-fat cultured sour cream approximation for low-fat/light label. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 teaspoon nutmeg": {
+    "fdcId": 171326,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, nutmeg, ground. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 cup granulated sugar": {
+    "fdcId": 746784,
+    "matchNote": "Draft computational correspondence, unreviewed. Sugars, granulated. Foundation granulated sugar; source ordinary sugar assumed granulated. Foundation snapshot 2026-04; release age must be considered."
+  },
+  "1 1/2 tablespoons cornstarch": {
+    "fdcId": 169698,
+    "matchNote": "Draft computational correspondence, unreviewed. Cornstarch. Dry cornstarch. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 1/2 tablespoons water": {
+    "fdcId": 174158,
+    "matchNote": "Draft computational correspondence, unreviewed. Water, bottled, generic. Plain water; generic bottled water mineral composition is an approximation. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2/3 cup firmly packed brown sugar": {
+    "fdcId": 168833,
+    "matchNote": "Draft computational correspondence, unreviewed. Sugars, brown. Brown sugar; light subtype approximated by generic brown sugar. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "83855"
+  },
+  "1/2 cup all-purpose flour": {
+    "fdcId": 168936,
+    "matchNote": "Draft computational correspondence, unreviewed. Wheat flour, white, all-purpose, enriched, unbleached. All-purpose white enriched unbleached wheat flour approximation; brand/enrichment unspecified. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 teaspoon ground cinnamon": {
+    "fdcId": 171320,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, cinnamon, ground. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 cup unsalted butter, softened": {
+    "fdcId": 173430,
+    "matchNote": "Draft computational correspondence, unreviewed. Butter, without salt. Unsalted butter, not salted. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 teaspoon cream of tartar": {
+    "fdcId": 175041,
+    "matchNote": "Draft computational correspondence, unreviewed. Leavening agents, cream of tartar. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 teaspoons pure vanilla extract": {
+    "fdcId": 173471,
+    "matchNote": "Draft computational correspondence, unreviewed. Vanilla extract. Pure vanilla extract approximation; excludes vanilla flavor desserts. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 teaspoons fresh lemon juice": {
+    "fdcId": 167747,
+    "matchNote": "Draft computational correspondence, unreviewed. Lemon juice, raw. Raw lemon juice, not whole fruit. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2/3 cup granulated sugar": {
+    "fdcId": 746784,
+    "matchNote": "Draft computational correspondence, unreviewed. Sugars, granulated. Foundation granulated sugar; source ordinary sugar assumed granulated. Foundation snapshot 2026-04; release age must be considered."
+  },
+  "1 tablespoon grated orange zest": {
+    "fdcId": 169103,
+    "matchNote": "Draft computational correspondence, unreviewed. Orange peel, raw. Raw orange peel used as grated zest; white pith amount varies. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/3 cup dry, unsweetened, shredded coconut": {
+    "fdcId": 170170,
+    "matchNote": "Draft computational correspondence, unreviewed. Nuts, coconut meat, dried (desiccated), not sweetened. Dried desiccated unsweetened coconut, not sweetened coconut; volume weight unavailable. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/3 cup fresh coconut shavings": {
+    "fdcId": 170169,
+    "matchNote": "Draft computational correspondence, unreviewed. Nuts, coconut meat, raw. Raw coconut shavings approximated by USDA shredded raw coconut. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 1/4 cups egg whites (from about 9 large eggs), at room temperature": {
+    "fdcId": 172183,
+    "matchNote": "Draft computational correspondence, unreviewed. Egg, white, raw, fresh. Fresh raw egg white; whole-egg shell and yolk excluded. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "90044"
+  },
+  "2/3 cup fresh orange juice": {
+    "fdcId": 169098,
+    "matchNote": "Draft computational correspondence, unreviewed. Orange juice, raw (Includes foods for USDA's Food Distribution Program). Raw orange juice approximation; source generic juice is treated as unfortified raw juice. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "½ teaspoon cinnamon": {
+    "fdcId": 171320,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, cinnamon, ground. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "3 large eggs, separated": {
+    "fdcId": 171287,
+    "matchNote": "Draft computational correspondence, unreviewed. Egg, whole, raw, fresh. Whole raw fresh egg; separated eggs assumed all edible yolk and white retained. Size unspecified uses no specific count override. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 teaspoon vanilla": {
+    "fdcId": 173471,
+    "matchNote": "Draft computational correspondence, unreviewed. Vanilla extract. Pure vanilla extract approximation; excludes vanilla flavor desserts. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "Dash of salt": {
+    "fdcId": 173468,
+    "matchNote": "Draft computational correspondence, unreviewed. Salt, table. Table salt composition approximation; sea/kosher salt density differs, so volume for those qualifiers is unresolved. Pinch/to-taste has no invented gram weight. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 cup sugar": {
+    "fdcId": 746784,
+    "matchNote": "Draft computational correspondence, unreviewed. Sugars, granulated. Foundation granulated sugar; source ordinary sugar assumed granulated. Foundation snapshot 2026-04; release age must be considered."
+  },
+  "1 teaspoon cinnamon": {
+    "fdcId": 171320,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, cinnamon, ground. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 cup all-purpose flour": {
+    "fdcId": 168936,
+    "matchNote": "Draft computational correspondence, unreviewed. Wheat flour, white, all-purpose, enriched, unbleached. All-purpose white enriched unbleached wheat flour approximation; brand/enrichment unspecified. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 teaspoons baking powder": {
+    "fdcId": 172804,
+    "matchNote": "Draft computational correspondence, unreviewed. Leavening agents, baking powder, double-acting, straight phosphate. Double-acting phosphate baking powder approximation; unspecified formulation changes sodium. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 teaspoon cinnamon": {
+    "fdcId": 171320,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, cinnamon, ground. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 cups 100 percent oat bran": {
+    "fdcId": 168872,
+    "matchNote": "Draft computational correspondence, unreviewed. Oat bran, raw. Raw oat bran. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 1/4 cups low-fat milk": {
+    "fdcId": 746772,
+    "matchNote": "Draft computational correspondence, unreviewed. Milk, lowfat, fluid, 1% milkfat, with added vitamin A and vitamin D. Foundation fluid 1% low-fat milk approximation; exact source low-fat percentage unspecified. Foundation snapshot 2026-04; release age must be considered."
+  },
+  "1/3 cup packed brown sugar": {
+    "fdcId": 168833,
+    "matchNote": "Draft computational correspondence, unreviewed. Sugars, brown. Brown sugar; light subtype approximated by generic brown sugar. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "83855"
+  },
+  "1 large egg": {
+    "fdcId": 171287,
+    "matchNote": "Draft computational correspondence, unreviewed. Egg, whole, raw, fresh. Whole raw fresh egg; separated eggs assumed all edible yolk and white retained. Size unspecified uses no specific count override. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 cup unsweetened applesauce": {
+    "fdcId": 171695,
+    "matchNote": "Draft computational correspondence, unreviewed. Applesauce, canned, unsweetened, without added ascorbic acid (Includes foods for USDA's Food Distribution Program). Canned unsweetened applesauce without added ascorbic acid approximation. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 eggs": {
+    "fdcId": 171287,
+    "matchNote": "Draft computational correspondence, unreviewed. Egg, whole, raw, fresh. Whole raw fresh egg; separated eggs assumed all edible yolk and white retained. Size unspecified uses no specific count override. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "½ cup canola oil": {
+    "fdcId": 172336,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, canola. Generic commodity approximation; cultivar, brand and batch can vary. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "¼ cup water": {
+    "fdcId": 174158,
+    "matchNote": "Draft computational correspondence, unreviewed. Water, bottled, generic. Plain water; generic bottled water mineral composition is an approximation. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 tablespoon vanilla": {
+    "fdcId": 173471,
+    "matchNote": "Draft computational correspondence, unreviewed. Vanilla extract. Pure vanilla extract approximation; excludes vanilla flavor desserts. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 1/2 cups all-purpose white flour": {
+    "fdcId": 168936,
+    "matchNote": "Draft computational correspondence, unreviewed. Wheat flour, white, all-purpose, enriched, unbleached. All-purpose white enriched unbleached wheat flour approximation; brand/enrichment unspecified. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 teaspoon baking soda": {
+    "fdcId": 175040,
+    "matchNote": "Draft computational correspondence, unreviewed. Leavening agents, baking soda. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 1/2 teaspoon cinnamon": {
+    "fdcId": 171320,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, cinnamon, ground. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 3/4 cup raw apple, peeled and cut into small pieces (other low-potassium fruit also can be used)": {
+    "fdcId": 171689,
+    "matchNote": "Draft computational correspondence, unreviewed. Apples, raw, without skin. Raw apple without skin; source green apple subtype approximated by generic peeled apple. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 cup sugar": {
+    "fdcId": 746784,
+    "matchNote": "Draft computational correspondence, unreviewed. Sugars, granulated. Foundation granulated sugar; source ordinary sugar assumed granulated. Foundation snapshot 2026-04; release age must be considered."
+  },
+  "1/2 cup fresh lime juice": {
+    "fdcId": 168156,
+    "matchNote": "Draft computational correspondence, unreviewed. Lime juice, raw. Raw lime juice, not whole lime. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 large eggs, yolks and whites separated": {
+    "fdcId": 171287,
+    "matchNote": "Draft computational correspondence, unreviewed. Egg, whole, raw, fresh. Whole raw fresh egg; separated eggs assumed all edible yolk and white retained. Size unspecified uses no specific count override. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "5 tablespoons unsalted butter, melted": {
+    "fdcId": 173430,
+    "matchNote": "Draft computational correspondence, unreviewed. Butter, without salt. Unsalted butter, not salted. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 teaspoon cream of tartar": {
+    "fdcId": 175041,
+    "matchNote": "Draft computational correspondence, unreviewed. Leavening agents, cream of tartar. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 lime, thinly sliced (optional)": {
+    "fdcId": 168155,
+    "matchNote": "Draft computational correspondence, unreviewed. Limes, raw. Whole edible lime; garnish amount consumed is unresolved. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "82570"
+  },
+  "4 1/2 teaspoons cumin": {
+    "fdcId": 170923,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, cumin seed. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 1/2 teaspoons garlic powder": {
+    "fdcId": 171325,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, garlic powder. Dried garlic powder, not fresh garlic. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "5 teaspoons paprika": {
+    "fdcId": 171329,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, paprika. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "3 teaspoons onion powder": {
+    "fdcId": 171327,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, onion powder. Dried onion powder. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 1/4 cup olive oil, divided": {
+    "fdcId": 171413,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, olive, salad or cooking. Generic olive oil approximation; extra-virgin/light qualifiers affect composition. SR household portions retained because Foundation oil has no normalized nutrient totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/2 teaspoon dry mustard": {
+    "fdcId": 170929,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, mustard seed, ground. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1/4 teaspoon salt (or less, to taste)": {
+    "fdcId": 173468,
+    "matchNote": "Draft computational correspondence, unreviewed. Salt, table. Table salt composition approximation; sea/kosher salt density differs, so volume for those qualifiers is unresolved. Pinch/to-taste has no invented gram weight. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 tablespoon paprika": {
+    "fdcId": 171329,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, paprika. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 teaspoon dry mustard": {
+    "fdcId": 170929,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, mustard seed, ground. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 teaspoons salt": {
+    "fdcId": 173468,
+    "matchNote": "Draft computational correspondence, unreviewed. Salt, table. Table salt composition approximation; sea/kosher salt density differs, so volume for those qualifiers is unresolved. Pinch/to-taste has no invented gram weight. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 teaspoon black pepper": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87560"
+  },
+  "1/4 cup low-sodium soy sauce": {
+    "fdcId": 172473,
+    "matchNote": "Draft computational correspondence, unreviewed. Soy sauce made from soy and wheat (shoyu), low sodium. Generic low-sodium shoyu; product-specific reduction varies, not regular soy sauce. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "2 tablespoons fresh lemon juice": {
+    "fdcId": 167747,
+    "matchNote": "Draft computational correspondence, unreviewed. Lemon juice, raw. Raw lemon juice, not whole fruit. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 clove crushed garlic": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84480"
+  },
+  "3/4 cup olive oil": {
+    "fdcId": 171413,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, olive, salad or cooking. Generic olive oil approximation; extra-virgin/light qualifiers affect composition. SR household portions retained because Foundation oil has no normalized nutrient totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "3 heads of garlic": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "water": {
+    "fdcId": 174158,
+    "matchNote": "Draft computational correspondence, unreviewed. Water, bottled, generic. Plain water; generic bottled water mineral composition is an approximation. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "3 tablespoons olive oil (divided)": {
+    "fdcId": 171413,
+    "matchNote": "Draft computational correspondence, unreviewed. Oil, olive, salad or cooking. Generic olive oil approximation; extra-virgin/light qualifiers affect composition. SR household portions retained because Foundation oil has no normalized nutrient totals. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 yellow onion, peeled, coarsely chopped": {
+    "fdcId": 170000,
+    "matchNote": "Draft computational correspondence, unreviewed. Onions, raw. Generic raw onion; red/yellow variety approximated by generic onion to retain compatible household portions. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85855"
+  },
+  "2 carrots, peeled, coarsely chopped": {
+    "fdcId": 170393,
+    "matchNote": "Draft computational correspondence, unreviewed. Carrots, raw. Raw carrot, before recipe cooking. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "86555"
+  },
+  "2 stalks celery, washed, coarsely chopped": {
+    "fdcId": 169988,
+    "matchNote": "Draft computational correspondence, unreviewed. Celery, raw. Raw celery stalks; leaves-only or alternative ingredient excluded. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "85824"
+  },
+  "2 cloves garlic, peeled": {
+    "fdcId": 169230,
+    "matchNote": "Draft computational correspondence, unreviewed. Garlic, raw. Raw garlic; USDA generic clove is 3 g. Large/small clove and whole-head weights are not size-specific. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "84480"
+  },
+  "2 bay leaves": {
+    "fdcId": 170917,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, bay leaf. Dried bay leaves; whole-leaf weight unavailable, crumbled portion not substituted. SR Legacy snapshot 2018-04; release age must be considered."
+  },
+  "1 tablespoon black peppercorns": {
+    "fdcId": 170931,
+    "matchNote": "Draft computational correspondence, unreviewed. Spices, pepper, black. Generic dried spice/seed or leavening agent; unspecified brand and grind approximated. SR Legacy snapshot 2018-04; release age must be considered.",
+    "portionId": "87562"
+  },
+  "2 ½ quarts water": {
+    "fdcId": 174158,
+    "matchNote": "Draft computational correspondence, unreviewed. Water, bottled, generic. Plain water; generic bottled water mineral composition is an approximation. SR Legacy snapshot 2018-04; release age must be considered."
+  }
+}

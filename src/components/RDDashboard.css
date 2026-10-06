@@ -1,0 +1,24 @@
+.rd-dashboard { display: grid; gap: 20px; padding: 24px; }
+.rd-dashboard h2 { margin: 0 0 8px; }
+.rd-notice { padding: 16px; border: 1px solid #d5e4de; background: #f2f8f5; border-radius: 12px; line-height: 1.6; }
+.rd-controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+.rd-controls label { display: grid; gap: 6px; }
+.rd-controls input { padding: 10px; border: 1px solid #cad7d1; border-radius: 8px; }
+.rd-nutrient-picker { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 12px; padding-top: 16px; }
+.rd-nutrient-picker label { display: flex; align-items: center; gap: 8px; }
+.rd-summary { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 12px; }
+.rd-summary article { display: grid; gap: 8px; padding: 16px; border: 1px solid #dce5e0; border-radius: 12px; }
+.rd-summary article span { font-size: 1.3rem; }.rd-summary small { line-height: 1.5; color: #52645c; }
+.rd-table-scroll { overflow-x: auto; border: 1px solid #dce5e0; border-radius: 12px; }
+.rd-dashboard table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.rd-dashboard caption { text-align: left; padding: 12px; line-height: 1.5; }
+.rd-dashboard th,.rd-dashboard td { padding: 12px; text-align: left; border-top: 1px solid #e1e8e4; white-space: nowrap; }
+.rd-dashboard thead { background: #f2f6f3; }
+@media(max-width:600px) { .rd-dashboard { padding: 16px 8px; }.rd-controls { align-items: stretch; }.rd-summary { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+
+.rd-dashboard { min-width: 0; }
+.rd-dashboard details { min-width: 0; }
+.rd-dashboard summary { cursor: pointer; padding: 8px 0; }
+.rd-dashboard td:nth-child(7), .rd-dashboard th[scope="row"] { white-space: normal; min-width: 190px; max-width: 300px; overflow-wrap: anywhere; }
+.rd-dashboard input[type="file"] { display: block; max-width: 100%; margin-top: 8px; }
+@media(max-width:600px) { .rd-dashboard { width: 100%; }.rd-summary article { padding: 12px; }.rd-controls label { flex: 1 1 140px; }.rd-controls button { flex: 1 1 120px; } }

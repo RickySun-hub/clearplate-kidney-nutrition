@@ -9,6 +9,7 @@ export default function CustomFoodModal({ open, saveError, onClose, onAdd }) {
   const [mode, setMode] = useState("packaged");
   const [name, setName] = useState("");
   const [meal, setMeal] = useState("Snack");
+  const [time, setTime] = useState(() => new Date().toTimeString().slice(0,5));
   const [servings, setServings] = useState(1);
   const [margin, setMargin] = useState(25);
   const [values, setValues] = useState(emptyValues);
@@ -42,6 +43,7 @@ export default function CustomFoodModal({ open, saveError, onClose, onAdd }) {
     try {
       const saved = await onAdd({
         meal,
+        time,
         servings: Number(servings),
         customFood: {
           id: `custom-${Date.now()}`,
@@ -78,6 +80,7 @@ export default function CustomFoodModal({ open, saveError, onClose, onAdd }) {
         <header className="modal-header"><div><h2 id="outside-food-title">Log food outside the cookbook</h2><p>Use the package label when it exists; otherwise record a transparent conservative estimate.</p></div><button type="button" className="icon-button" disabled={pending} onClick={requestClose} aria-label="Close"><X /></button></header>
         <div className="mode-switch"><button type="button" disabled={pending} className={mode === "packaged" ? "selected" : ""} onClick={() => setMode("packaged")}><Package size={20} /><span><strong>Packaged food</strong><small>Copy the Nutrition Facts label</small></span></button><button type="button" disabled={pending} className={mode === "unpackaged" ? "selected" : ""} onClick={() => setMode("unpackaged")}><Scale size={20} /><span><strong>Unpackaged food</strong><small>Estimate with a safety margin</small></span></button></div>
         <div className="form-grid">
+          <label><span>Time eaten</span><input type="time" value={time} onChange={event=>setTime(event.target.value)} /></label>
           <label className="full-field"><span>Food name</span><input data-dialog-initial-focus required disabled={pending} value={name} onChange={(event) => { setValidationError(""); setName(event.target.value); }} placeholder={mode === "packaged" ? "Example: Sea salt potato chips" : "Example: Restaurant noodle soup"} /></label>
           <label><span>Meal</span><select disabled={pending} value={meal} onChange={(event) => setMeal(event.target.value)}>{["Breakfast", "Lunch", "Dinner", "Snack"].map((item) => <option key={item}>{item}</option>)}</select></label>
           <label><span>Servings eaten</span><input required disabled={pending} type="number" min="0.25" max="20" step="0.25" value={servings} onChange={(event) => setServings(event.target.value)} /></label>

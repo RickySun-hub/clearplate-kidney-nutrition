@@ -1,5 +1,6 @@
 import {
   BookOpen,
+  Mic,
   CalendarDays,
   ChevronRight,
   CircleUserRound,
@@ -23,8 +24,16 @@ import ProfileDrawer from "./components/ProfileDrawer";
 import RecipeLibrary from "./components/RecipeLibrary";
 import RecipeDetailView from "./components/RecipeDetailView";
 import TodayMeals from "./components/TodayMeals";
-import recipes from "./data/recipes.json";
-import recipeDetails from "./data/recipeDetails.json";
+import UsdaFoodModal from "./components/UsdaFoodModal";
+import VoiceAssistant from "./components/VoiceAssistant";
+import RDDashboard from "./components/RDDashboard";
+import CareConnection from "./components/CareConnection";
+import AuthLanding from "./components/AuthLanding";
+import RecipeImport from "./components/RecipeImport";
+import { NUTRIENTS, normalizeNutrientPreferences } from "./utils/nutrientCatalog";
+import { nutrientCoverage } from "./utils/nutrition";
+import baseRecipes from "./data/recipes.json";
+import baseRecipeDetails from "./data/recipeDetails.json";
 import { defaultProfile, recipeImages } from "./data/seed";
 import { mealTimes, nextSortOrder, normalizeEntryOrder, reorderMealEntries } from "./utils/meals";
 import { formatAmount, localDateKey, mealTotals, mealTotalBounds } from "./utils/nutrition";
@@ -54,15 +63,41 @@ function loadInitialState(rawOverride) {
 }
 
 export default function App() {
+  const [authPage, setAuthPage] = useState(() => /[?&](code|error)=/.test(window.location.search) ? "signin" : ["how-it-works","signin","signup"].includes(window.location.hash.slice(1)) ? window.location.hash.slice(1) : "home");
+  function navigateAuth(page) {
+    setAuthPage(page);
+    const hash = page === 'home' ? '' : `#${page === 'google' ? 'signin' : page}`;
+    if (window.location.hash !== hash) window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
+    window.scrollTo(0, 0);
+  }
+  useEffect(() => {
+    const restore = () => { const hash = window.location.hash.slice(1); setAuthPage(['how-it-works','signin','signup'].includes(hash) ? hash : 'home'); };
+    window.addEventListener('popstate', restore);
+    window.addEventListener('hashchange', restore);
+    return () => { window.removeEventListener('popstate', restore); window.removeEventListener('hashchange', restore); };
+  }, []);
+  const [googleAvailable, setGoogleAvailable] = useState(false);
   const initial = useMemo(loadInitialState, []);
   const savedRaw = useRef(initial.raw);
   const saving = useRef(false);
+  const [customRecipes, setCustomRecipes] = useState(initial.customRecipes || []);
+  const [customRecipeDetails, setCustomRecipeDetails] = useState(initial.customRecipeDetails || {});
+  const recipes = useMemo(()=>[...baseRecipes,...customRecipes],[customRecipes]);
+  const recipeDetails = useMemo(()=>({...baseRecipeDetails,...customRecipeDetails}),[customRecipeDetails]);
+  const [importOpen,setImportOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("today");
   const [profile, setProfile] = useState(initial.profile);
   const [entries, setEntries] = useState(initial.entries);
   const [dayRecords, setDayRecords] = useState(initial.dayRecords || {});
   const [mealDialog, setMealDialog] = useState({ open: false, recipeId: null, initialMeal: null });
   const [customDialog, setCustomDialog] = useState(false);
+  const [usdaDialog, setUsdaDialog] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [careOpen, setCareOpen] = useState(false);
+  const [careSession, setCareSession] = useState(null);
+  const [sharedRecord, setSharedRecord] = useState(null);
+  const [sharedIdentity, setSharedIdentity] = useState('local');
+  const [inputPreference, setInputPreference] = useState(() => localStorage.getItem('clearplate-input-preference') || '');
   const [profileOpen, setProfileOpen] = useState(false);
   const [storageError, setStorageError] = useState("");
   const [detailView, setDetailView] = useState(null);
@@ -83,23 +118,25 @@ export default function App() {
       document.removeEventListener("visibilitychange", refresh);
     };
   }, []);
-  const recipesById = useMemo(() => Object.fromEntries(recipes.map((recipe) => [recipe.id, recipe])), []);
+  const recipesById = useMemo(() => Object.fromEntries(recipes.map((recipe) => [recipe.id, recipe])), [recipes]);
   const todayEntries = useMemo(() => entries.filter((entry) => entry.date === today), [entries, today]);
   const totals = useMemo(() => ({ ...mealTotals(todayEntries, recipesById), ...mealTotalBounds(todayEntries, recipesById) }), [recipesById, todayEntries]);
   const complete = isDayComplete(dayRecords, entries, today);
 
-  const persist = async (nextProfile, nextEntries, nextDayRecords = dayRecords) => {
+  const persist = async (nextProfile, nextEntries, nextDayRecords = dayRecords, imported = {customRecipes,customRecipeDetails}) => {
     if (saving.current) return false;
     saving.current = true;
     try {
       const result = await saveSnapshot(localStorage, navigator.locks, appStorageKey, savedRaw.current,
-        { profile: nextProfile, entries: nextEntries, dayRecords: nextDayRecords });
+        { profile: nextProfile, entries: nextEntries, dayRecords: nextDayRecords, ...imported });
       savedRaw.current = result.raw;
       if (result.status === "conflict") {
         const latest = loadInitialState(result.raw);
         setProfile(latest.profile);
         setEntries(latest.entries);
         setDayRecords(latest.dayRecords || {});
+        setCustomRecipes(latest.customRecipes || []);
+        setCustomRecipeDetails(latest.customRecipeDetails || {});
         setStorageError("Another tab changed your records. The latest saved records are now loaded; your input is still here. Review the changes, then save again to apply your input.");
         return false;
       }
@@ -124,17 +161,20 @@ export default function App() {
 
   const addRecipes = async (items) => {
     const nextByMeal = new Map();
-    const nextItems = items.map(({ recipeId, servings, meal }, index) => {
+    const nextItems = items.map(({ recipeId, servings, meal, time }, index) => {
       const sortOrder = nextByMeal.get(meal) ?? nextSortOrder(entries, today, meal);
       nextByMeal.set(meal, sortOrder + 1);
       return {
         id: `recipe-${Date.now()}-${index}`,
+        recordedAt: new Date().toISOString(),
         date: today,
         source: "recipe",
+        ...(recipesById[recipeId]?.imported ? {source:'custom',customFood:{...recipesById[recipeId],method:'imported',methodLabel:'Imported recipe · nutrients unknown'}} : {}),
         recipeId,
         servings,
         meal,
-        time: mealTimes[meal],
+        time: time || new Date().toTimeString().slice(0,5),
+        timeSource: 'user-recorded',
         sortOrder,
       };
     });
@@ -145,15 +185,17 @@ export default function App() {
     setActiveTab("today");
   };
 
-  const addCustomFood = async ({ customFood, servings, meal }) => {
+  const addCustomFood = async ({ customFood, servings, meal, time }) => {
     const next = [...entries, {
       id: `outside-${Date.now()}`,
+      recordedAt: new Date().toISOString(),
       date: today,
       source: "custom",
       customFood,
       servings,
       meal,
-      time: mealTimes[meal],
+      time: time || new Date().toTimeString().slice(0,5),
+      timeSource: 'user-recorded',
       sortOrder: nextSortOrder(entries, today, meal),
     }];
     if (!await persist(profile, next)) return false;
@@ -229,7 +271,11 @@ export default function App() {
     || (activeTab === "recipe-detail" && detailView?.returnTab === tab);
 
   return (
-    <div className="app-shell">
+    <div className={careSession ? "app-shell" : "auth-shell"}>
+      {!careSession && <AuthLanding googleAvailable={googleAvailable} page={authPage} onNavigate={navigateAuth} />}
+      <div hidden={careSession ? !careOpen && activeTab!=='rd' : ['home','how-it-works'].includes(authPage)}><CareConnection onGoogleAvailability={setGoogleAvailable} requestedMode={authPage} onAuthModeChange={navigateAuth} mode={activeTab==='rd'?'rd':'patient'} getRecord={()=>({profile,entries,dayRecords})} onSessionChange={setCareSession} onReviewRecord={(record,meta)=>{setSharedRecord(record);setSharedIdentity(meta?`${meta.ownerId}:${meta.updatedAt}`:'local');}} /></div>
+      {careSession && <>
+
       <header className="topbar">
         <button className="logo-button" type="button" onClick={() => navigateTo("today")}><Logo /></button>
         <nav aria-label="Primary navigation">
@@ -237,12 +283,21 @@ export default function App() {
           <button className={isTabActive("planner") ? "active" : ""} type="button" onClick={() => navigateTo("planner")}><Utensils /> Plan</button>
           <button className={isTabActive("recipes") ? "active" : ""} type="button" onClick={() => navigateTo("recipes")}><BookOpen /> Recipes</button>
           <button className={activeTab === "history" ? "active" : ""} type="button" onClick={() => navigateTo("history")}><History /> History</button>
+          <button className={activeTab === "rd" ? "active" : ""} type="button" onClick={() => navigateTo("rd")}><BookOpen /> RD report</button>
           <button type="button" onClick={() => setProfileOpen(true)}><CircleUserRound /> Profile</button>
         </nav>
-        <button className="avatar-button" type="button" onClick={() => setProfileOpen(true)} aria-label="Open profile">{profile.name.slice(0, 1).toUpperCase()}</button>
+        <div className="sidebar-profile"><button className="avatar-button" type="button" onClick={() => setProfileOpen(true)} aria-label="Open profile">{profile.name.slice(0, 1).toUpperCase()}</button><div><strong>{profile.name}</strong><span>Your nutrition profile</span></div></div>
       </header>
 
       {storageError && !mealDialog.open && !customDialog && !profileOpen && <p className="storage-alert" role="alert">{storageError}</p>}
+      {!inputPreference && <section className="input-welcome"><h2>How would you like to record your meals?</h2><p>You can switch any time. Your microphone stays off until you start it.</p>{[['voice','Speak with assistance'],['touch','Use buttons and forms']].map(([value,label])=><button type="button" key={value} onClick={()=>{setInputPreference(value);try{localStorage.setItem('clearplate-input-preference',value);}catch{}setVoiceOpen(value==='voice');}}>{label}</button>)}</section>}
+      <section className="assist-launch" aria-label="Food logging tools">
+        <div className="voice-feature"><div className="voice-feature-icon"><Mic size={30} /></div><div className="voice-feature-copy"><span className="feature-eyebrow">YOUR VOICE, LESS TYPING</span><h2>Say it. Review it. Log it.</h2><p>Tell us what you ate, or follow a recipe hands-free.</p></div><button className="voice-feature-button" type="button" aria-expanded={voiceOpen} onClick={()=>setVoiceOpen(!voiceOpen)}><Mic size={20} />{voiceOpen?'Close voice assistant':'Voice Assistant'}<ChevronRight size={20} /></button></div>
+        <div className="assist-secondary"><button type="button" onClick={()=>setUsdaDialog(true)}>Find a USDA food</button><button type="button" onClick={()=>setCareOpen(!careOpen)}>{careSession ? "Account & care sharing" : "Sign in / Create account"}</button><button type="button" onClick={()=>setImportOpen(!importOpen)}>Import recipe</button></div>
+      </section>
+      {importOpen && <RecipeImport onClose={()=>setImportOpen(false)} onImport={async({recipe,details})=>{const nextRecipes=[...customRecipes,recipe],nextDetails={...customRecipeDetails,[recipe.id]:details};if(!await persist(profile,entries,dayRecords,{customRecipes:nextRecipes,customRecipeDetails:nextDetails}))return false;setCustomRecipes(nextRecipes);setCustomRecipeDetails(nextDetails);navigateTo('recipes');return true;}} />}
+
+      {voiceOpen && <VoiceAssistant onSignIn={()=>{setCareOpen(true);setTimeout(()=>document.getElementById("care-connection-title")?.scrollIntoView({behavior:"smooth",block:"start"}),0);}} accessToken={careSession?.accessToken} recipes={recipes} recipe={detailView?recipesById[detailView.recipeId]:null} details={detailView?recipeDetails[detailView.recipeId]:null} onAddFood={payload=>payload.recipeId?addRecipes([payload]):addCustomFood(payload)} />}
       {activeTab === "today" && <TodayView
         profile={profile}
         entries={todayEntries}
@@ -258,8 +313,9 @@ export default function App() {
         onReorder={reorderMealEntry}
       />}
       {activeTab === "planner" && <PlannerView recipes={recipes} recipeDetails={recipeDetails} profile={profile} todayEntries={todayEntries} todayTotals={totals} plannerSession={plannerSession} onPlannerSessionChange={setPlannerSession} onAddPlan={addPlan} onOpenRecipe={(recipe) => openRecipeDetails(recipe, "planner")} />}
-      {activeTab === "recipes" && <RecipeLibrary recipes={recipes} onChoose={(recipe) => openMealDialog(recipe.id)} onOpenRecipe={(recipe) => openRecipeDetails(recipe, "recipes")} />}
+      {activeTab === "recipes" && <RecipeLibrary recipes={recipes} details={recipeDetails} onChoose={(recipe) => openMealDialog(recipe.id)} onOpenRecipe={(recipe) => openRecipeDetails(recipe, "recipes")} />}
       {activeTab === "history" && <HistoryView entries={entries} recipesById={recipesById} profile={profile} dayRecords={dayRecords} />}
+      {activeTab === "rd" && <>{sharedRecord && <p className="input-welcome">Reviewing a shared patient snapshot. <button type="button" onClick={()=>setSharedRecord(null)}>Return to this device's record</button></p>}<RDDashboard key={sharedRecord ? sharedIdentity : 'local'} entries={sharedRecord?.entries || entries} recipesById={recipesById} profile={sharedRecord?.profile || profile} dayRecords={sharedRecord?.dayRecords || dayRecords} /></>}
       {activeTab === "recipe-detail" && detailView && (
         <RecipeDetailView
           recipe={recipesById[detailView.recipeId]}
@@ -274,7 +330,9 @@ export default function App() {
 
       <AddMealModal open={mealDialog.open} recipes={recipes} initialRecipeId={mealDialog.recipeId} initialMeal={mealDialog.initialMeal} todayTotals={totals} profile={profile} saveError={storageError} onClose={() => setMealDialog({ open: false, recipeId: null, initialMeal: null })} onAdd={addRecipes} />
       <CustomFoodModal open={customDialog} saveError={storageError} onClose={() => setCustomDialog(false)} onAdd={addCustomFood} />
+      <UsdaFoodModal open={usdaDialog} onClose={() => setUsdaDialog(false)} onAdd={addCustomFood} />
       <ProfileDrawer open={profileOpen} profile={profile} saveError={storageError} onClose={() => setProfileOpen(false)} onSave={saveProfile} />
+      </>}
     </div>
   );
 }
@@ -285,6 +343,8 @@ function TodayView({ profile, entries, recipesById, totals, complete, onToggleCo
   const displayDate = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const lowSodiumIds = ["roasted-garlic", "quinoa-with-black-beans-and-avocado"];
   const ideas = lowSodiumIds.map((id) => recipesById[id]).filter(Boolean);
+  const preferences = normalizeNutrientPreferences(profile);
+  const coverage = nutrientCoverage(entries, recipesById);
 
   return (
     <main className="dashboard-layout">
@@ -303,10 +363,11 @@ function TodayView({ profile, entries, recipesById, totals, complete, onToggleCo
           <div><strong>{complete ? "Recording complete" : "Recording in progress"}</strong><p>{complete ? "You confirmed all food and drinks for today. This does not certify nutritional adequacy." : "Totals reflect logged foods only. Include drinks, sauces and snacks before confirming."}</p><button className="secondary-button" type="button" disabled={!entries.length} onClick={onToggleComplete}>{complete ? "Reopen today's record" : "I've logged everything today"}</button></div>
         </section>
         <div className="nutrient-stack">
-          <NutrientProgress type="sodium" value={totals.sodium} target={profile.sodiumTargetMg} complete={complete} estimated={totals.estimatedCount > 0} />
-          <NutrientProgress type="protein" value={totals.protein} range={{ min: profile.proteinMinG, max: profile.proteinMaxG }} complete={complete} estimated={totals.estimatedCount > 0} />
+          {preferences.trackedNutrients.includes('sodium') && <NutrientProgress type="sodium" value={totals.sodium} target={profile.sodiumTargetMg} complete={complete} estimated={totals.estimatedCount > 0} />}
+          {preferences.trackedNutrients.includes('protein') && <NutrientProgress type="protein" value={totals.protein} range={{ min: profile.proteinMinG, max: profile.proteinMaxG }} complete={complete} estimated={totals.estimatedCount > 0} />}
+          {NUTRIENTS.filter(n=>preferences.trackedNutrients.includes(n.key)&&!['sodium','protein'].includes(n.key)).map(n=>{const info=coverage[n.key];const target=preferences.nutrientTargets[n.key];return <section className="additional-nutrient" key={n.key}><strong>{n.label}</strong><span>{entries.length ? formatAmount(info.total,2) : '0'} {n.unit}</span><small>{entries.length&&!info.complete?`Known subtotal ${formatAmount(info.knownSubtotal,2)} ${n.unit} · ${info.knownCount}/${info.itemCount} items have data`:'Recorded foods only'}{target && ` · Saved target: ${target.min ?? '—'}–${target.max ?? '—'} ${n.unit}/day`}</small></section>;})}
         </div>
-        {totals.estimatedCount > 0 && <p className="estimate-note">User-set estimate ranges: sodium {formatAmount(totals.lower.sodium, 1)}–{formatAmount(totals.upper.sodium, 1)} mg; protein {formatAmount(totals.lower.protein, 1)}–{formatAmount(totals.upper.protein, 1)} g. These are planning assumptions, not measured confidence intervals. Original estimates are shown above; older added margins are not counted as food eaten.</p>}
+        {totals.estimatedCount > 0 && <p className="estimate-note">Includes estimated food matches. Actual preparation and portions may differ. Unknown nutrients are not counted as zero.{entries.some(entry=>entry.customFood?.method==='unpackaged') && <> User-set ranges: sodium {formatAmount(totals.lower.sodium, 2)}–{formatAmount(totals.upper.sodium, 2)} mg; protein {formatAmount(totals.lower.protein, 2)}–{formatAmount(totals.upper.protein, 2)} g. These are planning assumptions, not measured confidence intervals.</>}</p>}
         <TodayMeals entries={entries} recipesById={recipesById} onAddMeal={(meal) => onOpenMeal(null, meal)} onOpenRecipe={onOpenRecipe} onRemove={onRemove} onReorder={onReorder} />
       </section>
 

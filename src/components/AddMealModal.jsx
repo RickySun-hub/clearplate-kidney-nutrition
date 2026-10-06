@@ -2,22 +2,15 @@ import { Check, Minus, Plus, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { recipeImages } from "../data/seed";
 import recipeDetails from "../data/recipeDetails.json";
+import recipeMetadata from "../data/recipeMetadata.json";
+import { enrichRecipe } from "../utils/recipeFilters";
 import useDialogFocus from "../hooks/useDialogFocus";
 import { mealSections } from "../utils/meals";
 import { formatAmount, nutritionFor } from "../utils/nutrition";
 import { hasValidProteinTargets } from "../utils/profile";
 
 const meals = mealSections.map(({ name }) => name);
-const courseFilters = [
-  { value: "all", label: "All courses" },
-  { value: "appetizers", label: "Appetizers", categories: ["Appetizers"] },
-  { value: "soups-salads", label: "Soups & Salads", categories: ["Soups & Salads"] },
-  { value: "sides", label: "Sides", categories: ["Sides", "Grains"] },
-  { value: "entrees", label: "Entrées", categories: ["Entrees"] },
-  { value: "desserts", label: "Desserts", categories: ["Desserts"] },
-  { value: "seasonings", label: "Seasonings", categories: ["Spices & Rubs"] },
-  { value: "sauces", label: "Sauces", categories: ["sauce"] },
-];
+const sumKnown = (a, b) => a == null || b == null ? null : a + b;
 
 const emptyTotals = { sodium: 0, protein: 0 };
 
@@ -34,6 +27,7 @@ export default function AddMealModal({
 }) {
   const [search, setSearch] = useState("");
   const [meal, setMeal] = useState("Lunch");
+  const [time, setTime] = useState(() => new Date().toTimeString().slice(0,5));
   const [dietFilter, setDietFilter] = useState("all");
   const [courseFilter, setCourseFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState([]);
@@ -53,25 +47,27 @@ export default function AddMealModal({
       setDietFilter("all");
       setCourseFilter("all");
       setServings(1);
+      setTime(new Date().toTimeString().slice(0, 5));
       setMeal(initialMeal || "Lunch");
       setSubmissionError("");
     }
   }, [open, initialMeal, initialRecipeId]);
 
+  const enriched = useMemo(() => recipes.map((recipe) => enrichRecipe(recipe, recipeDetails[recipe.id], recipeMetadata[recipe.id])), [recipes]);
+  const courseFilters = useMemo(() => [{ value: "all", label: "All courses" }, ...[...new Set(enriched.map((recipe) => recipe.category))].sort().map((category) => ({ value: category, label: category }))], [enriched]);
   const results = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const course = courseFilters.find((option) => option.value === courseFilter);
-    return recipes
+    return enriched
       .filter((recipe) => !query || recipe.name.toLowerCase().includes(query))
-      .filter((recipe) => !course?.categories || course.categories.includes(recipe.category))
-      .filter((recipe) => dietFilter !== "low" || recipe.sodium <= 140)
+      .filter((recipe) => courseFilter === "all" || recipe.category === courseFilter)
+      .filter((recipe) => dietFilter !== "low" || typeof recipe.sodium === "number" && recipe.sodium <= 140)
       .filter((recipe) => dietFilter !== "protein" || recipe.protein >= 15)
       .sort((a, b) => {
         const aImage = recipeImages[a.id] ? 0 : 1;
         const bImage = recipeImages[b.id] ? 0 : 1;
         return aImage - bImage || a.sodium - b.sodium;
       });
-  }, [courseFilter, dietFilter, recipes, search]);
+  }, [courseFilter, dietFilter, enriched, search]);
 
   const selectedRecipes = useMemo(
     () => selectedIds.map((id) => recipes.find((recipe) => recipe.id === id)).filter(Boolean),
@@ -82,8 +78,8 @@ export default function AddMealModal({
     () => selectedRecipes.reduce((totals, recipe) => {
       const nutrients = nutritionFor(recipe, servings);
       return {
-        sodium: totals.sodium + nutrients.sodium,
-        protein: totals.protein + nutrients.protein,
+        sodium: sumKnown(totals.sodium, nutrients.sodium),
+        protein: sumKnown(totals.protein, nutrients.protein),
       };
     }, { ...emptyTotals }),
     [selectedRecipes, servings],
@@ -96,8 +92,8 @@ export default function AddMealModal({
   const proteinMin = proteinTargetsValid ? Number(profile.proteinMinG) : null;
   const proteinMax = proteinTargetsValid ? Number(profile.proteinMaxG) : null;
   const combined = {
-    sodium: (todayTotals.upper?.sodium ?? todayTotals.sodium) + selectedNutrition.sodium,
-    protein: (todayTotals.upper?.protein ?? todayTotals.protein) + selectedNutrition.protein,
+    sodium: sumKnown(todayTotals.upper ? todayTotals.upper.sodium : todayTotals.sodium, selectedNutrition.sodium),
+    protein: sumKnown(todayTotals.upper ? todayTotals.upper.protein : todayTotals.protein, selectedNutrition.protein),
   };
   const sodiumOver = sodiumTarget !== null && combined.sodium > sodiumTarget;
   const proteinOver = proteinTargetsValid && combined.protein > proteinMax;
@@ -113,11 +109,12 @@ export default function AddMealModal({
 
   const handleAdd = async () => {
     if (!selectedRecipes.length || submittingRef.current) return;
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) { setSubmissionError("Enter the time eaten."); return; }
     submittingRef.current = true;
     setPending(true);
     setSubmissionError("");
     try {
-      const saved = await onAdd(selectedRecipes.map((recipe) => ({ recipeId: recipe.id, servings, meal })));
+      const saved = await onAdd(selectedRecipes.map((recipe) => ({ recipeId: recipe.id, servings, meal, time })));
       if (saved === false) return;
       submittingRef.current = false;
       onClose();
@@ -132,9 +129,10 @@ export default function AddMealModal({
   const recipeFitLabel = (recipe, chosen) => {
     const nutrients = nutritionFor(recipe, servings);
     const projected = chosen ? combined : {
-      sodium: combined.sodium + nutrients.sodium,
-      protein: combined.protein + nutrients.protein,
+      sodium: sumKnown(combined.sodium, nutrients.sodium),
+      protein: sumKnown(combined.protein, nutrients.protein),
     };
+    if (projected.sodium == null || projected.protein == null) return { text: "Incomplete nutrition · fit unknown", danger: false };
     const over = [];
     if (sodiumTarget !== null && projected.sodium > sodiumTarget) over.push("sodium");
     if (proteinTargetsValid && projected.protein > proteinMax) over.push("protein");
@@ -150,7 +148,7 @@ export default function AddMealModal({
           <h2 id="add-meal-title">Add a meal</h2>
           <button className="icon-button" type="button" disabled={pending} onClick={requestClose} aria-label="Close add meal dialog"><X /></button>
         </header>
-
+        <label>Time eaten<input type="time" required disabled={pending} value={time} onChange={event=>setTime(event.target.value)} /></label>
         <label className="search-field">
           <Search size={21} strokeWidth={1.8} aria-hidden="true" />
           <input data-dialog-initial-focus disabled={pending} value={search} onChange={(event) => setSearch(event.target.value)} placeholder={`Search ${recipes.length} recipes`} />
@@ -171,7 +169,7 @@ export default function AddMealModal({
               displayMax={sodiumTarget === null ? "Target needs review" : `${formatAmount(sodiumTarget)} mg max`}
               danger={sodiumOver}
               warning={sodiumTarget === null}
-              status={sodiumTarget === null ? "Target needs review" : sodiumOver ? `${formatAmount(combined.sodium - sodiumTarget, 1)} mg over` : `${formatAmount(sodiumTarget - combined.sodium, 1)} mg remaining`}
+              status={combined.sodium == null ? "Incomplete nutrition · remaining amount unknown" : sodiumTarget === null ? "Target needs review" : sodiumOver ? `${formatAmount(combined.sodium - sodiumTarget, 1)} mg over` : `${formatAmount(sodiumTarget - combined.sodium, 1)} mg remaining`}
             />
             <CompactProgress
               label="Protein"
@@ -182,7 +180,7 @@ export default function AddMealModal({
               marker={proteinTargetsValid ? (proteinMin / proteinMax) * 100 : undefined}
               danger={proteinOver}
               warning={!proteinTargetsValid || combined.protein < proteinMin}
-              status={!proteinTargetsValid ? "Targets need review" : proteinOver ? `${formatAmount(combined.protein - proteinMax, 1)} g over` : todayTotals.estimatedCount > 0 ? "Includes estimates" : combined.protein < proteinMin ? `${formatAmount(proteinMin - combined.protein, 1)} g to minimum` : "Within range"}
+              status={combined.protein == null ? "Incomplete nutrition · range check unknown" : !proteinTargetsValid ? "Targets need review" : proteinOver ? `${formatAmount(combined.protein - proteinMax, 1)} g over` : todayTotals.estimatedCount > 0 ? "Includes estimates" : combined.protein < proteinMin ? `${formatAmount(proteinMin - combined.protein, 1)} g to minimum` : "Within range"}
             />
           </div>
         </section>
@@ -232,7 +230,7 @@ export default function AddMealModal({
         </div>
 
         <footer className="meal-modal-footer">
-          {todayTotals.estimatedCount > 0 && <p className="field-note">Upper-limit checks use the high end of your logged estimates. Protein adequacy is not confirmed here.</p>}
+          {todayTotals.estimatedCount > 0 && <p className="field-note">User-defined ranges are used where recorded; USDA matches remain point estimates. Missing amounts or ranges prevent a complete limit check.</p>}
           {(submissionError || saveError) && <p className="storage-alert" role="alert">{submissionError || saveError}</p>}
           <div className="serving-row">
             <span>Servings for each selected recipe</span>
@@ -253,7 +251,7 @@ export default function AddMealModal({
 }
 
 function CompactProgress({ label, value, unit, max, displayMax, marker, danger, warning, status }) {
-  const percent = max ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
+  const percent = value != null && max ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
   return (
     <div className={`compact-progress ${danger ? "danger" : warning ? "warning" : ""}`}>
       <div><strong>{label}</strong><span>{formatAmount(value, 1)} {unit} / {displayMax}</span></div>

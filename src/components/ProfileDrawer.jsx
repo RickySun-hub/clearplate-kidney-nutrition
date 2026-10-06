@@ -2,9 +2,10 @@ import { ExternalLink, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import useDialogFocus from "../hooks/useDialogFocus";
 import { isGuidelineProteinEligible, normalizeProfileDraft, updateProfileDraft } from "../utils/profile";
+import { NUTRIENTS, normalizeNutrientPreferences, validNutrientValue } from '../utils/nutrientCatalog.js';
 
 export default function ProfileDrawer({ open, profile, saveError, onClose, onSave }) {
-  const [draft, setDraft] = useState(() => normalizeProfileDraft(profile));
+  const [draft, setDraft] = useState(() => ({ ...normalizeProfileDraft(profile), ...normalizeNutrientPreferences(profile) }));
   const [validationError, setValidationError] = useState("");
   const [submissionError, setSubmissionError] = useState("");
   const [pending, setPending] = useState(false);
@@ -17,7 +18,7 @@ export default function ProfileDrawer({ open, profile, saveError, onClose, onSav
 
   useEffect(() => {
     if (open && !wasOpenRef.current) {
-      setDraft(normalizeProfileDraft(profile));
+      setDraft({ ...normalizeProfileDraft(profile), ...normalizeNutrientPreferences(profile) });
       setValidationError("");
       setSubmissionError("");
     }
@@ -44,12 +45,20 @@ export default function ProfileDrawer({ open, profile, saveError, onClose, onSav
       setValidationError("Protein minimum must be less than or equal to the maximum.");
       return;
     }
+    for (const target of Object.values(draft.nutrientTargets || {})) {
+      const supplied = ['min', 'max'].filter((key) => target[key] !== undefined && target[key] !== '');
+      if (supplied.some((key) => !validNutrientValue(target[key])) || (supplied.length === 2 && Number(target.min) > Number(target.max))) {
+        setValidationError('Optional nutrient targets must be nonnegative numbers, with minimum no greater than maximum.');
+        return;
+      }
+    }
     submittingRef.current = true;
     setPending(true);
     setSubmissionError("");
     try {
       const saved = await onSave({
         ...draft,
+        ...normalizeNutrientPreferences(draft),
         name: draft.name.trim(),
         weightKg: Number(draft.weightKg),
         heightCm: Number(draft.heightCm),
@@ -96,6 +105,16 @@ export default function ProfileDrawer({ open, profile, saveError, onClose, onSav
             <label><span>Protein minimum (g)</span><input required type="number" min="10" max="250" step="1" disabled={pending || draft.useGuidelineProteinRange} value={draft.proteinMinG} onChange={(event) => update("proteinMinG", event.target.value)} /></label>
             <label><span>Protein maximum (g)</span><input required type="number" min="10" max="250" step="1" disabled={pending || draft.useGuidelineProteinRange} value={draft.proteinMaxG} onChange={(event) => update("proteinMaxG", event.target.value)} /></label>
           </div>
+        </div>
+
+        <div className="form-section">
+          <h3>Additional nutrients to track</h3>
+          <p className="field-note">Choose report nutrients. Optional daily ranges must come from your care team; blank means no target. Missing food values remain unknown.</p>
+          <div className="nutrient-settings-grid">{NUTRIENTS.map((nutrient) => <div className={`nutrient-setting-card ${draft.trackedNutrients.includes(nutrient.key) ? "is-selected" : ""}`} key={nutrient.key}>
+            <label className="check-row"><input type="checkbox" disabled={pending} checked={draft.trackedNutrients.includes(nutrient.key)} onChange={(event) => update('trackedNutrients', event.target.checked ? [...draft.trackedNutrients, nutrient.key] : draft.trackedNutrients.filter((key) => key !== nutrient.key))} /><span><strong>{nutrient.label}</strong><small>{nutrient.unit} · {draft.trackedNutrients.includes(nutrient.key) ? "Tracking" : "Not tracked"}</small></span></label>
+            {draft.trackedNutrients.includes(nutrient.key) && !['protein', 'sodium'].includes(nutrient.key) && <div className="nutrient-target-fields">{['min', 'max'].map((bound) => <label key={bound}><span>Optional {bound} ({nutrient.unit}/day)</span><input type="number" min="0" step="any" disabled={pending} value={draft.nutrientTargets?.[nutrient.key]?.[bound] ?? ''} onChange={(event) => update('nutrientTargets', { ...draft.nutrientTargets, [nutrient.key]: { ...draft.nutrientTargets?.[nutrient.key], [bound]: event.target.value } })} /></label>)}</div>}
+            {draft.trackedNutrients.includes(nutrient.key) && ['protein', 'sodium'].includes(nutrient.key) && <p className="nutrient-target-hint">Target set in Daily targets above.</p>}
+          </div>)}</div>
         </div>
 
         <div className="source-note">

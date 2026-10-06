@@ -3,7 +3,7 @@ import { formatAmount } from "../utils/nutrition";
 
 export default function NutrientProgress({ type, value, target, range, complete = false, estimated = false }) {
   const isSodium = type === "sodium";
-  const numericValue = Number.isFinite(Number(value)) ? Number(value) : null;
+  const numericValue = value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value)) ? Number(value) : null;
   const hasValidTarget = isSodium
     ? Number.isFinite(Number(target)) && Number(target) > 0
     : Number.isFinite(Number(range?.min)) && Number(range.min) > 0
@@ -34,6 +34,10 @@ export default function NutrientProgress({ type, value, target, range, complete 
 
   if (hasValidTarget && !complete && tone !== "danger") {
     status = "Recording in progress";
+    tone = "neutral";
+  }
+  if (numericValue === null) {
+    status = "Incomplete nutrient data";
     tone = "neutral";
   }
 

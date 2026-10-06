@@ -1,0 +1,16 @@
+.how-page{max-width:1240px;margin:0 auto;padding:0 28px 32px;color:#20221f;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif}
+.how-heading{padding:56px 0 42px;border-bottom:1px solid #dedfe2;text-align:left}
+.how-heading h1{font-size:clamp(34px,3.8vw,54px);line-height:1.08;letter-spacing:-2px;font-weight:600;margin:0 0 20px}
+.how-heading p{font-size:18px;line-height:1.6;color:#62676d;margin:0}
+.how-story{display:grid;grid-template-columns:1.2fr 1fr;align-items:center;gap:64px;padding:40px 0;border-bottom:1px solid #dedfe2}
+.how-story>img{display:block;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;background:#f7f7f8}
+.how-copy{padding:12px 0}
+.how-copy h2{font-size:clamp(28px,2.6vw,38px);line-height:1.12;letter-spacing:-1.2px;font-weight:600;margin:0 0 22px}
+.how-copy p{font-size:18px;line-height:1.65;margin:0 0 20px;color:#50565c}
+.how-copy .how-payment{font-size:16px;color:#20221f;margin:0 0 24px}
+.how-link{display:inline-flex;align-items:center;gap:18px;min-height:46px;padding:0;border:0;background:none;color:#002fa7;font:600 17px 'Helvetica Neue',Helvetica,Arial,sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:6px;text-decoration-thickness:1px}
+.how-link:hover{color:#102455}.how-copy small{display:block;font-size:13px;line-height:1.6;color:#666d75;margin-top:10px;max-width:340px}
+.how-story-reverse{grid-template-columns:1fr 1.2fr}.how-story-reverse>img{grid-column:2;grid-row:1}.how-story-reverse .how-copy{grid-column:1;grid-row:1}
+.how-photo-note{font-size:12px;color:#747b82;margin:16px 0 0}
+@media(max-width:800px){.how-story{gap:32px}.how-copy p{font-size:16px}.how-copy h2{font-size:29px}.how-heading{padding-top:42px}}
+@media(max-width:600px){.how-page{padding:0 22px 26px}.how-heading{padding:36px 0 28px}.how-heading h1{font-size:34px;letter-spacing:-1.2px}.how-heading p{font-size:16px;max-width:310px}.how-story,.how-story-reverse{grid-template-columns:1fr;gap:24px;padding:28px 0}.how-story-reverse>img,.how-story-reverse .how-copy{grid-column:auto;grid-row:auto}.how-copy{padding:0}.how-copy h2{margin-bottom:16px}.how-copy p{font-size:17px;margin-bottom:16px}.how-copy .how-payment{margin-bottom:14px}.how-copy small{max-width:none}.auth-shell .public-nav nav{display:flex}.auth-shell .public-nav nav button{display:none}.auth-shell .public-nav nav a{font-size:13px}.auth-shell .public-nav{gap:14px}.auth-shell .public-account{gap:10px}.auth-shell .public-nav .public-primary{display:none}.auth-shell .public-nav .public-brand{font-size:21px}}

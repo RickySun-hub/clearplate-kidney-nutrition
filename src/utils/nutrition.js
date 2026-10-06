@@ -1,3 +1,5 @@
+import { NUTRIENT_KEYS, validNutrientValue } from './nutrientCatalog.js';
+
 export const round = (value, digits = 1) => {
   const factor = 10 ** digits;
   return Math.round((Number(value) || 0) * factor) / factor;
@@ -5,6 +7,7 @@ export const round = (value, digits = 1) => {
 
 const isUnknown = (value) => value === null
   || value === undefined
+  || !['string', 'number'].includes(typeof value)
   || (typeof value === "string" && value.trim() === "")
   || !Number.isFinite(Number(value));
 
@@ -18,27 +21,59 @@ export const formatAmount = (value, digits = 0) => isUnknown(value)
 export function parseNutrientValues(values = {}) {
   const result = {};
   for (const key of ["calories", "protein", "sodium"]) {
-    if (isUnknown(values[key]) || Number(values[key]) < 0) return null;
+    if (!validNutrientValue(values[key])) return null;
     result[key] = Number(values[key]);
   }
   for (const key of ["potassium", "phosphorus"]) {
     if (values[key] === null || values[key] === undefined || String(values[key]).trim() === "") {
       result[key] = null;
-    } else if (!Number.isFinite(Number(values[key])) || Number(values[key]) < 0) {
+    } else if (!validNutrientValue(values[key])) {
       return null;
     } else {
       result[key] = Number(values[key]);
     }
+  }
+  for (const key of NUTRIENT_KEYS.filter((key) => !['calories', 'protein', 'sodium', 'potassium', 'phosphorus'].includes(key))) {
+    if (!(key in values)) continue;
+    if (values[key] === null || values[key] === undefined || String(values[key]).trim() === '') result[key] = null;
+    else if (!validNutrientValue(values[key])) return null;
+    else result[key] = Number(values[key]);
   }
   return result;
 }
 
 export const nutritionFor = (recipe, servings = 1) => {
   // Older records stored an inflated estimate alongside the original values.
-  const values = recipe.method === "unpackaged" && recipe.baseEstimate ? recipe.baseEstimate : recipe;
+  const values = recipe?.method === "unpackaged" && recipe.baseEstimate ? recipe.baseEstimate : recipe;
   return Object.fromEntries(["calories", "protein", "sodium", "potassium", "phosphorus"]
-    .map((key) => [key, isUnknown(values[key]) ? null : round(Number(values[key]) * servings, 1)]));
+    .map((key) => [key, !validNutrientValue(values?.[key]) || !validNutrientValue(servings) || Number(servings) <= 0 ? null : round(Number(values[key]) * servings, 2)]));
 };
+
+export const detailedNutritionFor = (food, servings = 1) => {
+  const values = food?.method === 'unpackaged' && food.baseEstimate ? food.baseEstimate : food;
+  return Object.fromEntries(NUTRIENT_KEYS.map((key) => [key,
+    validNutrientValue(values?.[key]) && validNutrientValue(servings) && Number(servings) > 0
+      ? round(Number(values[key]) * Number(servings), 2) : null]));
+};
+
+// Every recorded item counts in the denominator, including unresolved recipes.
+export function nutrientCoverage(meals, recipesById = {}) {
+  const result = Object.fromEntries(NUTRIENT_KEYS.map((key) => [key,
+    { knownSubtotal: 0, knownCount: 0, itemCount: meals.length, total: null, complete: false }]));
+  for (const meal of meals) {
+    const food = meal.source === 'custom' ? meal.customFood : recipesById[meal.recipeId];
+    const amount = detailedNutritionFor(food, meal.servings);
+    for (const key of NUTRIENT_KEYS) if (amount[key] !== null) {
+      result[key].knownSubtotal = round(result[key].knownSubtotal + amount[key], 2);
+      result[key].knownCount += 1;
+    }
+  }
+  for (const key of NUTRIENT_KEYS) {
+    result[key].complete = meals.length > 0 && result[key].knownCount === meals.length;
+    result[key].total = result[key].complete ? result[key].knownSubtotal : null;
+  }
+  return result;
+}
 
 const addNutritionValue = (current, amount) => current === null || amount === null
   ? null
@@ -50,14 +85,18 @@ export function mealTotalBounds(meals, recipesById) {
   let estimatedCount = 0;
   for (const meal of meals) {
     const food = meal.source === "custom" ? meal.customFood : recipesById[meal.recipeId];
-    if (!food) continue;
+    if (!food) {
+      for (const key of Object.keys(lower)) { lower[key] = null; upper[key] = null; }
+      continue;
+    }
     const estimated = food.method === "unpackaged";
-    const margin = estimated ? Math.min(100, Math.max(0, Number(food.estimateRangePercent ?? food.uncertaintyMargin) || 0)) / 100 : 0;
-    if (estimated) estimatedCount += 1;
+    const rawMargin = food.estimateRangePercent ?? food.uncertaintyMargin;
+    const margin = estimated ? (validNutrientValue(rawMargin) && Number(rawMargin) <= 100 ? Number(rawMargin) / 100 : null) : 0;
+    if (estimated || food.method === 'usda-estimate') estimatedCount += 1;
     const nutrition = nutritionFor(food, meal.servings);
     for (const key of Object.keys(lower)) {
-      lower[key] = addNutritionValue(lower[key], nutrition[key] === null ? null : nutrition[key] * (1 - margin));
-      upper[key] = addNutritionValue(upper[key], nutrition[key] === null ? null : nutrition[key] * (1 + margin));
+      lower[key] = addNutritionValue(lower[key], nutrition[key] === null || margin === null ? null : nutrition[key] * (1 - margin));
+      upper[key] = addNutritionValue(upper[key], nutrition[key] === null || margin === null ? null : nutrition[key] * (1 + margin));
     }
   }
   return { lower, upper, estimatedCount };
@@ -67,7 +106,7 @@ export const mealTotals = (meals, recipesById) =>
   meals.reduce(
     (totals, meal) => {
       const recipe = meal.source === "custom" ? meal.customFood : recipesById[meal.recipeId];
-      if (!recipe) return totals;
+      if (!recipe) return Object.fromEntries(Object.keys(totals).map((key) => [key, null]));
       const amount = nutritionFor(recipe, meal.servings);
       return {
         calories: addNutritionValue(totals.calories, amount.calories),
