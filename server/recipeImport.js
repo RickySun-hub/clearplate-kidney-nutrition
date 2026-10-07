@@ -22,7 +22,7 @@ export function downloadPinned({url,address}, remainingMs, transport = https.req
     let settled = false;
     let timer;
     const finish = (error,value) => { if (settled) return; settled=true; clearTimeout(timer); if (error) reject(error); else resolve(value); };
-    const req = transport(url, { method:'GET', agent:false, headers:{Accept:'text/html,application/ld+json,application/json','Accept-Encoding':'identity','User-Agent':'ClearPlate-RecipeImporter/1.0'}, lookup:(_host,options,callback) => options?.all ? callback(null,[address]) : callback(null,address.address,address.family) }, (res) => {
+    const req = transport(url, { method:'GET', agent:false, headers:{Accept:'text/html,application/ld+json,application/json','Accept-Encoding':'identity','User-Agent':'RenalSync-RecipeImporter/1.0'}, lookup:(_host,options,callback) => options?.all ? callback(null,[address]) : callback(null,address.address,address.family) }, (res) => {
       if ([301,302,303,307,308].includes(res.statusCode)) { res.destroy(); finish(null,{redirect:res.headers.location}); return; }
       if (res.statusCode !== 200 || !/^(?:text\/html|application\/(?:ld\+json|json))(?:;|$)/i.test(res.headers['content-type'] || '') || (res.headers['content-encoding'] && res.headers['content-encoding'] !== 'identity')) { res.destroy(); finish(new Error('Source page is unavailable or unsupported.')); return; }
       if (Number(res.headers['content-length']) > 1000000) { res.destroy(); finish(new Error('Source page exceeds 1 MB.')); return; }

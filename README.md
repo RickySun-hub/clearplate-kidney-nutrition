@@ -1,6 +1,6 @@
-# ClearPlate
+# RenalSync
 
-ClearPlate is an adult ADPKD nutrition-tracking prototype with user-saved sodium and protein targets. Care-team review is not verified by the app.
+RenalSync is an adult ADPKD nutrition-tracking prototype with user-saved sodium and protein targets. Care-team review is not verified by the app.
 
 ## Features
 

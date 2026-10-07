@@ -1,6 +1,6 @@
 import { NUTRIENTS, NUTRIENT_KEYS, validNutrientValue } from './nutrientCatalog.js';
 export function validateDeviceReport(value) {
-  if (value?.schema !== 'clearplate-device-report' || value.version !== 1 || !Array.isArray(value.rows) || value.rows.length > 10000) throw new Error('Choose a ClearPlate version 1 device report with at most 10,000 items.');
+  if (!['renalsync-device-report', 'clearplate-device-report'].includes(value?.schema) || value.version !== 1 || !Array.isArray(value.rows) || value.rows.length > 10000) throw new Error('Choose a RenalSync version 1 device report with at most 10,000 items.');
   if (value.nutrientUnits && NUTRIENTS.some(({ key, unit }) => value.nutrientUnits[key] !== unit)) throw new Error('Report nutrient units do not match this report format.');
   const rows = value.rows.map((row) => {
     if (!row || !/^\d{4}-\d{2}-\d{2}$/.test(row.date) || !validNutrientValue(row.servings) || Number(row.servings) <= 0 || typeof row.name !== 'string' || row.name.length > 500 || !row.nutrients || typeof row.nutrients !== 'object') throw new Error('Report contains an invalid food record.');

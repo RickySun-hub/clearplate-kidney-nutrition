@@ -20,7 +20,7 @@ export default function HowItWorks({ onNavigate }) {
     </section>
 
     <section className="how-story how-story-reverse" aria-labelledby="on-own-title">
-      <img src="/images/how-it-works/at-home-ui-v1.png" alt="An older adult preparing vegetables at home with a phone on the kitchen counter" width="1536" height="1024" loading="lazy" />
+      <img src="/images/how-it-works/at-home-renalsync.png" alt="An older adult preparing vegetables at home with a phone on the kitchen counter" width="1536" height="1024" loading="lazy" />
       <div className="how-copy">
         <h2 id="on-own-title">On your own.</h2>
         <p>Find a recipe. Choose your portion.<br />Say what you ate, check it, and save.</p>

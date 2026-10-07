@@ -17,3 +17,10 @@ test('device report rejects impossible dates and incompatible declared units', (
   assert.throws(() => validateDeviceReport({ schema: 'clearplate-device-report', version: 1, rows: [row] }));
   assert.throws(() => validateDeviceReport({ schema: 'clearplate-device-report', version: 1, rows: [], nutrientUnits: { vitaminA: 'IU' } }));
 });
+
+test('RenalSync imports new and legacy reports after rebranding', () => {
+  const row = { date: '2026-10-07', name: 'Meal', servings: 1, nutrients: { protein: 12 } };
+  for (const schema of ['renalsync-device-report', 'clearplate-device-report']) {
+    assert.equal(validateDeviceReport({ schema, version: 1, rows: [row] }).rows[0].nutrients.protein, 12);
+  }
+});
