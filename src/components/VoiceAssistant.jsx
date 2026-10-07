@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { parseNutrientValues, formatAmount } from '../utils/nutrition';
 import './VoiceAssistant.css';
+import { Mic, Pause, Play, ArrowUp, X } from 'lucide-react';
 import { recordingToWav } from '../utils/voiceAudio';
 const emptyNutrients = { calories: '', protein: '', sodium: '', potassium: '', phosphorus: '' };
-export default function VoiceAssistant({ recipes = [], recipe = null, details = null, accessToken = null, onSignIn, onAddFood }) {
+export default function VoiceAssistant({ recipes = [], recipe = null, details = null, accessToken = null, onSignIn, onClose, onAddFood }) {
   const [available, setAvailable] = useState(false);
   const [message, setMessage] = useState('Checking voice availability…');
   const [transcript, setTranscript] = useState('');
@@ -11,6 +12,12 @@ export default function VoiceAssistant({ recipes = [], recipe = null, details = 
   const [nutrients, setNutrients] = useState(emptyNutrients);
   const [pending, setPending] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [levels, setLevels] = useState(Array(36).fill(4));
+  const [typing, setTyping] = useState(false);
+  const audioContext = useRef(null), frame = useRef(null), clock = useRef(null), elapsedRef = useRef(0);
+  function stopMeter() { cancelAnimationFrame(frame.current); clearInterval(clock.current); audioContext.current?.close().catch(() => {}); audioContext.current = null; }
   const [speech, setSpeech] = useState(false);
   const [step, setStep] = useState(0);
   const [outsideMode, setOutsideMode] = useState('usda');
@@ -42,9 +49,9 @@ export default function VoiceAssistant({ recipes = [], recipe = null, details = 
   useEffect(() => {
     alive.current = true;
     const sessionGeneration = ++generation.current;
-    clearMatches(); setAvailable(false); setDraft(null); setTranscript(''); setRecording(false); setPending(false);
+    clearMatches(); setAvailable(false); setDraft(null); setTranscript(''); setRecording(false); setPaused(false); setPending(false);
     fetch('/api/voice-status', { headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} }).then(response => response.json()).then(data => { if (alive.current && generation.current === sessionGeneration) { setAvailable(data.available === true); setMessage(data.available ? 'Microphone is off. Review every draft before saving.' : (data.message || data.error?.message || 'Sign in with a verified account to use AI voice. Manual logging is always available.')); } }).catch(() => { if (alive.current && generation.current === sessionGeneration) setMessage('AI voice is unavailable. Manual logging is available.'); });
-    return () => { alive.current = false; generation.current++; cancelled.current = true; clearTimeout(timer.current); if (recorder.current?.state === 'recording') recorder.current.stop(); stream.current?.getTracks().forEach(track => track.stop()); window.speechSynthesis?.cancel(); };
+    return () => { alive.current = false; generation.current++; cancelled.current = true; clearTimeout(timer.current); stopMeter(); if (recorder.current && recorder.current.state !== 'inactive') recorder.current.stop(); stream.current?.getTracks().forEach(track => track.stop()); window.speechSynthesis?.cancel(); };
   }, [accessToken]);
   function speak(text) { if (speech && window.speechSynthesis) { window.speechSynthesis.cancel(); window.speechSynthesis.speak(new SpeechSynthesisUtterance(text)); } }
   function navigate(command) {
@@ -80,10 +87,10 @@ export default function VoiceAssistant({ recipes = [], recipe = null, details = 
       const mimeType = ['audio/webm', 'audio/mp4', 'audio/ogg'].find(type => MediaRecorder.isTypeSupported(type));
       if (!mimeType) throw new Error('No supported audio recording format. Please type instead.');
       const capture = new MediaRecorder(audioStream, { mimeType, audioBitsPerSecond: 32000 }); const chunks = []; let size = 0;
-      capture.ondataavailable = event => { size += event.data.size; if (size <= 1800000) chunks.push(event.data); else { cancelled.current = true; if (capture.state === 'recording') capture.stop(); setMessage('Recording is too large. Try a shorter recording.'); } };
+      capture.ondataavailable = event => { size += event.data.size; if (size <= 1800000) chunks.push(event.data); else { cancelled.current = true; if (capture.state !== 'inactive') capture.stop(); setMessage('Recording is too large. Try a shorter recording.'); } };
       capture.onstop = async () => {
-        clearTimeout(timer.current); audioStream.getTracks().forEach(track => track.stop()); if (!alive.current || generation.current !== sessionGeneration) return; setRecording(false);
-        if (cancelled.current) return;
+        clearTimeout(timer.current); stopMeter(); audioStream.getTracks().forEach(track => track.stop()); if (!alive.current || generation.current !== sessionGeneration) return; setRecording(false); setPaused(false); setLevels(Array(36).fill(4));
+        if (cancelled.current) { setPending(false); return; }
         try {
           setPending(true);
           const wav = await recordingToWav(new Blob(chunks, { type: mimeType }));
@@ -93,9 +100,28 @@ export default function VoiceAssistant({ recipes = [], recipe = null, details = 
           reader.readAsDataURL(wav.blob);
         } catch(error) { if (alive.current && generation.current === sessionGeneration) { setPending(false); setMessage(error.message || 'Could not prepare audio. Please type instead.'); } }
       };
-      recorder.current = capture; capture.start(1000); setRecording(true); setMessage('Recording. Stop to send up to 60 seconds of audio for transcription.');
-      timer.current = setTimeout(() => { if (capture.state === 'recording') capture.stop(); }, 60000);
-    } catch { stream.current?.getTracks().forEach(track => track.stop()); if (alive.current && generation.current === sessionGeneration) setMessage('Microphone unavailable or permission declined. Please type instead.'); }
+      recorder.current = capture; capture.start(1000); setRecording(true); setPaused(false); setTyping(false); setElapsed(0); elapsedRef.current = 0;
+      setMessage('Listening. Send when you are ready.');
+      clock.current = setInterval(() => {
+        if (capture.state !== 'recording') return;
+        elapsedRef.current += 1; setElapsed(elapsedRef.current);
+        if (elapsedRef.current >= 60) { capture.pause(); setPaused(true); setMessage('60-second limit reached. Send this recording or discard it.'); }
+      }, 1000);
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          const context = new AudioContext(); audioContext.current = context;
+          const analyser = context.createAnalyser(); analyser.fftSize = 128;
+          context.createMediaStreamSource(audioStream).connect(analyser);
+          const values = new Uint8Array(analyser.frequencyBinCount);
+          const draw = () => {
+            if (capture.state === 'recording') { analyser.getByteFrequencyData(values); setLevels(Array.from({length:36}, (_, i) => Math.max(4, values[i + 2] / 255 * 52))); }
+            frame.current = requestAnimationFrame(draw);
+          };
+          context.resume().catch(() => {}); draw();
+        }
+      } catch { /* Recording works even when audio visualization is unavailable. */ }
+    } catch { stopMeter(); stream.current?.getTracks().forEach(track => track.stop()); if (alive.current && generation.current === sessionGeneration) setMessage('Microphone unavailable or permission declined. Please type instead.'); }
     finally { if (alive.current && generation.current === sessionGeneration) setPending(false); }
   }
   async function save() {
@@ -117,11 +143,17 @@ export default function VoiceAssistant({ recipes = [], recipe = null, details = 
     finally { saving.current = false; setPending(false); }
   }
   return <section className="voice-assistant" aria-label="Voice and typed assistant">
-    <header><h2>Voice assistant</h2>{!accessToken && <button className="voice-sign-in" type="button" onClick={onSignIn}>Sign in or create an account</button>}<p>Opt in to send a short recording to OpenAI. Audio is processed for a draft; nothing is saved until you confirm.</p></header>
-    <p role="status">{message}</p>
-    <div className="voice-actions"><button type="button" disabled={!available || pending || recording} onClick={start}>Start microphone</button>{recording && <><button type="button" onClick={() => recorder.current?.stop()}>Stop & transcribe</button><button type="button" onClick={() => { cancelled.current = true; recorder.current?.stop(); setMessage('Recording discarded.'); }}>Cancel recording</button></>}</div>
-    <label>Transcript or typed request<textarea maxLength={2000} value={transcript} disabled={pending || recording} onChange={event => { setTranscript(event.target.value); setDraft(null); clearMatches(); }} placeholder="I ate one serving of mango salsa wontons for lunch" /></label>
-    <div className="voice-actions"><button type="button" disabled={!available || pending || recording || !transcript.trim()} onClick={() => interpret({ transcript })}>Interpret text</button><button type="button" disabled={pending || recording || !transcript.trim()} onClick={() => { setDraft({ foodName: transcript.slice(0, 120), recipeId: null, servings: 1, meal: 'Snack' }); setNutrients(emptyNutrients); clearMatches(); setOutsideMode('usda'); searchUsda(transcript.slice(0,120)); }}>Create manual draft</button></div>
+    <header className="voice-heading">{onClose && <button className="voice-close" type="button" aria-label="Close voice assistant" onClick={onClose}><X size={24}/></button>}<h2>Tell me about your meal.</h2><p>Speak naturally. Review before saving.</p>{!accessToken && <button className="voice-sign-in" type="button" onClick={onSignIn}>Sign in or create an account</button>}</header>
+    <p className="voice-status" role="status">{message}</p>
+    <div className={`voice-composer ${paused ? 'is-paused' : ''}`}>
+      <button className="voice-mic" type="button" aria-label="Start microphone" disabled={!available || pending || recording} onClick={start}><Mic size={44} strokeWidth={1.8} /></button>
+      <div className="voice-recording-label"><strong>{pending ? 'Please wait…' : recording ? paused ? 'Paused' : 'Listening…' : 'Tap to speak'}</strong><span>{recording ? `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}` : 'Up to 60 seconds'}</span></div>
+      <div className="voice-waveform" aria-hidden="true">{levels.map((height,i)=><span key={i} style={{height:`${height}px`}} />)}</div>
+      {recording && <div className="voice-record-controls"><div><button className="voice-round" type="button" aria-label={paused ? 'Resume recording' : 'Pause recording'} disabled={paused && elapsed >= 60} onClick={()=>{if (paused) {recorder.current?.resume();setPaused(false);setMessage('Listening. Send when you are ready.');} else {recorder.current?.pause();setPaused(true);setMessage('Recording paused. Resume or send when ready.');}}}>{paused ? <Play size={30} /> : <Pause size={30} />}</button><span>{paused?'Resume':'Pause'}</span></div><div><button className="voice-round voice-send" type="button" aria-label="Send recording" onClick={()=>{setPending(true);recorder.current?.stop();}} disabled={pending}><ArrowUp size={34} /></button><span>Send</span></div></div>}
+    </div>
+    <div className="voice-underbar"><p>Audio is sent to OpenAI when you send. Nothing is logged until you confirm.</p>{recording ? <button type="button" className="voice-text-button" onClick={()=>{cancelled.current=true;recorder.current?.stop();setMessage('Recording discarded.');}}><X size={16}/>Discard recording</button> : <button type="button" className="voice-text-button" disabled={pending} onClick={()=>setTyping(!typing)}>{typing?'Hide text':'Type instead'}</button>}</div>
+    {(typing || transcript) && <div className="voice-text-entry"><label>Message<textarea maxLength={2000} value={transcript} disabled={pending || recording} onChange={event => { setTranscript(event.target.value); setDraft(null); clearMatches(); }} placeholder="Tell me what you ate…" /></label>
+    <div className="voice-actions"><button type="button" disabled={!available || pending || recording || !transcript.trim()} onClick={() => interpret({ transcript })}>Send message</button><button type="button" disabled={pending || recording || !transcript.trim()} onClick={() => { setDraft({ foodName: transcript.slice(0, 120), recipeId: null, servings: 1, meal: 'Snack' }); setNutrients(emptyNutrients); clearMatches(); setOutsideMode('usda'); searchUsda(transcript.slice(0,120)); }}>Create manual draft</button></div></div>}
     {draft && <div className="voice-draft"><h3>Confirm food draft</h3>
       <label>Cookbook recipe<select disabled={pending || recording} value={draft.recipeId || ''} onChange={event => { setDraft({ ...draft, recipeId:event.target.value || null }); clearMatches(); }}><option value="">Outside food — USDA match or label</option>{recipes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       {!draft.recipeId && <>
@@ -144,6 +176,6 @@ export default function VoiceAssistant({ recipes = [], recipe = null, details = 
       <button type="button" disabled={pending || recording || searching} onClick={save}>Confirm & save food</button><button type="button" disabled={pending} onClick={() => { setDraft(null); clearMatches(); }}>Discard draft</button>
     </div>}
     {recipe && <div className="voice-cooking"><h3>Cook {recipe.name}</h3>{steps.length ? <><p>Source step {step + 1} of {steps.length}: {steps[Math.min(step, steps.length - 1)]}</p><div className="voice-actions">{['previous', 'repeat', 'next'].map(command => <button key={command} type="button" onClick={() => navigate(command)}>{command}</button>)}</div></> : <p>Source cooking steps are unavailable.</p>}</div>}
-    <label className="voice-speech"><input type="checkbox" checked={speech} onChange={event => { setSpeech(event.target.checked); if (!event.target.checked) window.speechSynthesis?.cancel(); }} />Read source steps aloud using the browser voice</label>
+    {recipe && <label className="voice-speech"><input type="checkbox" checked={speech} onChange={event => { setSpeech(event.target.checked); if (!event.target.checked) window.speechSynthesis?.cancel(); }} />Read source steps aloud using the browser voice</label>}
   </section>;
 }

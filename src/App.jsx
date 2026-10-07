@@ -92,12 +92,11 @@ export default function App() {
   const [mealDialog, setMealDialog] = useState({ open: false, recipeId: null, initialMeal: null });
   const [customDialog, setCustomDialog] = useState(false);
   const [usdaDialog, setUsdaDialog] = useState(false);
-  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(true);
   const [careOpen, setCareOpen] = useState(false);
   const [careSession, setCareSession] = useState(null);
   const [sharedRecord, setSharedRecord] = useState(null);
   const [sharedIdentity, setSharedIdentity] = useState('local');
-  const [inputPreference, setInputPreference] = useState(() => localStorage.getItem('clearplate-input-preference') || '');
   const [profileOpen, setProfileOpen] = useState(false);
   const [storageError, setStorageError] = useState("");
   const [detailView, setDetailView] = useState(null);
@@ -290,14 +289,13 @@ export default function App() {
       </header>
 
       {storageError && !mealDialog.open && !customDialog && !profileOpen && <p className="storage-alert" role="alert">{storageError}</p>}
-      {!inputPreference && <section className="input-welcome"><h2>How would you like to record your meals?</h2><p>You can switch any time. Your microphone stays off until you start it.</p>{[['voice','Speak with assistance'],['touch','Use buttons and forms']].map(([value,label])=><button type="button" key={value} onClick={()=>{setInputPreference(value);try{localStorage.setItem('clearplate-input-preference',value);}catch{}setVoiceOpen(value==='voice');}}>{label}</button>)}</section>}
       <section className="assist-launch" aria-label="Food logging tools">
-        <div className="voice-feature"><div className="voice-feature-icon"><Mic size={30} /></div><div className="voice-feature-copy"><span className="feature-eyebrow">YOUR VOICE, LESS TYPING</span><h2>Say it. Review it. Log it.</h2><p>Tell us what you ate, or follow a recipe hands-free.</p></div><button className="voice-feature-button" type="button" aria-expanded={voiceOpen} onClick={()=>setVoiceOpen(!voiceOpen)}><Mic size={20} />{voiceOpen?'Close voice assistant':'Voice Assistant'}<ChevronRight size={20} /></button></div>
+        {!voiceOpen && <div className="voice-feature"><div className="voice-feature-icon"><Mic size={30} /></div><div className="voice-feature-copy"><span className="feature-eyebrow">YOUR VOICE, LESS TYPING</span><h2>Say it. Review it. Log it.</h2><p>Tell us what you ate, or follow a recipe hands-free.</p></div><button className="voice-feature-button" type="button" aria-expanded={voiceOpen} onClick={()=>setVoiceOpen(!voiceOpen)}><Mic size={20} />{voiceOpen?'Close voice assistant':'Voice Assistant'}<ChevronRight size={20} /></button></div>}
         <div className="assist-secondary"><button type="button" onClick={()=>setUsdaDialog(true)}>Find a USDA food</button><button type="button" onClick={()=>setCareOpen(!careOpen)}>{careSession ? "Account & care sharing" : "Sign in / Create account"}</button><button type="button" onClick={()=>setImportOpen(!importOpen)}>Import recipe</button></div>
       </section>
       {importOpen && <RecipeImport onClose={()=>setImportOpen(false)} onImport={async({recipe,details})=>{const nextRecipes=[...customRecipes,recipe],nextDetails={...customRecipeDetails,[recipe.id]:details};if(!await persist(profile,entries,dayRecords,{customRecipes:nextRecipes,customRecipeDetails:nextDetails}))return false;setCustomRecipes(nextRecipes);setCustomRecipeDetails(nextDetails);navigateTo('recipes');return true;}} />}
 
-      {voiceOpen && <VoiceAssistant onSignIn={()=>{setCareOpen(true);setTimeout(()=>document.getElementById("care-connection-title")?.scrollIntoView({behavior:"smooth",block:"start"}),0);}} accessToken={careSession?.accessToken} recipes={recipes} recipe={detailView?recipesById[detailView.recipeId]:null} details={detailView?recipeDetails[detailView.recipeId]:null} onAddFood={payload=>payload.recipeId?addRecipes([payload]):addCustomFood(payload)} />}
+      {voiceOpen && <VoiceAssistant onSignIn={()=>{setCareOpen(true);setTimeout(()=>document.getElementById("care-connection-title")?.scrollIntoView({behavior:"smooth",block:"start"}),0);}} onClose={()=>setVoiceOpen(false)} accessToken={careSession?.accessToken} recipes={recipes} recipe={detailView?recipesById[detailView.recipeId]:null} details={detailView?recipeDetails[detailView.recipeId]:null} onAddFood={payload=>payload.recipeId?addRecipes([payload]):addCustomFood(payload)} />}
       {activeTab === "today" && <TodayView
         profile={profile}
         entries={todayEntries}
