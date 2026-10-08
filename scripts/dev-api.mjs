@@ -3,12 +3,14 @@ import searchHandler from '../api/fdc-search.js';
 import foodHandler from '../api/fdc-food.js';
 import calculationHandler from '../api/recipe-calculate.js';
 import auditHandler from '../api/recipe-audit.js';
+import liveHandler from '../api/voice-live.js';
 import voiceHandler from '../api/voice.js';
 import voiceStatusHandler from '../api/voice-status.js';
 import careConfigHandler from '../api/care-config.js';
 import recipeImportHandler from '../api/recipe-import.js';
 
 const handlers = new Map([['/api/fdc-search', searchHandler], ['/api/fdc-food', foodHandler], ['/api/recipe-calculate', calculationHandler], ['/api/recipe-audit', auditHandler]]);
+handlers.set('/api/voice-live', liveHandler);
 handlers.set('/api/voice', voiceHandler);
 handlers.set('/api/voice-status', voiceStatusHandler);
 handlers.set('/api/care-config', careConfigHandler);

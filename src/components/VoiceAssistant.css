@@ -27,3 +27,6 @@
 
 .voice-conversation label:has(input[type="checkbox"]) {display:flex;align-items:center;gap:10px;}
 .voice-conversation input[type="checkbox"] {width:20px;height:20px;flex:none;}
+
+.voice-assistant [hidden]{display:none!important}
+.live-voice details{max-height:260px;overflow:auto;margin:18px 0;border-top:1px solid #ddd;padding-top:12px}.live-voice details p{white-space:pre-wrap;overflow-wrap:anywhere}.live-voice .voice-send{display:inline-flex;align-items:center;gap:8px;margin-top:12px}.live-voice .voice-underbar{font-size:14px;color:#626975}

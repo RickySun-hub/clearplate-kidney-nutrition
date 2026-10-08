@@ -3,25 +3,24 @@ import { parseNutrientValues, formatAmount } from '../utils/nutrition';
 import './VoiceAssistant.css';
 import { MEALS, dueMeals, nextMeal, mealQuestion, conversationText } from '../utils/mealConversation.js';
 import { Mic, Pause, Play, ArrowUp, X } from 'lucide-react';
+import LiveVoice from './LiveVoice';
 import { recordingToWav } from '../utils/voiceAudio';
 const emptyNutrients = { calories: '', protein: '', sodium: '', potassium: '', phosphorus: '' };
-export default function VoiceAssistant({ recipes = [], recipe = null, details = null, accessToken = null, entries = [], date, mealReviews = {}, onReviewMeal, onSignIn, onClose, onAddFood }) {
+export default function VoiceAssistant({ recipes = [], recipe = null, details = null, accessToken = null, autoStart = false, entries = [], date, mealReviews = {}, onReviewMeal, onSignIn, onClose, onAddFood }) {
   const [meal, setMeal] = useState(() => nextMeal(entries, mealReviews, date));
   const [conversation, setConversation] = useState([]);
   const [reply, setReply] = useState(() => mealQuestion(nextMeal(entries, mealReviews, date)));
   const [mealTime, setMealTime] = useState('');
-  const [readReplies, setReadReplies] = useState(true);
+  const [liveBusy,setLiveBusy]=useState(false);
+  const [liveVersion,setLiveVersion]=useState(0);
   const turnBusy = useRef(false);
   function assistantReply(text) {
     setReply(text);
-    if (readReplies && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
-    }
+
   }
   function chooseMeal(value, confirmed = false) {
     if (!confirmed && (conversation.length || draft || transcript) && !window.confirm('Switch meals and discard this unsaved conversation?')) return;
-    window.speechSynthesis?.cancel(); setMeal(value); setConversation([]); setDraft(null); setTranscript(''); setMealTime(''); clearMatches();
+    setLiveVersion(v=>v+1); window.speechSynthesis?.cancel(); setMeal(value); setConversation([]); setDraft(null); setTranscript(''); setMealTime(''); clearMatches();
     assistantReply(mealQuestion(value, entries.some(e=>e.date===date && e.meal===value)));
   }
   async function finishMeal(status) {
@@ -88,23 +87,23 @@ export default function VoiceAssistant({ recipes = [], recipe = null, details = 
     const next = command === 'next' ? Math.min(step + 1, steps.length - 1) : command === 'previous' ? Math.max(step - 1, 0) : step;
     setStep(next); speak(steps[next]); setMessage(`Source step ${next + 1} of ${steps.length}.`);
   }
-  async function interpret(payload) {
+  async function interpret(payload, liveConversation = null) {
     const sessionGeneration = generation.current;
     if (turnBusy.current) return;
-    if (conversation.length >= 38) {setMessage('Please save or finish this food before starting a new conversation.');return;}
+    if ((liveConversation || conversation).length >= 38) {setMessage('Please save or finish this food before starting a new conversation.');return;}
     turnBusy.current=true; window.speechSynthesis?.cancel();
     setPending(true); setMessage('Listening to your answer…');
     try {
-      const response = await fetch('/api/voice', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) }, body: JSON.stringify({...payload, ...(!recipe ? {conversation,meal} : {})}), signal: AbortSignal.timeout(60000) });
+      const response = await fetch('/api/voice', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) }, body: JSON.stringify({...payload, ...(!recipe ? {conversation:liveConversation || conversation,meal} : {})}), signal: AbortSignal.timeout(60000) });
       const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || 'Voice request failed.');
       if (!alive.current || generation.current !== sessionGeneration) return;
       setTranscript(''); setNutrients(emptyNutrients);
       if (!recipe) {
         const answer={role:'user',content:data.transcript,source:payload.audio?'voice':'typed',at:new Date().toISOString()};
         const question={role:'assistant',content:reply,source:'assistant',at:new Date().toISOString()};
-        const updated=[...conversation,question,answer];
+        const updated=liveConversation || [...conversation,question,answer];
         setConversation(updated);
-        if (draft && /^(yes|yes please|confirm|save|save it|correct|对|是的|确认|保存)[.!。！ ]*$/i.test(data.transcript.trim())) {await save(updated);return;}
+        if (!liveConversation && draft && /^(yes|yes please|confirm|save|save it|correct|对|是的|确认|保存)[.!。！ ]*$/i.test(data.transcript.trim())) {await save(updated);return;}
         assistantReply(data.reply || 'Review the food below. You can correct it before saving.');
         setMealTime(data.mealTime || '');
         if (!data.ready) {setDraft(null);clearMatches();setMessage('Reply by voice or type. Nothing is saved yet.');return;}
@@ -207,45 +206,44 @@ export default function VoiceAssistant({ recipes = [], recipe = null, details = 
   return <section className="voice-assistant" aria-label="Voice and typed assistant">
     <header className="voice-heading">{onClose && <button className="voice-close" type="button" aria-label="Close voice assistant" onClick={onClose}><X size={24}/></button>}<h2>Let’s talk about your day.</h2><p>One meal at a time. You confirm what gets saved.</p>{!accessToken && <button className="voice-sign-in" type="button" onClick={onSignIn}>Sign in or create an account</button>}</header>
     {!recipe && <div className="voice-conversation">
-      <nav aria-label="Meal being discussed">{MEALS.map(m=><button type="button" key={m} aria-pressed={meal===m} disabled={pending || recording} onClick={()=>chooseMeal(m)}>{m}{mealReviews[m] ? ' · reviewed' : entries.some(e=>e.date===date && e.meal===m) ? ' · logged' : ''}</button>)}</nav>
-      <p className="voice-question" aria-live="polite">{reply}</p>
-      <label><input type="checkbox" checked={readReplies} onChange={e=>{setReadReplies(e.target.checked);if(!e.target.checked)window.speechSynthesis?.cancel();}} />Read replies aloud</label>
-      <button type="button" className="voice-text-button" onClick={()=>assistantReply(reply)} disabled={recording || pending}>Repeat question</button>
+      <nav aria-label="Meal being discussed">{MEALS.map(m=><button type="button" key={m} aria-pressed={meal===m} disabled={pending || recording || liveBusy} onClick={()=>chooseMeal(m)}>{m}{mealReviews[m] ? ' · reviewed' : entries.some(e=>e.date===date && e.meal===m) ? ' · logged' : ''}</button>)}</nav>
+      {!liveBusy && <p className="voice-question" aria-live="polite">{reply}</p>}
       {!!conversation.length && <details><summary>Conversation for this food</summary>{conversation.map((t,i)=><p key={i}><strong>{t.role==='user'?'You':'RenalSync'}:</strong> {t.content}</p>)}</details>}
-      <div className="voice-actions"><button type="button" disabled={pending || recording || !!draft} onClick={()=>finishMeal('reviewed')}>Meal finished</button><button type="button" disabled={pending || recording || !!draft || entries.some(e=>e.date===date && e.meal===meal)} onClick={()=>finishMeal('not-eaten')}>I did not eat this meal</button><button type="button" disabled={pending || recording} onClick={()=>chooseMeal(MEALS[(MEALS.indexOf(meal)+1)%MEALS.length])}>Skip for now</button></div>
+      <div className="voice-actions"><button type="button" disabled={pending || recording || liveBusy || !!draft} onClick={()=>finishMeal('reviewed')}>Meal finished</button><button type="button" disabled={pending || recording || liveBusy || !!draft || entries.some(e=>e.date===date && e.meal===meal)} onClick={()=>finishMeal('not-eaten')}>I did not eat this meal</button><button type="button" disabled={pending || recording || liveBusy} onClick={()=>chooseMeal(MEALS[(MEALS.indexOf(meal)+1)%MEALS.length])}>Skip for now</button></div>
     </div>}
-    <p className="voice-status" role="status">{message}</p>
-    <div className={`voice-composer ${paused ? 'is-paused' : ''}`}>
+    {!liveBusy && <p className="voice-status" role="status">{message}</p>}
+    {!recipe && available && <LiveVoice key={`${meal}-${liveVersion}`} accessToken={accessToken} meal={meal} conversation={conversation} disabled={pending} autoStart={autoStart && liveVersion===0} onBusy={setLiveBusy} onReview={turns=>{setConversation(turns);setLiveVersion(v=>v+1);interpret({transcript:"Prepare a draft of the first food described in the conversation. Keep other foods in the transcript for separate review; do not combine foods. Do not invent missing details."},turns);}} />}
+    <div hidden={!recipe} className={`voice-composer ${paused ? 'is-paused' : ''}`}>
       <button className="voice-mic" type="button" aria-label="Start microphone" disabled={!available || pending || recording} onClick={start}><Mic size={44} strokeWidth={1.8} /></button>
       <div className="voice-recording-label"><strong>{pending ? 'Please wait…' : recording ? paused ? 'Paused' : 'Listening…' : 'Tap to speak'}</strong><span>{recording ? `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}` : 'Up to 60 seconds'}</span></div>
       <div className="voice-waveform" aria-hidden="true">{levels.map((height,i)=><span key={i} style={{height:`${height}px`}} />)}</div>
       {recording && <div className="voice-record-controls"><div><button className="voice-round" type="button" aria-label={paused ? 'Resume recording' : 'Pause recording'} disabled={pending || (paused && elapsed >= 60)} onClick={()=>{if (recorder.current?.state === 'paused') {recorder.current.resume();setPaused(false);setMessage('Listening. Send when you are ready.');} else if (recorder.current?.state === 'recording') {recorder.current.pause();setPaused(true);setMessage('Recording paused. Resume or send when ready.');}}}>{paused ? <Play size={30} /> : <Pause size={30} />}</button><span>{paused?'Resume':'Pause'}</span></div><div><button className="voice-round voice-send" type="button" aria-label="Send recording" onClick={()=>{if (recorder.current && recorder.current.state !== 'inactive') {sendRequested.current=true;setPending(true);recorder.current.stop();}}} disabled={pending}><ArrowUp size={34} /></button><span>Send</span></div></div>}
     </div>
     <div className="voice-underbar"><p>Your replies are saved with food you confirm and included when you share your record with your dietitian. Audio is not saved.</p>{recording ? <button type="button" className="voice-text-button" disabled={pending} onClick={()=>{cancelled.current=true;if (recorder.current?.state !== 'inactive') recorder.current?.stop();setMessage('Recording discarded.');}}><X size={16}/>Discard recording</button> : <button type="button" className="voice-text-button" disabled={pending} onClick={()=>setTyping(!typing)}>{typing?'Hide text':'Type instead'}</button>}</div>
-    {!recipe && (conversation.some(t=>t.role==='user') || transcript.trim()) && <button type="button" className="voice-text-button" disabled={pending || recording} onClick={saveUnknown}>Confirm & save description · nutrition unknown</button>}
-    {(typing || transcript) && <div className="voice-text-entry"><label>Message<textarea maxLength={2000} value={transcript} disabled={pending || recording} onChange={event => setTranscript(event.target.value)} placeholder="Tell me what you ate…" /></label>
-    <div className="voice-actions"><button type="button" disabled={!available || pending || recording || !transcript.trim()} onClick={() => interpret({ transcript })}>Send message</button><button type="button" disabled={pending || recording || !transcript.trim()} onClick={() => { setConversation(current=>[...current,{role:'user',content:transcript,source:'typed',at:new Date().toISOString()}].slice(0,40)); setDraft({ foodName: transcript.slice(0, 120), recipeId: null, servings: 1, meal }); setNutrients(emptyNutrients); clearMatches(); setOutsideMode('usda'); searchUsda(transcript.slice(0,120)); }}>Create manual draft</button></div></div>}
+    {!recipe && (conversation.some(t=>t.role==='user') || transcript.trim()) && <button type="button" className="voice-text-button" disabled={pending || recording || liveBusy} onClick={saveUnknown}>Confirm & save description · nutrition unknown</button>}
+    {(typing || transcript) && <div className="voice-text-entry"><label>Message<textarea maxLength={2000} value={transcript} disabled={pending || recording || liveBusy} onChange={event => setTranscript(event.target.value)} placeholder="Tell me what you ate…" /></label>
+    <div className="voice-actions"><button type="button" disabled={!available || pending || recording || liveBusy || !transcript.trim()} onClick={() => interpret({ transcript })}>Send message</button><button type="button" disabled={pending || recording || liveBusy || !transcript.trim()} onClick={() => { setConversation(current=>[...current,{role:'user',content:transcript,source:'typed',at:new Date().toISOString()}].slice(0,40)); setDraft({ foodName: transcript.slice(0, 120), recipeId: null, servings: 1, meal }); setNutrients(emptyNutrients); clearMatches(); setOutsideMode('usda'); searchUsda(transcript.slice(0,120)); }}>Create manual draft</button></div></div>}
     {draft && <div className="voice-draft"><h3>Confirm food draft</h3><p>Check the food and portion below. Say “confirm” or use the save button. For an outside food, first choose its source and portion, or save the description with nutrition unknown.</p>
-      <label>Cookbook recipe<select disabled={pending || recording} value={draft.recipeId || ''} onChange={event => { setDraft({ ...draft, recipeId:event.target.value || null }); clearMatches(); }}><option value="">Outside food — USDA match or label</option>{recipes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+      <label>Cookbook recipe<select disabled={pending || recording || liveBusy} value={draft.recipeId || ''} onChange={event => { setDraft({ ...draft, recipeId:event.target.value || null }); clearMatches(); }}><option value="">Outside food — USDA match or label</option>{recipes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       {!draft.recipeId && <>
-        <label>Food name<input disabled={pending || recording} maxLength={120} value={draft.foodName} onChange={event => { setDraft({ ...draft,foodName:event.target.value }); clearMatches(); }} /></label>
-        <label>Nutrition source<select disabled={pending || recording} value={outsideMode} onChange={event => setOutsideMode(event.target.value)}><option value="usda">USDA food match</option><option value="label">My nutrition label</option></select></label>
+        <label>Food name<input disabled={pending || recording || liveBusy} maxLength={120} value={draft.foodName} onChange={event => { setDraft({ ...draft,foodName:event.target.value }); clearMatches(); }} /></label>
+        <label>Nutrition source<select disabled={pending || recording || liveBusy} value={outsideMode} onChange={event => setOutsideMode(event.target.value)}><option value="usda">USDA food match</option><option value="label">My nutrition label</option></select></label>
         {outsideMode === 'usda' ? <>
-          <button type="button" disabled={pending || recording || searching || !draft.foodName.trim()} onClick={() => searchUsda(draft.foodName)}>Search USDA</button>
+          <button type="button" disabled={pending || recording || liveBusy || searching || !draft.foodName.trim()} onClick={() => searchUsda(draft.foodName)}>Search USDA</button>
           {searching && <p role="status">Searching USDA source…</p>}
-          {!!candidates.length && <div className="voice-actions" aria-label="USDA food candidates">{candidates.map(food => <button type="button" key={food.fdcId} disabled={pending || recording} aria-pressed={usdaFood?.fdcId === food.fdcId} onClick={() => { setUsdaFood(food); setGrams(''); }}><strong>{food.description}</strong> · {food.dataType} · FDC {food.fdcId}</button>)}</div>}
+          {!!candidates.length && <div className="voice-actions" aria-label="USDA food candidates">{candidates.map(food => <button type="button" key={food.fdcId} disabled={pending || recording || liveBusy} aria-pressed={usdaFood?.fdcId === food.fdcId} onClick={() => { setUsdaFood(food); setGrams(''); }}><strong>{food.description}</strong> · {food.dataType} · FDC {food.fdcId}</button>)}</div>}
           {usdaFood && <><p>{usdaSource}. Match and portion are estimates; actual brands and preparation can differ.</p><a href={`https://fdc.nal.usda.gov/food-details/${usdaFood.fdcId}/nutrients`} target="_blank" rel="noreferrer noopener">View USDA source</a>
-            {!!usdaFood.portions?.length && <label>Choose a USDA household portion per serving<select disabled={pending || recording} defaultValue="" key={usdaFood.fdcId} onChange={event => { if (event.target.value !== '') setGrams(String(usdaFood.portions[Number(event.target.value)].gramWeight)); }}><option value="">Choose the portion you ate</option>{usdaFood.portions.map((portion,index) => <option value={index} key={index}>{formatAmount(portion.amount,2)} {portion.description || portion.modifier || portion.unit} ({formatAmount(portion.gramWeight,2)} g)</option>)}</select></label>}
-            <label>Grams per serving<input disabled={pending || recording} type="number" min="0.01" max="10000" step="0.01" value={grams} onChange={event => setGrams(event.target.value)} /></label>
+            {!!usdaFood.portions?.length && <label>Choose a USDA household portion per serving<select disabled={pending || recording || liveBusy} defaultValue="" key={usdaFood.fdcId} onChange={event => { if (event.target.value !== '') setGrams(String(usdaFood.portions[Number(event.target.value)].gramWeight)); }}><option value="">Choose the portion you ate</option>{usdaFood.portions.map((portion,index) => <option value={index} key={index}>{formatAmount(portion.amount,2)} {portion.description || portion.modifier || portion.unit} ({formatAmount(portion.gramWeight,2)} g)</option>)}</select></label>}
+            <label>Grams per serving<input disabled={pending || recording || liveBusy} type="number" min="0.01" max="10000" step="0.01" value={grams} onChange={event => setGrams(event.target.value)} /></label>
             <p>Total eaten: {grams ? formatAmount(Number(grams)*Number(draft.servings),2) : 'Unknown'} g</p>
             <p>{Object.keys(emptyNutrients).map(key => `${key}: ${formatAmount(grams && typeof usdaFood.nutrients?.[key] === 'number' ? usdaFood.nutrients[key]*Number(grams)/100*Number(draft.servings) : null,2)} ${key === 'calories' ? 'kcal' : key === 'protein' ? 'g' : 'mg'}`).join(' · ')}</p><p>Missing nutrients remain unknown; they are never treated as zero.</p>
           </>}
-        </> : <><p>Per-serving values from your nutrition label. AI does not supply these values.</p><div className="voice-nutrients">{Object.keys(emptyNutrients).map(key => <label key={key}>{key} ({key === 'calories' ? 'kcal' : key === 'protein' ? 'g' : 'mg'})<input disabled={pending || recording} type="number" min="0" step="0.01" value={nutrients[key]} onChange={event => setNutrients({ ...nutrients,[key]:event.target.value })} /></label>)}</div></>}
+        </> : <><p>Per-serving values from your nutrition label. AI does not supply these values.</p><div className="voice-nutrients">{Object.keys(emptyNutrients).map(key => <label key={key}>{key} ({key === 'calories' ? 'kcal' : key === 'protein' ? 'g' : 'mg'})<input disabled={pending || recording || liveBusy} type="number" min="0" step="0.01" value={nutrients[key]} onChange={event => setNutrients({ ...nutrients,[key]:event.target.value })} /></label>)}</div></>}
       </>}
-      <label>Meal time (optional)<input type="time" disabled={pending || recording} value={mealTime} onChange={e=>setMealTime(e.target.value)} /></label>
-      <label>Servings<input disabled={pending || recording} type="number" min="0.25" max="20" step="0.25" value={draft.servings} onChange={event => setDraft({ ...draft,servings:event.target.value })} /></label>
-      <label>Meal<select disabled={pending || recording} value={draft.meal} onChange={event => setDraft({ ...draft,meal:event.target.value })}>{['Breakfast','Lunch','Dinner','Snack'].map(meal => <option key={meal}>{meal}</option>)}</select></label>
-      <button type="button" disabled={pending || recording || searching || !!transcript.trim()} onClick={()=>save()}>Confirm & save food</button><button type="button" disabled={pending} onClick={() => { setDraft(null); clearMatches(); }}>Discard draft</button>
+      <label>Meal time (optional)<input type="time" disabled={pending || recording || liveBusy} value={mealTime} onChange={e=>setMealTime(e.target.value)} /></label>
+      <label>Servings<input disabled={pending || recording || liveBusy} type="number" min="0.25" max="20" step="0.25" value={draft.servings} onChange={event => setDraft({ ...draft,servings:event.target.value })} /></label>
+      <label>Meal<select disabled={pending || recording || liveBusy} value={draft.meal} onChange={event => setDraft({ ...draft,meal:event.target.value })}>{['Breakfast','Lunch','Dinner','Snack'].map(meal => <option key={meal}>{meal}</option>)}</select></label>
+      <button type="button" disabled={pending || recording || liveBusy || searching || !!transcript.trim()} onClick={()=>save()}>Confirm & save food</button><button type="button" disabled={pending} onClick={() => { setDraft(null); clearMatches(); }}>Discard draft</button>
     </div>}
     {recipe && <div className="voice-cooking"><h3>Cook {recipe.name}</h3>{steps.length ? <><p>Source step {step + 1} of {steps.length}: {steps[Math.min(step, steps.length - 1)]}</p><div className="voice-actions">{['previous', 'repeat', 'next'].map(command => <button key={command} type="button" onClick={() => navigate(command)}>{command}</button>)}</div></> : <p>Source cooking steps are unavailable.</p>}</div>}
     {recipe && <label className="voice-speech"><input type="checkbox" checked={speech} onChange={event => { setSpeech(event.target.checked); if (!event.target.checked) window.speechSynthesis?.cancel(); }} />Read source steps aloud using the browser voice</label>}

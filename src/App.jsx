@@ -92,7 +92,7 @@ export default function App() {
   const [mealDialog, setMealDialog] = useState({ open: false, recipeId: null, initialMeal: null });
   const [customDialog, setCustomDialog] = useState(false);
   const [usdaDialog, setUsdaDialog] = useState(false);
-  const [voiceOpen, setVoiceOpen] = useState(true);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const [careOpen, setCareOpen] = useState(false);
   const [careSession, setCareSession] = useState(null);
   const [sharedRecord, setSharedRecord] = useState(null);
@@ -304,7 +304,7 @@ export default function App() {
       </section>
       {importOpen && <RecipeImport onClose={()=>setImportOpen(false)} onImport={async({recipe,details})=>{const nextRecipes=[...customRecipes,recipe],nextDetails={...customRecipeDetails,[recipe.id]:details};if(!await persist(profile,entries,dayRecords,{customRecipes:nextRecipes,customRecipeDetails:nextDetails}))return false;setCustomRecipes(nextRecipes);setCustomRecipeDetails(nextDetails);navigateTo('recipes');return true;}} />}
 
-      {voiceOpen && <VoiceAssistant key={`${careSession?.account?.id || "local"}-${today}`} entries={entries} date={today} mealReviews={dayRecords[today]?.mealReviews || {}} onReviewMeal={reviewMeal} onSignIn={()=>{setCareOpen(true);setTimeout(()=>document.getElementById("care-connection-title")?.scrollIntoView({behavior:"smooth",block:"start"}),0);}} onClose={()=>setVoiceOpen(false)} accessToken={careSession?.accessToken} recipes={recipes} recipe={detailView?recipesById[detailView.recipeId]:null} details={detailView?recipeDetails[detailView.recipeId]:null} onAddFood={payload=>payload.recipeId?addRecipes([payload]):addCustomFood(payload)} />}
+      {voiceOpen && <VoiceAssistant autoStart key={`${careSession?.account?.id || "local"}-${today}`} entries={entries} date={today} mealReviews={dayRecords[today]?.mealReviews || {}} onReviewMeal={reviewMeal} onSignIn={()=>{setCareOpen(true);setTimeout(()=>document.getElementById("care-connection-title")?.scrollIntoView({behavior:"smooth",block:"start"}),0);}} onClose={()=>setVoiceOpen(false)} accessToken={careSession?.accessToken} recipes={recipes} recipe={detailView?recipesById[detailView.recipeId]:null} details={detailView?recipeDetails[detailView.recipeId]:null} onAddFood={payload=>payload.recipeId?addRecipes([payload]):addCustomFood(payload)} />}
       {activeTab === "today" && <TodayView
         profile={profile}
         entries={todayEntries}

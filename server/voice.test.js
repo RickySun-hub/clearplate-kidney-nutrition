@@ -27,7 +27,7 @@ test('no key and invalid audio never call paid upstream', async () => {
 test('model output is allowlisted, nutrition discarded, and requests throttled', async () => {
   let calls = 0;
   const service = createVoiceService({ apiKey: 'mock', recipes: [{ id: 'apple', name: 'Apple' }], fetchImpl: async (_url, options) => {
-    calls++; assert.equal(JSON.parse(options.body).model, 'gpt-4o-mini');
+    calls++; assert.equal(JSON.parse(options.body).model, 'gpt-4.1');
     return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify({ intent: 'food', recipeId: 'fake-id', foodName: 'apple', servings: 100, meal: 'fake', calories: 100 }) } }] }) };
   } });
   const result = await service.process({ transcript: 'apple' });
@@ -38,7 +38,7 @@ test('audio transcribes then interprets, never returns provider audio or secrets
   const calls = [];
   const service = createVoiceService({ apiKey: 'mock', fetchImpl: async (url, options) => {
     calls.push(url);
-    if (url.endsWith('transcriptions')) { assert.equal(options.body.get('model'), 'gpt-4o-mini-transcribe'); return { ok: true, json: async () => ({ text: 'next step' }) }; }
+    if (url.endsWith('transcriptions')) { assert.equal(options.body.get('model'), 'gpt-4o-transcribe'); assert.equal(options.body.get('language'),'en'); return { ok: true, json: async () => ({ text: 'next step' }) }; }
     return { ok: true, json: async () => ({ choices: [{ message: { content: '{"intent":"cooking","command":"next"}' } }] }) };
   } });
   const result = await service.process({ audio: 'AAAA', mimeType: 'audio/webm', duration: 2 });
