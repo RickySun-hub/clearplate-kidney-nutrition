@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {nextMeal,validConversation,conversationText} from './mealConversation.js';
+import {dueMeals,nextMeal,validConversation,conversationText} from './mealConversation.js';
 import {validateCareRecord} from './careCloud.js';
 import {validateDeviceReport} from './rdReport.js';
 import {reviewDays} from './rdReview.js';
 const turn={role:'user',content:'Two eggs. Actually, only one.',source:'voice',at:'2026-10-07T20:00:00Z'};
 test('meal prompts use local time and do not re-ask logged or reviewed meals',()=>{
+ assert.deepEqual(dueMeals(9),['Breakfast']);
+ assert.deepEqual(dueMeals(13),['Breakfast','Lunch']);
  assert.equal(nextMeal([],{},'2026-10-07',19),'Breakfast');
  assert.equal(nextMeal([{date:'2026-10-07',meal:'Breakfast'}],{},'2026-10-07',13),'Lunch');
  assert.equal(nextMeal([],{Breakfast:{status:'not-eaten'},Lunch:{status:'reviewed'}},'2026-10-07',19),'Dinner');

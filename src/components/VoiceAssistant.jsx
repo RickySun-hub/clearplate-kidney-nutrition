@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { parseNutrientValues, formatAmount } from '../utils/nutrition';
 import './VoiceAssistant.css';
-import { MEALS, nextMeal, mealQuestion, conversationText } from '../utils/mealConversation.js';
+import { MEALS, dueMeals, nextMeal, mealQuestion, conversationText } from '../utils/mealConversation.js';
 import { Mic, Pause, Play, ArrowUp, X } from 'lucide-react';
 import { recordingToWav } from '../utils/voiceAudio';
 const emptyNutrients = { calories: '', protein: '', sodium: '', potassium: '', phosphorus: '' };
@@ -29,7 +29,7 @@ export default function VoiceAssistant({ recipes = [], recipe = null, details = 
     turnBusy.current=true; setPending(true);
     try {
       if (await onReviewMeal?.(meal,status,conversation) === false) {setMessage('Could not save the meal status. Please retry.');return;}
-      const next=MEALS.find(m=>m!==meal && !mealReviews[m] && !entries.some(e=>e.date===date && e.meal===m));
+      const next=dueMeals().find(m=>m!==meal && !mealReviews[m] && !entries.some(e=>e.date===date && e.meal===m));
       if(next) chooseMeal(next,true); else {setConversation([]);setDraft(null);setTranscript('');assistantReply('Your meal review is finished. Anything else to add, such as a drink or snack?');}
       setMessage(status==='not-eaten'?'Saved: you said you did not eat this meal.':'Meal review saved.');
     } catch {setMessage('Could not save the meal status. Please retry.');} finally {turnBusy.current=false;setPending(false);}
