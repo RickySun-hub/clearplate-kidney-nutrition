@@ -1,3 +1,4 @@
+import { validConversation, MEALS } from './mealConversation.js';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const isAccountId = (value) => typeof value === 'string' && UUID.test(value.trim());
 import { NUTRIENT_KEYS, validNutrientValue } from './nutrientCatalog.js';
@@ -16,6 +17,8 @@ export function validateCareRecord(value) {
   for (const entry of value.entries) {
     if (!object(entry) || !validDate(entry.date) || !validNutrientValue(entry.servings) || Number(entry.servings) <= 0
       || !textFields(entry, ['id','meal','time','timeSource','recordedAt','createdAt','recipeId']) || !['recipe','custom'].includes(entry.source)) invalid();
+    if (entry.conversation !== undefined && !validConversation(entry.conversation)) invalid();
+    if (!textFields(entry,['inputMethod','confirmedAt'])) invalid();
     if (entry.source === 'recipe' && (typeof entry.recipeId !== 'string' || !entry.recipeId.trim())) invalid();
     if (entry.source === 'custom') {
       const food = entry.customFood;
@@ -24,6 +27,7 @@ export function validateCareRecord(value) {
     }
   }
   for (const [date, day] of Object.entries(value.dayRecords)) {
+    if (day?.mealReviews !== undefined && (!object(day.mealReviews) || Object.entries(day.mealReviews).some(([meal,r])=> !MEALS.includes(meal) || !object(r) || !['reviewed','not-eaten'].includes(r.status) || !validConversation(r.conversation) || typeof r.reviewedAt !== 'string' || !Number.isFinite(Date.parse(r.reviewedAt))))) invalid();
     if (!validDate(date) || (day !== null && (!object(day) || !textFields(day, ['completedAt','signature']) || (day.profile !== undefined && !profileValid(day.profile))))) invalid();
   }
   let serialized;

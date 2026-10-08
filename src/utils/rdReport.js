@@ -1,3 +1,4 @@
+import { validConversation } from './mealConversation.js';
 import { NUTRIENTS, NUTRIENT_KEYS, validNutrientValue } from './nutrientCatalog.js';
 export function validateDeviceReport(value) {
   if (!['renalsync-device-report', 'clearplate-device-report'].includes(value?.schema) || value.version !== 1 || !Array.isArray(value.rows) || value.rows.length > 10000) throw new Error('Choose a RenalSync version 1 device report with at most 10,000 items.');
@@ -12,8 +13,9 @@ export function validateDeviceReport(value) {
       if (amount !== null && amount !== undefined && !validNutrientValue(amount)) throw new Error('Report contains an invalid nutrient amount.');
       nutrients[key] = amount === null || amount === undefined ? null : Number(amount);
     }
+    if (row.conversation !== undefined && !validConversation(row.conversation)) throw new Error('Report contains an invalid conversation.');
     const text = (key) => typeof row[key] === 'string' ? row[key].slice(0, 500) : null;
-    return { date: row.date, time: text('time'), name: row.name, servings: Number(row.servings), meal: text('meal'), source: text('source'), recordedAt: text('recordedAt'), nutrients };
+    return { date: row.date, time: text('time'), name: row.name, servings: Number(row.servings), meal: text('meal'), source: text('source'), recordedAt: text('recordedAt'), confirmedAt:text('confirmedAt'), inputMethod:text('inputMethod'), conversation:row.conversation || [], nutrients };
   });
   return { rows };
 }

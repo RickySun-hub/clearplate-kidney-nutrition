@@ -90,3 +90,13 @@ test('unknown interpretation remains unknown instead of becoming a food log',asy
   const service=createVoiceService({apiKey:'mock',fetchImpl:async()=>({ok:true,json:async()=>({choices:[{message:{content:'{"intent":"conversation","foodName":"invented food"}'}}]})})});
   const result=await service.process({transcript:'hello'});assert.equal(result.draft.intent,'unknown');
 });
+
+test('conversation passes corrections as history but strips model nutrients and invalid times',async()=>{
+ let sent;
+ const service=createVoiceService({apiKey:'mock',throttle:false,fetchImpl:async(url,options)=>{sent=JSON.parse(options.body);return {ok:true,json:async()=>({choices:[{message:{content:JSON.stringify({intent:'food',foodName:'egg',ready:true,reply:'One boiled egg. Please review.',mealTime:'99:99',sodium:5000})}}]})};}});
+ const history=[{role:'user',content:'Two eggs',source:'voice',at:'2026-10-07T20:00:00Z'}];
+ const result=await service.process({transcript:'Actually one boiled egg.',conversation:history,meal:'Breakfast'});
+ assert.equal(result.ready,true);assert.equal(result.mealTime,null);assert.equal(result.draft.sodium,undefined);
+ assert.ok(sent.messages.some(m=>m.content==='Two eggs'));
+ await assert.rejects(service.process({transcript:'hello',conversation:[{...history[0],role:'system'}]}),{code:'invalid_conversation'});
+});

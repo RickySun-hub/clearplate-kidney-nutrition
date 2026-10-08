@@ -16,3 +16,14 @@
 .voice-text-entry{margin-top:20px}.voice-assistant .voice-speech{margin-top:24px;color:#626975}.voice-assistant .voice-speech input{min-width:20px;height:20px}
 @media(max-width:700px){.voice-assistant{padding:20px 16px}.voice-composer{padding:16px;gap:12px;flex-wrap:wrap;border-radius:24px}.voice-assistant .voice-mic{width:64px;height:64px}.voice-recording-label{flex:1;min-width:100px}.voice-waveform{order:3;flex-basis:100%;height:58px}.voice-record-controls{gap:12px;margin-left:auto}.voice-assistant .voice-round{width:52px;height:52px}.voice-status{margin:20px 0}.voice-heading p{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.voice-waveform span{transition:none}}
+
+.voice-conversation { display:grid; gap:16px; margin:24px 0; }
+.voice-conversation nav { display:flex; gap:8px; flex-wrap:wrap; }
+.voice-conversation nav button { padding:10px 16px; border:1px solid #cbd2e3; border-radius:8px; background:white; color:#002fa7; }
+.voice-conversation nav button[aria-pressed="true"] { background:#002fa7; color:white; }
+.voice-question { font-size:clamp(1.2rem,2vw,1.6rem); line-height:1.5; margin:0; max-width:850px; }
+.voice-conversation details { max-height:260px; overflow:auto; border-top:1px solid #ddd; padding-top:12px; }
+.voice-conversation details p { white-space:pre-wrap; overflow-wrap:anywhere; }
+
+.voice-conversation label:has(input[type="checkbox"]) {display:flex;align-items:center;gap:10px;}
+.voice-conversation input[type="checkbox"] {width:20px;height:20px;flex:none;}

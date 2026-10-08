@@ -39,3 +39,15 @@ Supabase clearplate ACTIVE_HEALTHY verified. Email/password auth enabled, signup
 Live synthetic verified account: real REST password sign-in, /user validation, record upload/readback and logout passed. Browser sign-in enabled Start microphone. Temporary account, session, record and local fixture removed after testing. Actual signup confirmation email delivery was not tested. No real patient data accessed.
 
 Targeted care/recipe tests passed; added three auth-error code cases (care suite 12/12). Build passed. Desktop 1440px and mobile 390px Plan, Smoothies empty state, profile selector and account entry checked with Playwright. No document horizontal overflow.
+
+
+## 2026-10-07 conversational recall and dietitian dashboard
+
+- Voice uses bounded multi-turn history, one follow-up at a time, browser spoken replies, meal selection based on local time and existing records, explicit food confirmation and separate meal review statuses.
+- Outside-food source/weight still require review. Users can explicitly save a description with unknown nutrients. No AI-generated nutrient values enter the record. This is turn-based voice input, not continuous realtime listening.
+- Confirmed entries retain timestamped user transcripts, assistant questions, input method and confirmation time. Spoken text is automatic transcription, not original audio. Audio is not persisted. Skipping a meal prompt is distinct from reporting that a meal was not eaten.
+- RD dashboard adds patient context, daily saved-target comparison across the existing 28-nutrient catalog, food details, original conversation and transcript CSV/JSON export/import. Daily targets are never compared against multi-day totals. Logging timestamps are distinguished from user-recorded meal times.
+- Existing patient-controlled snapshot upload and RLS grants are reused; no schema migration or automatic patient upload. Patients must upload again to share new entries. Older records have no retroactively invented transcripts.
+- Verification: unit tests cover history bounds, original-text round trip, daily totals/unknown values and model response sanitation. Browser regression uses synthetic audio plus mocked AI responses to test multi-turn context, no pre-confirmation write, spoken confirmation, meal review, RD originals, unknown-food save and 390px layout. Actual OpenAI two-turn text recall returned a clarification followed by a reviewable boiled-egg draft and 08:30 time.
+- Live Supabase transaction: synthetic owner and RD, original text round trip, authorized read, denied RD write and denied read after revocation all passed; rolled back all fixtures. No real patient records were accessed.
+- Browser reproduction: start `npm run dev`, open a Playwright CLI browser named `conversationqa`, then run `playwright-cli -s=conversationqa run-code --filename scripts/browser-conversation-rd.js`. Fixture is development-only and not part of the production bundle.

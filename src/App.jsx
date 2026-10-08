@@ -152,7 +152,8 @@ export default function App() {
   };
 
   const toggleComplete = async () => {
-    const next = { ...dayRecords, [today]: complete ? null : {
+    const next = { ...dayRecords, [today]: complete ? {...dayRecords[today],completedAt:null,signature:null} : {
+      ...dayRecords[today],
       completedAt: new Date().toISOString(), signature: daySignature(entries, today), profile: { ...profile },
     } };
     if (await persist(profile, entries, next)) setDayRecords(next);
@@ -160,7 +161,7 @@ export default function App() {
 
   const addRecipes = async (items) => {
     const nextByMeal = new Map();
-    const nextItems = items.map(({ recipeId, servings, meal, time }, index) => {
+    const nextItems = items.map(({ recipeId, servings, meal, time, conversation, inputMethod }, index) => {
       const sortOrder = nextByMeal.get(meal) ?? nextSortOrder(entries, today, meal);
       nextByMeal.set(meal, sortOrder + 1);
       return {
@@ -173,7 +174,8 @@ export default function App() {
         servings,
         meal,
         time: time || new Date().toTimeString().slice(0,5),
-        timeSource: 'user-recorded',
+        timeSource: time ? 'user-recorded' : 'recording-time',
+        ...(conversation ? {conversation, inputMethod, confirmedAt:new Date().toISOString()} : {}),
         sortOrder,
       };
     });
@@ -184,7 +186,7 @@ export default function App() {
     setActiveTab("today");
   };
 
-  const addCustomFood = async ({ customFood, servings, meal, time }) => {
+  const addCustomFood = async ({ customFood, servings, meal, time, conversation, inputMethod }) => {
     const next = [...entries, {
       id: `outside-${Date.now()}`,
       recordedAt: new Date().toISOString(),
@@ -194,13 +196,20 @@ export default function App() {
       servings,
       meal,
       time: time || new Date().toTimeString().slice(0,5),
-      timeSource: 'user-recorded',
+      timeSource: time ? 'user-recorded' : 'recording-time',
+        ...(conversation ? {conversation, inputMethod, confirmedAt:new Date().toISOString()} : {}),
       sortOrder: nextSortOrder(entries, today, meal),
     }];
     if (!await persist(profile, next)) return false;
     setEntries(next);
     setActiveTab("today");
     return true;
+  };
+
+  const reviewMeal = async (meal, status, conversation) => {
+    const next = {...dayRecords,[today]:{...dayRecords[today],mealReviews:{...dayRecords[today]?.mealReviews,[meal]:{status,conversation,reviewedAt:new Date().toISOString()}}}};
+    if (!await persist(profile,entries,next)) return false;
+    setDayRecords(next); return true;
   };
 
   const removeEntry = async (id) => {
@@ -295,7 +304,7 @@ export default function App() {
       </section>
       {importOpen && <RecipeImport onClose={()=>setImportOpen(false)} onImport={async({recipe,details})=>{const nextRecipes=[...customRecipes,recipe],nextDetails={...customRecipeDetails,[recipe.id]:details};if(!await persist(profile,entries,dayRecords,{customRecipes:nextRecipes,customRecipeDetails:nextDetails}))return false;setCustomRecipes(nextRecipes);setCustomRecipeDetails(nextDetails);navigateTo('recipes');return true;}} />}
 
-      {voiceOpen && <VoiceAssistant onSignIn={()=>{setCareOpen(true);setTimeout(()=>document.getElementById("care-connection-title")?.scrollIntoView({behavior:"smooth",block:"start"}),0);}} onClose={()=>setVoiceOpen(false)} accessToken={careSession?.accessToken} recipes={recipes} recipe={detailView?recipesById[detailView.recipeId]:null} details={detailView?recipeDetails[detailView.recipeId]:null} onAddFood={payload=>payload.recipeId?addRecipes([payload]):addCustomFood(payload)} />}
+      {voiceOpen && <VoiceAssistant key={`${careSession?.account?.id || "local"}-${today}`} entries={entries} date={today} mealReviews={dayRecords[today]?.mealReviews || {}} onReviewMeal={reviewMeal} onSignIn={()=>{setCareOpen(true);setTimeout(()=>document.getElementById("care-connection-title")?.scrollIntoView({behavior:"smooth",block:"start"}),0);}} onClose={()=>setVoiceOpen(false)} accessToken={careSession?.accessToken} recipes={recipes} recipe={detailView?recipesById[detailView.recipeId]:null} details={detailView?recipeDetails[detailView.recipeId]:null} onAddFood={payload=>payload.recipeId?addRecipes([payload]):addCustomFood(payload)} />}
       {activeTab === "today" && <TodayView
         profile={profile}
         entries={todayEntries}
@@ -313,7 +322,7 @@ export default function App() {
       {activeTab === "planner" && <PlannerView recipes={recipes} recipeDetails={recipeDetails} profile={profile} todayEntries={todayEntries} todayTotals={totals} plannerSession={plannerSession} onPlannerSessionChange={setPlannerSession} onAddPlan={addPlan} onOpenRecipe={(recipe) => openRecipeDetails(recipe, "planner")} />}
       {activeTab === "recipes" && <RecipeLibrary recipes={recipes} details={recipeDetails} onChoose={(recipe) => openMealDialog(recipe.id)} onOpenRecipe={(recipe) => openRecipeDetails(recipe, "recipes")} />}
       {activeTab === "history" && <HistoryView entries={entries} recipesById={recipesById} profile={profile} dayRecords={dayRecords} />}
-      {activeTab === "rd" && <>{sharedRecord && <p className="input-welcome">Reviewing a shared patient snapshot. <button type="button" onClick={()=>setSharedRecord(null)}>Return to this device's record</button></p>}<RDDashboard key={sharedRecord ? sharedIdentity : 'local'} entries={sharedRecord?.entries || entries} recipesById={recipesById} profile={sharedRecord?.profile || profile} dayRecords={sharedRecord?.dayRecords || dayRecords} /></>}
+      {activeTab === "rd" && <>{sharedRecord && <p className="input-welcome">Reviewing a shared patient snapshot. <button type="button" onClick={()=>setSharedRecord(null)}>Return to this device's record</button></p>}<RDDashboard key={sharedRecord ? sharedIdentity : 'local'} entries={sharedRecord?.entries || entries} recipesById={recipesById} profile={sharedRecord?.profile || profile} sharedIdentity={sharedRecord ? sharedIdentity : null} dayRecords={sharedRecord?.dayRecords || dayRecords} /></>}
       {activeTab === "recipe-detail" && detailView && (
         <RecipeDetailView
           recipe={recipesById[detailView.recipeId]}
