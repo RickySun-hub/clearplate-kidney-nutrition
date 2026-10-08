@@ -1,5 +1,6 @@
 <div id="root"></div><script type="module">
 import React from 'react';import {createRoot} from 'react-dom/client';import Live from '../../src/components/LiveVoice.jsx';import '../../src/components/VoiceAssistant.css';
-function Harness(){const[show,setShow]=React.useState(false);return React.createElement('div',{className:'voice-assistant'},React.createElement('button',{onClick:()=>setShow(!show)},'Voice Assistant'),show&&React.createElement(Live,{autoStart:true,meal:'Breakfast',onSaveMeal:async b=>{window.qaSaved=[...(window.qaSaved||[]),b];return true;},onReview:t=>{window.qaTurns=t;},onBusy:b=>{window.qaBusy=b;}}));}
+import recipes from '../../src/data/recipes.json';import recipeDetails from '../../src/data/recipeDetails.json';
+function Harness(){const[show,setShow]=React.useState(false);return React.createElement('div',{className:'voice-assistant'},React.createElement('button',{onClick:()=>setShow(!show)},'Voice Assistant'),show&&React.createElement(Live,{autoStart:true,meal:'Breakfast',mode:'choose',recipes,recipeDetails,onSaveMeal:async b=>{window.qaSaved=[...(window.qaSaved||[]),b];return true;},onReview:t=>{window.qaTurns=t;},onBusy:b=>{window.qaBusy=b;}}));}
 createRoot(document.getElementById('root')).render(React.createElement(React.StrictMode,null,React.createElement(Harness)));
 </script>

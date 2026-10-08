@@ -19,16 +19,17 @@ export function confirmsDraft(quote,turns,preparedCount) {
   return /^(yes|yeah|yep|correct|thats right|that is right|sounds right|go ahead|save it|please save|okay save|ok save|confirm)(\b|$)/.test(words);
 }
 // Tool outputs never contain calculated nutrients. Writes are atomic batches after fresh spoken consent.
-export function createMealTools({getTurns,onSave,onDraft=()=>{},onSaved=()=>{},id=()=>crypto.randomUUID()}) {
+export function createMealTools({getTurns,onSave,onDraft=()=>{},onSaved=()=>{},resolveSource=()=>null,id=()=>crypto.randomUUID()}) {
   let pending=null;const completed=new Map();const calls=new Map();let queue=Promise.resolve();
   async function execute(name,args) {
     if(name==='prepare_meal') {
       const draft=mealDraft(args);const turns=getTurns();
+      draft.foods=draft.foods.map((f,i)=>{const ref=args.foods[i].source_ref;if(!ref)return f;const source=resolveSource(ref);if(!source)throw Error('Unknown food match. Search again.');return {...f,matchedFood:source};});
       if(!validConversation(turns)) return {status:'needs_shorter_conversation'};
       const signature=JSON.stringify(draft);
       if(pending?.signature!==signature)pending={...draft,id:id(),signature,preparedCount:turns.length};
       onDraft(pending);
-      return {status:'awaiting_spoken_confirmation',draft_id:pending.id,meal:draft.meal,time:draft.time,foods:draft.foods,instruction:'Read back these foods and personal portions. Ask: Should I save that? Wait for a NEW affirmative reply before calling confirm_meal. Nutrition will be marked unknown.'};
+      return {status:'awaiting_spoken_confirmation',draft_id:pending.id,meal:draft.meal,time:draft.time,foods:draft.foods,instruction:'Read back these foods and personal portions. Ask: Should I save that? Wait for a NEW affirmative reply before calling confirm_meal. Describe the source match as an estimate if present, otherwise nutrition unknown.'};
     }
     if(name==='confirm_meal') {
       if(completed.has(args.draft_id))return completed.get(args.draft_id);
@@ -37,7 +38,7 @@ export function createMealTools({getTurns,onSave,onDraft=()=>{},onSaved=()=>{},i
       if(!validConversation(turns)||!confirmsDraft(args.confirmation_quote,turns,pending.preparedCount))return {status:'not_saved',instruction:'A fresh unambiguous spoken confirmation is required. If the user corrected details, prepare the corrected draft and ask again. Captions may still be arriving; never claim saved.'};
       const result=await onSave({...pending,conversation:turns});
       if(result===false)return {status:'save_failed',instruction:'The record was not saved. Ask whether to retry. Keep the draft.'};
-      const saved={status:'saved',draft_id:pending.id,meal:pending.meal,foods:pending.foods,nutrition:'unknown',instruction:'Tell the user this meal was saved. Ask what else they had, then continue to the next due meal. Do not ask them to press buttons.'};
+      const saved={status:'saved',draft_id:pending.id,meal:pending.meal,foods:pending.foods,nutrition:pending.foods.some(f=>f.matchedFood)?'source-based estimates; missing values unknown':'unknown',instruction:'Tell the user this meal was saved. Ask what else they had, then continue to the next due meal. Do not ask them to press buttons.'};
       completed.set(pending.id,saved);pending=null;onDraft(null);onSaved(saved);return saved;
     }
     return {status:'unsupported_tool'};
@@ -57,7 +58,7 @@ export function appendVoiceMeal(entries,batch,date,now=new Date().toISOString())
     id:prefix+index,recordedAt:now,confirmedAt:now,date,source:'custom',servings:1,meal:draft.meal,
     time:draft.time||new Date(now).toTimeString().slice(0,5),timeSource:draft.time?'user-recorded':'recording-time',
     sortOrder:Math.max(-1,...entries.filter(e=>e.date===date&&e.meal===draft.meal).map(e=>Number.isFinite(e.sortOrder)?e.sortOrder:-1))+1+index,
-    customFood:{name:`${food.name} — ${food.portion}`,method:'unmeasured',methodLabel:'Voice-confirmed food · nutrition unknown',servingDescription:food.portion},
+    customFood:batch.foods[index].matchedFood ? {...batch.foods[index].matchedFood,servingDescription:food.portion} : {name:`${food.name} — ${food.portion}`,method:'unmeasured',methodLabel:'Voice-confirmed food · nutrition unknown',servingDescription:food.portion},
     inputMethod:'voice-conversation',conversation:batch.conversation,
   }))];
 }

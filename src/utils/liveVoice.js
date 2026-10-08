@@ -9,6 +9,8 @@ export function liveTurns(fragments, startedAt) {
   }
   return turns;
 }
-export function liveGreeting(meal, resume=false) {
+export function liveGreeting(meal, resume=false, mode='log') {
+  if(!resume && mode==='choose')return "Hi there! Would you like to log something you ate, or find something to cook?";
+  if(!resume && mode==='cook')return "Hi there! What ingredients do you have, and what would you like to cook?";
   return resume ? "Hi there, welcome back. Let's pick up where we left off. What else would you like to add?" : `Hi there! Let's talk about your ${meal.toLowerCase()} today. What did you have?`;
 }

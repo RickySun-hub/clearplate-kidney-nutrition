@@ -7,8 +7,7 @@ async(page)=>{
   navigator.mediaDevices.getUserMedia=async()=>{const c=new AudioContext();const d=c.createMediaStreamDestination();window.qaMic=d.stream;return d.stream;};
   class Peer{constructor(){this.iceGatheringState='complete';}addTrack(){}createDataChannel(){this.dc={readyState:'open',send:raw=>{const e=JSON.parse(raw);(window.qaSent||=[]).push(e);if(e.type==='session.close')setTimeout(()=>this.dc.onmessage({data:JSON.stringify({type:'session.closed'})}),10);},close(){}};window.qaEmit=e=>this.dc.onmessage({data:JSON.stringify(e)});return this.dc;}async createOffer(){return{type:'offer',sdp:'v=0\r\n'};}async setLocalDescription(o){this.localDescription=o;}async setRemoteDescription(){setTimeout(()=>window.qaEmit({type:'session.started'}),10);}close(){}}window.RTCPeerConnection=Peer;
  });
- await page.getByRole('button',{name:'Breakfast',exact:true}).click();
- await page.getByRole('button',{name:'Start live conversation',exact:true}).click();
+ await page.getByRole('button',{name:'Log what I ate',exact:false}).click();
  await page.getByRole('button',{name:'End conversation',exact:true}).waitFor();
  const caption=async(role,text,n)=>page.evaluate(({role,text,n})=>window.qaEmit({type:`session.${role}_transcript.delta`,event_id:'t'+n,start_ms:n*1000,delta:text}),{role,text,n});
  const call=async(id,name,args)=>{await page.evaluate(({id,name,args})=>{for(const event of [{type:'response.created',response:{id}},{type:'response.output_item.done',item:{type:'function_call',call_id:id,name,arguments:JSON.stringify(args)}},{type:'response.completed',response:{id,output:[]}}])window.qaEmit({type:'response.event',event});},{id,name,args});await page.waitForTimeout(150);return page.evaluate(id=>JSON.parse(window.qaSent.find(e=>e.item?.call_id===id).item.output),id);};

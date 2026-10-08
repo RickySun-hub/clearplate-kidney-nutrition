@@ -92,7 +92,7 @@ export function mealTotalBounds(meals, recipesById) {
     const estimated = food.method === "unpackaged";
     const rawMargin = food.estimateRangePercent ?? food.uncertaintyMargin;
     const margin = estimated ? (validNutrientValue(rawMargin) && Number(rawMargin) <= 100 ? Number(rawMargin) / 100 : null) : 0;
-    if (estimated || food.method === 'usda-estimate') estimatedCount += 1;
+    if (estimated || food.method === 'usda-estimate' || food.method === 'recipe-estimate') estimatedCount += 1;
     const nutrition = nutritionFor(food, meal.servings);
     for (const key of Object.keys(lower)) {
       lower[key] = addNutritionValue(lower[key], nutrition[key] === null || margin === null ? null : nutrition[key] * (1 - margin));
