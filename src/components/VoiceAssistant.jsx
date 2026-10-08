@@ -6,7 +6,7 @@ import { Mic, Pause, Play, ArrowUp, X } from 'lucide-react';
 import LiveVoice from './LiveVoice';
 import { recordingToWav } from '../utils/voiceAudio';
 const emptyNutrients = { calories: '', protein: '', sodium: '', potassium: '', phosphorus: '' };
-export default function VoiceAssistant({ recipes = [], recipe = null, details = null, accessToken = null, autoStart = false, entries = [], date, mealReviews = {}, onReviewMeal, onSignIn, onClose, onAddFood }) {
+export default function VoiceAssistant({ recipes = [], recipe = null, details = null, accessToken = null, autoStart = false, entries = [], date, mealReviews = {}, onReviewMeal, onSignIn, onClose, onSaveMeal, onAddFood }) {
   const [meal, setMeal] = useState(() => nextMeal(entries, mealReviews, date));
   const [conversation, setConversation] = useState([]);
   const [reply, setReply] = useState(() => mealQuestion(nextMeal(entries, mealReviews, date)));
@@ -212,7 +212,7 @@ export default function VoiceAssistant({ recipes = [], recipe = null, details = 
       <div className="voice-actions"><button type="button" disabled={pending || recording || liveBusy || !!draft} onClick={()=>finishMeal('reviewed')}>Meal finished</button><button type="button" disabled={pending || recording || liveBusy || !!draft || entries.some(e=>e.date===date && e.meal===meal)} onClick={()=>finishMeal('not-eaten')}>I did not eat this meal</button><button type="button" disabled={pending || recording || liveBusy} onClick={()=>chooseMeal(MEALS[(MEALS.indexOf(meal)+1)%MEALS.length])}>Skip for now</button></div>
     </div>}
     {!liveBusy && <p className="voice-status" role="status">{message}</p>}
-    {!recipe && available && <LiveVoice key={`${meal}-${liveVersion}`} accessToken={accessToken} meal={meal} conversation={conversation} disabled={pending} autoStart={autoStart && liveVersion===0} onBusy={setLiveBusy} onReview={turns=>{setConversation(turns);setLiveVersion(v=>v+1);interpret({transcript:"Prepare a draft of the first food described in the conversation. Keep other foods in the transcript for separate review; do not combine foods. Do not invent missing details."},turns);}} />}
+    {!recipe && available && <LiveVoice key={`${meal}-${liveVersion}`} accessToken={accessToken} meal={meal} conversation={conversation} disabled={pending} autoStart={autoStart && liveVersion===0} onSaveMeal={onSaveMeal} onBusy={setLiveBusy} onReview={turns=>{setConversation(turns);setLiveVersion(v=>v+1);interpret({transcript:"Prepare a draft of the first food described in the conversation. Keep other foods in the transcript for separate review; do not combine foods. Do not invent missing details."},turns);}} />}
     <div hidden={!recipe} className={`voice-composer ${paused ? 'is-paused' : ''}`}>
       <button className="voice-mic" type="button" aria-label="Start microphone" disabled={!available || pending || recording} onClick={start}><Mic size={44} strokeWidth={1.8} /></button>
       <div className="voice-recording-label"><strong>{pending ? 'Please wait…' : recording ? paused ? 'Paused' : 'Listening…' : 'Tap to speak'}</strong><span>{recording ? `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}` : 'Up to 60 seconds'}</span></div>

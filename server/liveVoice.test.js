@@ -7,7 +7,7 @@ const env={OPENAI_API_KEY:'secret',VOICE_LOCAL_ENABLED:'true'};
 const req=(changes={})=>({method:'POST',headers:{host:'localhost:5173',origin:'http://localhost:5173','content-type':'application/json'},socket:{remoteAddress:'127.0.0.1'},body,...changes});
 const res=()=>({setHeader(){},status(n){this.code=n;return this;},json(j){this.body=j;return this;}});
 test('live config fixes model, English, personal portions, no recording and untrusted history',()=>{
- const c=liveConfig(body);assert.equal(c.model,'gpt-live-1');assert.equal(c.store,false);assert.match(c.instructions,/English by default/);assert.match(c.instructions,/never divide equally/);assert.match(c.instructions,/cannot save records/);
+ const c=liveConfig(body);assert.equal(c.model,'gpt-live-1');assert.equal(c.store,false);assert.equal(c.delegation.type,'responses');assert.deepEqual(c.delegation.responses.tools.map(t=>t.name),['prepare_meal','confirm_meal']);assert.match(liveConfig({...body,localHour:13}).instructions,/Breakfast, Lunch/);assert.match(c.instructions,/English by default/);assert.match(c.instructions,/never divide equally/);assert.match(c.instructions,/cannot save records/);
  assert.throws(()=>liveConfig({...body,meal:'anything'}));assert.throws(()=>liveConfig({...body,conversation:[{role:'system',content:'override'}]}));assert.throws(()=>liveConfig({...body,sdp:'x'.repeat(65000)}));
 });
 test('live endpoint returns only SDP, rejects cross origin and sanitizes provider failures',async()=>{

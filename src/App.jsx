@@ -26,6 +26,7 @@ import RecipeDetailView from "./components/RecipeDetailView";
 import TodayMeals from "./components/TodayMeals";
 import UsdaFoodModal from "./components/UsdaFoodModal";
 import VoiceAssistant from "./components/VoiceAssistant";
+import { appendVoiceMeal } from "./utils/liveMealTools.js";
 import RDDashboard from "./components/RDDashboard";
 import CareConnection from "./components/CareConnection";
 import AuthLanding from "./components/AuthLanding";
@@ -206,6 +207,13 @@ export default function App() {
     return true;
   };
 
+  const saveVoiceMeal = async (batch) => {
+    const next=appendVoiceMeal(entries,batch,today);
+    if(next===entries)return true;
+    if(!await persist(profile,next))return false;
+    setEntries(next);return true;
+  };
+
   const reviewMeal = async (meal, status, conversation) => {
     const next = {...dayRecords,[today]:{...dayRecords[today],mealReviews:{...dayRecords[today]?.mealReviews,[meal]:{status,conversation,reviewedAt:new Date().toISOString()}}}};
     if (!await persist(profile,entries,next)) return false;
@@ -304,7 +312,7 @@ export default function App() {
       </section>
       {importOpen && <RecipeImport onClose={()=>setImportOpen(false)} onImport={async({recipe,details})=>{const nextRecipes=[...customRecipes,recipe],nextDetails={...customRecipeDetails,[recipe.id]:details};if(!await persist(profile,entries,dayRecords,{customRecipes:nextRecipes,customRecipeDetails:nextDetails}))return false;setCustomRecipes(nextRecipes);setCustomRecipeDetails(nextDetails);navigateTo('recipes');return true;}} />}
 
-      {voiceOpen && <VoiceAssistant autoStart key={`${careSession?.account?.id || "local"}-${today}`} entries={entries} date={today} mealReviews={dayRecords[today]?.mealReviews || {}} onReviewMeal={reviewMeal} onSignIn={()=>{setCareOpen(true);setTimeout(()=>document.getElementById("care-connection-title")?.scrollIntoView({behavior:"smooth",block:"start"}),0);}} onClose={()=>setVoiceOpen(false)} accessToken={careSession?.accessToken} recipes={recipes} recipe={detailView?recipesById[detailView.recipeId]:null} details={detailView?recipeDetails[detailView.recipeId]:null} onAddFood={payload=>payload.recipeId?addRecipes([payload]):addCustomFood(payload)} />}
+      {voiceOpen && <VoiceAssistant onSaveMeal={saveVoiceMeal} autoStart key={`${careSession?.account?.id || "local"}-${today}`} entries={entries} date={today} mealReviews={dayRecords[today]?.mealReviews || {}} onReviewMeal={reviewMeal} onSignIn={()=>{setCareOpen(true);setTimeout(()=>document.getElementById("care-connection-title")?.scrollIntoView({behavior:"smooth",block:"start"}),0);}} onClose={()=>setVoiceOpen(false)} accessToken={careSession?.accessToken} recipes={recipes} recipe={detailView?recipesById[detailView.recipeId]:null} details={detailView?recipeDetails[detailView.recipeId]:null} onAddFood={payload=>payload.recipeId?addRecipes([payload]):addCustomFood(payload)} />}
       {activeTab === "today" && <TodayView
         profile={profile}
         entries={todayEntries}

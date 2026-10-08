@@ -11,9 +11,9 @@ async(page)=>{
  await say('shared');results.shared=await page.locator('details').innerText();
  await say('portion');results.portion=await page.locator('details').innerText();
  results.audio=await page.locator('audio').evaluate(a=>({currentTime:a.currentTime,paused:a.paused,readyState:a.readyState}));
- await page.getByRole('button',{name:'Pause microphone',exact:true}).click();results.pause=await page.evaluate(()=>window.qaMic.getTracks().every(t=>!t.enabled));
- await page.getByRole('button',{name:'Review food',exact:true}).click();await page.waitForTimeout(4500);
- results.review=await page.evaluate(()=>({turns:window.qaTurns,mic:window.qaMic.getTracks().map(t=>t.readyState),busy:window.qaBusy}));
+ await page.getByRole('button',{name:'End conversation',exact:true}).click();await page.waitForTimeout(4500);
+ results.saved=await page.evaluate(()=>window.qaSaved||[]);
+ results.ended=await page.evaluate(()=>window.qaMic.getTracks().every(t=>t.readyState==='ended'));
  await page.setViewportSize({width:390,height:844});results.mobile=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));
  results.errors=errors;return results;
 }
