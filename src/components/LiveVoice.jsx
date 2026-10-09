@@ -7,6 +7,9 @@ import { responseToolBridge } from '../utils/liveToolBridge.js';
 export default function LiveVoice({accessToken,meal,mode='log',recipes=[],recipeDetails={},entries=[],date,profile={},conversation=[],autoStart=false,disabled=false,onReview,onBusy,onSaveMeal}) {
   const context=useRef({entries,date,profile});context.current={entries,date,profile};
   const [cooking,setCooking]=useState(null);
+  const [manualSaving,setManualSaving]=useState(false);
+  const manualLock=useRef(false);
+  async function savePending(){if(!pending||manualLock.current)return;manualLock.current=true;setManualSaving(true);try{const ok=await callbacks.current.onSaveMeal?.({...pending,conversation:turnRef.current});if(ok===false||ok===undefined){setStatus('Meal was not saved. Check the cloud message above and retry.');return;}setSaved(old=>[...old,{...pending,draft_id:pending.id}]);setPending(null);setStatus('Meal saved to your record and today’s meals.');}catch{setStatus('Meal was not saved. Your draft is still here. Please retry.');}finally{manualLock.current=false;setManualSaving(false);}}
   const [status,setStatus]=useState('Start a natural voice conversation.');
   const [greetingBlocked,setGreetingBlocked]=useState(false);
   const [phase,setPhase]=useState('idle'), [pending,setPending]=useState(null), [saved,setSaved]=useState([]),[turns,setTurns]=useState([]),[levels,setLevels]=useState(Array(36).fill(4));
@@ -41,7 +44,7 @@ export default function LiveVoice({accessToken,meal,mode='log',recipes=[],recipe
       r.send=send;
       const guide=createFoodGuide({recipes,details:recipeDetails,getContext:()=>context.current,onRecipe:setCooking});
       const recorder=createMealTools({resolveSource:guide.resolve,getTurns:()=>turnRef.current,onSave:batch=>{
-        if(r.released||r.closing||!mounted.current)return false;
+        if(r.released||!mounted.current)return false;
         return callbacks.current.onSaveMeal?.(batch) ?? false;
       },onDraft:d=>{if(r.released)return;setPending(d);if(d){
         const foods=d.foods.map(f=>`${f.matchedFood?.name||f.name}: ${f.portion}${f.matchedFood?" (source-based estimate)":" (nutrients unknown)"}`).join('; ');
@@ -75,9 +78,9 @@ export default function LiveVoice({accessToken,meal,mode='log',recipes=[],recipe
           if(e.event_id)r.seen.add(e.event_id);
           r.fragments.push({role:e.type.includes('input_')?'user':'assistant',text:e.delta,start:e.start_ms,order:r.fragments.length});
           const next=[...r.prior,...liveTurns(r.fragments,r.startedAt)];turnRef.current=next;setTurns(next);
-          if(next.length>=34 || r.fragments.reduce((n,f)=>n+f.text.length,0)>24000){setStatus('Please review this conversation before continuing.');void close();}
+          if(next.length>=150 || r.fragments.reduce((n,f)=>n+f.text.length,0)>24000){setStatus('Please review this conversation before continuing.');void close();}
         } else if(e.type==='response.event'){void bridge(e).catch(()=>setStatus('Could not finish that record. Please ask me to try again.'));}
-        else if(e.type==='session.closed'){setStatus('Conversation ended. Confirmed meals are saved; unfinished details are kept below.');release(r);}
+        else if(e.type==='session.closed'){setStatus('Conversation ended. Check the save status above; unfinished details are kept below.');release(r);}
         else if(e.type==='error'){setStatus('Voice encountered a problem. Your transcript is kept below; reconnect or review it.');void close();}
       };
       r.dc.onclose=()=>{if(!r.released){setStatus('Disconnected. Your transcript is kept below.');release(r);}};
@@ -109,6 +112,7 @@ export default function LiveVoice({accessToken,meal,mode='log',recipes=[],recipe
     <p className="voice-underbar">Confirm by voice to save. End stops the microphone. Up to five minutes per call.</p>
     {!!saved.length&&<div role="status">{saved.map(s=><p key={s.draft_id}><Check size={18} aria-hidden="true"/> {s.meal} saved: {s.foods.map(f=>`${f.name} (${f.portion})`).join(', ')}</p>)}</div>}
     {pending&&<p>Ready to confirm: {pending.foods.map(f=>`${f.name} (${f.portion})`).join(', ')}. Tell me if this is right.</p>}
+    {pending&&!busy&&<button type="button" className="voice-send" disabled={manualSaving} onClick={savePending}>{manualSaving?'Saving…':'Confirm & save meal'}</button>}
     {cooking&&<article className="voice-recipe"><span>Cooking together · not logged</span><h3>{cooking.name}</h3><p>{cooking.servingSize} · Recipe makes {cooking.servings} servings</p><details><summary>Ingredients & steps</summary><ul>{cooking.ingredients?.map((x,i)=><li key={i}>{x}</li>)}</ul><ol>{cooking.steps?.map((x,i)=><li key={i}>{x}</li>)}</ol></details><p>Tell me when you've eaten, and how much. Changes to ingredients affect the nutrition estimate.</p></article>}
     {turns.filter(t=>t.role==='assistant').at(-1)?.content&&<p className="voice-current-question">{turns.filter(t=>t.role==='assistant').at(-1).content}</p>}
     {!!turns.length&&<details className="voice-transcript"><summary><MessageSquare size={20} aria-hidden="true"/> Conversation <span>{turns.length} messages</span></summary>{turns.map((t,i)=><p key={i}><strong>{t.role==='user'?'You':'RenalSync'}:</strong> {t.content}</p>)}</details>}

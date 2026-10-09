@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createCareCloud } from '../utils/careCloud';
 import './care-connection.css';
 
-export default function CareConnection({ mode = 'patient', requestedMode = 'signin', onAuthModeChange, onGoogleAvailability, getRecord, onReviewRecord, onSessionChange }) {
+export default function CareConnection({ mode = 'patient', requestedMode = 'signin', onAuthModeChange, onGoogleAvailability, getRecord, onSync, syncStatus, onReviewRecord, onSessionChange }) {
   const client = useRef(null);
   const mountedRef = useRef(false);
   const busyRef = useRef(false);
@@ -36,6 +36,13 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('Checking cloud connection…');
   const isRD = mode === 'rd';
+  const selectedPatient=useRef(null);
+  useEffect(()=>{
+    if(!isRD||!account){selectedPatient.current=null;return;}
+    let active=true,running=false;
+    const refresh=async()=>{if(running||document.hidden)return;running=true;try{const rows=await client.current.shared();if(!active)return;setPatients(rows);const id=selectedPatient.current;if(id){if(!rows.some(r=>r.owner_id===id)){selectedPatient.current=null;callbacks.current.onReviewRecord?.(null);return;}const latest=await client.current.read(id);if(active&&selectedPatient.current===id)callbacks.current.onReviewRecord?.(latest.record,{ownerId:latest.owner_id,updatedAt:latest.updated_at});}}catch{if(active){callbacks.current.onReviewRecord?.(null);setMessage('Could not refresh patient records. Check your connection or sign in again.');}}finally{running=false;}};
+    const timer=setInterval(refresh,15000);window.addEventListener('focus',refresh);return()=>{active=false;clearInterval(timer);window.removeEventListener('focus',refresh);};
+  },[isRD,account?.id]);
   useEffect(() => {
     let mounted = true;
     mountedRef.current = true;
@@ -49,7 +56,7 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
       client.current.googleAvailable().then(enabled => { if (mounted) { setGoogleAvailable(enabled); onGoogleAvailability?.(enabled); } }).catch(() => {});
       try {
         const user = await client.current.finishGoogleSignIn();
-        if (mounted && user) { setAccount(user); callbacks.current.onSessionChange?.({ accessToken: client.current.accessToken(), account: user }); setMessage('Signed in with Google.'); }
+        if (mounted && user) { setAccount(user); callbacks.current.onSessionChange?.({ accessToken: client.current.accessToken(), account: user, client: client.current }); setMessage('Signed in with Google.'); }
       } catch (error) { if (mounted) setMessage(error.message); }
     }).catch(() => { if (mounted) setMessage('Cloud connection is not available yet. Your local record stays on this device.'); });
     const timer = window.setInterval(() => {
@@ -99,19 +106,19 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
       finally { if (mountedRef.current) setPassword(''); }
       setAccount(user);
       if (!user) { setMessage('Check your email to confirm your account, then sign in.'); return; }
-      callbacks.current.onSessionChange?.({ accessToken: client.current.accessToken(), account: user });
+      callbacks.current.onSessionChange?.({ accessToken: client.current.accessToken(), account: user, client: client.current });
       setMessage('Signed in. Your account ID is shown below.');
 
     });
   }
   return <section className="care-connection" aria-labelledby="care-connection-title">
-    <header><h2 id="care-connection-title">{!account ? 'Your RenalSync account' : isRD ? 'Connect to shared patient records' : 'Your account & care records'}</h2><p>{!account ? 'Sign in to use voice assistance and securely save your record. New here? Create an account first.' : isRD ? 'Use your own account. Patients grant access using your account ID.' : 'Your record uploads only when you choose. You control which care-team account can read it.'}</p></header>
+    <header><h2 id="care-connection-title">{!account ? 'Your RenalSync account' : isRD ? 'Connect to shared patient records' : 'Your account & care records'}</h2><p>{!account ? 'Sign in to use voice assistance and securely save your record. New here? Create an account first.' : isRD ? 'Use your own account. Patients grant access using your account ID.' : 'Confirmed changes save to your private cloud record. You control which care-team account can read it.'}</p></header>
     {ready && !account && <form onSubmit={(event) => {
       event.preventDefault();
       if (loginMethod === 'phone') {
         action(async () => {
           if (!sentTo) { await client.current.sendPhoneCode(phone); setSentTo(phone.replace(/[\s()-]/g,'')); setResendAt(Date.now()+60000); setNow(Date.now()); setMessage('Enter the code from your text message.'); }
-          else { const user=await client.current.verifyPhoneCode(sentTo,otp); setAccount(user); setOtp(''); callbacks.current.onSessionChange?.({accessToken:client.current.accessToken(),account:user}); setMessage('Signed in.'); }
+          else { const user=await client.current.verifyPhoneCode(sentTo,otp); setAccount(user); setOtp(''); callbacks.current.onSessionChange?.({accessToken:client.current.accessToken(),account:user,client:client.current}); setMessage('Signed in.'); }
         });
       } else if (!emailStep) { setEmailStep(true); }
       else authenticate(authMode === 'signup');
@@ -147,21 +154,22 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
       })}>Sign out</button></div>
       {isRD ? <div className="care-shared">
         <button disabled={busy} type="button" onClick={() => action(async () => { setPatients(await client.current.shared()); setMessage('Shared record list refreshed.'); })}>Refresh shared patients</button>
-        <p className="care-help">Opening a record retrieves the latest uploaded snapshot. Changes on the patient’s device appear after they upload again.</p>
+        <p className="care-help">Patient records refresh every 15 seconds while this dashboard is open. Only patients who grant you access are listed.</p>
         {patients.length ? <ul>{patients.map((patient) => <li key={patient.owner_id}><span>Patient account <code>{patient.owner_id}</code><small>Updated {new Date(patient.updated_at).toLocaleString()}</small></span><button disabled={busy} type="button" onClick={() => action(async () => {
+          selectedPatient.current=patient.owner_id;
           callbacks.current.onReviewRecord?.(null);
           const latest = await client.current.read(patient.owner_id);
-          if (!mountedRef.current || modeRef.current !== 'rd') return;
+          if (!mountedRef.current || modeRef.current !== 'rd' || selectedPatient.current!==patient.owner_id) return;
           callbacks.current.onReviewRecord?.(latest.record, { ownerId: latest.owner_id, updatedAt: latest.updated_at });
           setMessage('Shared snapshot opened for review.');
         })}>Review record</button></li>)}</ul> : <p>No patient records are shared with this account.</p>}
       </div> : <div className="care-owner">
-        <button className="care-upload" disabled={busy || !getRecord} type="button" onClick={() => action(async () => { await client.current.upload(getRecord()); setMessage('Current record uploaded privately. Only you and accounts you grant can read it.'); })}>Upload current record</button>
-        <p className="care-help">This replaces your previous cloud snapshot with your current profile, meal entries and saved daily records. Future local edits stay local until you upload again.</p>
+        <p className="care-help" role="status">{syncStatus || 'Confirmed changes save automatically to Supabase.'}</p>
+        <button className="care-upload" disabled={busy} type="button" onClick={()=>onSync?.()}>Refresh cloud record</button>
         <form onSubmit={(event) => { event.preventDefault(); action(async () => { await client.current.grant(readerId); setReaderId(''); setGrants(await client.current.grants()); setMessage('Read access granted to this account.'); }); }}>
           <label>RD account ID<input required placeholder="Ask your RD for their account ID" value={readerId} onChange={(event) => setReaderId(event.target.value)} /></label><button disabled={busy} type="submit">Grant read access</button>
         </form>
-        <p className="care-help">Verify the account ID with your RD before granting access. This grants access to your uploaded snapshot and later uploads.</p>
+        <p className="care-help">Verify the account ID with your RD before granting access. This grants access to your cloud record and future confirmed changes.</p>
         {grants.length > 0 && <ul>{grants.map((grant) => <li key={grant.reader_id}><code>{grant.reader_id}</code><button disabled={busy} type="button" onClick={() => action(async () => { await client.current.revoke(grant.reader_id); setGrants(await client.current.grants()); setMessage('Access revoked. Previously viewed or downloaded copies cannot be recalled.'); })}>Revoke access</button></li>)}</ul>}
       </div>}
     </>}

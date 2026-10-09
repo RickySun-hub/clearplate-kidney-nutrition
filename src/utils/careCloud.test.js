@@ -143,3 +143,8 @@ test('auth errors distinguish unconfirmed email, bad credentials and delivery se
     assert.equal(client.accessToken(),null);
   }
 });
+
+test('cloud save uses compare-and-swap and detects stale revisions',async()=>{
+ let row=null;const client=createCareCloud(config,async(url,o)=>{if(url.includes('/token?'))return Response.json({access_token:'test',expires_in:3600});if(url.endsWith('/user'))return Response.json({id:owner});if(o.method==='POST'){if(row)return Response.json([]);row=JSON.parse(o.body);return Response.json([row]);}if(o.method==='PATCH'){if(new URL(url).searchParams.get('updated_at')!=='eq.'+row.updated_at)return Response.json([]);row={...row,...JSON.parse(o.body)};return Response.json([row]);}return Response.json(row?[row]:[]);});
+ await client.signIn('x@example.test','test');assert.equal(await client.own(),null);const first=await client.save(record,null);assert.ok(first.updated_at);const newer=await client.save({...record,profile:{name:'Changed'}},first.updated_at);await assert.rejects(()=>client.save(record,first.updated_at),/Another device/);assert.equal((await client.own()).record.profile.name,'Changed');assert.equal((await client.save(newer.record,first.updated_at)).updated_at,newer.updated_at);
+});

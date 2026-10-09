@@ -30,9 +30,11 @@ export function validateCareRecord(value) {
     if (day?.mealReviews !== undefined && (!object(day.mealReviews) || Object.entries(day.mealReviews).some(([meal,r])=> !MEALS.includes(meal) || !object(r) || !['reviewed','not-eaten'].includes(r.status) || !validConversation(r.conversation) || typeof r.reviewedAt !== 'string' || !Number.isFinite(Date.parse(r.reviewedAt))))) invalid();
     if (!validDate(date) || (day !== null && (!object(day) || !textFields(day, ['completedAt','signature']) || (day.profile !== undefined && !profileValid(day.profile))))) invalid();
   }
+  if(value.customRecipes!==undefined&&(!Array.isArray(value.customRecipes)||value.customRecipes.length>500||value.customRecipes.some(r=>!object(r)||typeof r.id!=='string'||typeof r.name!=='string'||!nutrientFields(r))))invalid();
+  if(value.customRecipeDetails!==undefined&&!object(value.customRecipeDetails))invalid();
   let serialized;
   try {
-    serialized = JSON.stringify({ profile: value.profile, entries: value.entries, dayRecords: value.dayRecords }, (key, item) => {
+    serialized = JSON.stringify({ profile: value.profile, entries: value.entries, dayRecords: value.dayRecords, ...(value.customRecipes?{customRecipes:value.customRecipes}:{}), ...(value.customRecipeDetails?{customRecipeDetails:value.customRecipeDetails}:{}) }, (key, item) => {
       if (['__proto__','constructor','prototype'].includes(key) || ['function','symbol','bigint'].includes(typeof item) || (typeof item === 'number' && !Number.isFinite(item))) invalid();
       return item;
     });
@@ -56,7 +58,7 @@ export function createCareCloud(config, fetcher = fetch) {
     if (authenticated) headers.Authorization = `Bearer ${session.token}`;
     if (prefer) headers.Prefer = prefer;
     let response;
-    try { response = await fetcher(`${origin}${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), cache: 'no-store', credentials: 'omit' }); }
+    try { response = await fetcher(`${origin}${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), cache: 'no-store', credentials: 'omit',signal:AbortSignal.timeout(20000) }); }
     catch { throw new Error('Cloud connection failed. Please try again.'); }
     if (disposed) throw new Error('Cloud connection was closed.');
     if (generation !== requestGeneration) throw new Error('Account changed. Please retry.');
@@ -162,6 +164,22 @@ export function createCareCloud(config, fetcher = fetch) {
       try { response = await fetcher(`${origin}/auth/v1/logout`, { method: 'POST', headers: { apikey: key, Authorization: `Bearer ${token}` }, cache: 'no-store', credentials: 'omit' }); }
       catch { throw new Error('Signed out on this device. Cloud logout could not be confirmed.'); }
       if (!response.ok) throw new Error('Signed out on this device. Cloud logout could not be confirmed.');
+    },
+    async own() {
+      const owner=account();if(!owner)throw new Error('Please sign in again.');
+      const rows=await request(`/rest/v1/care_records?owner_id=eq.${owner.id}&select=owner_id,record,updated_at`);
+      if(!Array.isArray(rows)||rows.length>1)throw new Error('Unexpected cloud record.');
+      if(!rows.length)return null;
+      return {...rows[0],record:validateCareRecord(rows[0].record)};
+    },
+    async save(record, expectedVersion) {
+      const snapshot=validateCareRecord(record),owner=account();if(!owner)throw new Error('Please sign in again.');
+      const updated_at=new Date(Math.max(Date.now(),Date.parse(expectedVersion||'')+1||0)).toISOString();
+      const rows=expectedVersion===null
+        ? await request('/rest/v1/care_records?on_conflict=owner_id',{method:'POST',prefer:'resolution=ignore-duplicates,return=representation',body:{owner_id:owner.id,record:snapshot,updated_at}})
+        : await request(`/rest/v1/care_records?owner_id=eq.${owner.id}&updated_at=eq.${encodeURIComponent(expectedVersion)}`,{method:'PATCH',prefer:'return=representation',body:{record:snapshot,updated_at}});
+      if(!Array.isArray(rows)||rows.length!==1){const latest=await this.own();if(latest&&JSON.stringify(latest.record)===JSON.stringify(snapshot))return latest;const error=new Error('Another device changed this record. Reload the cloud record before retrying. Your draft is retained on this device.');error.code='record_conflict';throw error;}
+      return {record:validateCareRecord(rows[0].record),updated_at:rows[0].updated_at};
     },
     async upload(record) {
       const snapshot = validateCareRecord(record);

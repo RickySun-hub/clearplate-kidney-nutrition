@@ -1,0 +1,23 @@
+async(page)=>{
+await page.goto('about:blank');await page.unrouteAll({behavior:'wait'});
+const owner='11111111-1111-4111-8111-111111111111';let row=null;const reader='22222222-2222-4222-8222-222222222222';let current=owner,granted=false;
+await page.route('**/api/care-config',r=>r.fulfill({json:{url:'https://qa.supabase.co',publishableKey:'sb_publishable_qa'}}));
+await page.route('https://qa.supabase.co/**',async route=>{const req=route.request(),url=new URL(req.url());if(url.pathname.endsWith('/settings'))return route.fulfill({json:{external:{google:false,phone:false}}});if(url.pathname.endsWith('/token')){current=req.postDataJSON().email==='rd@example.test'?reader:owner;return route.fulfill({json:{access_token:'qa-token',expires_in:3600}});}if(url.pathname.endsWith('/user'))return route.fulfill({json:{id:current,email:current===owner?'qa@example.test':'rd@example.test'}});if(url.pathname.endsWith('/care_grants')){if(req.method()==='POST')granted=true;return route.fulfill({json:granted?[{reader_id:reader,created_at:new Date().toISOString()}]:[]});}if(url.pathname.endsWith('/care_records')){if(req.method()==='POST'||req.method()==='PATCH'){const body=req.postDataJSON();row={...row,...body,owner_id:owner};return route.fulfill({json:[row]});}const filter=url.searchParams.get('owner_id');const visible=filter==='neq.'+reader?granted&&row:filter==='eq.'+owner?(current===owner||granted)&&row:false;return route.fulfill({json:visible?[url.searchParams.get('select')==='owner_id,updated_at'?{owner_id:owner,updated_at:row.updated_at}:row]:[]});}return route.fulfill({json:{}});});
+await page.route('**/api/voice-status',r=>r.fulfill({json:{available:false,message:'Synthetic manual save test'}}));
+await page.route('**/api/fdc-search?*',r=>r.fulfill({json:{foods:[]}}));
+await page.goto('http://127.0.0.1:5173/#signin');
+await page.getByLabel('Email',{exact:true}).fill('qa@example.test');await page.getByRole('button',{name:'Continue with email',exact:true}).click();await page.getByLabel('Password',{exact:true}).fill('Synthetic-password-123');await page.getByRole('button',{name:'Sign in',exact:true}).last().click();
+await page.getByText('Connected to Supabase. Confirmed changes save automatically.',{exact:true}).last().waitFor();await page.getByRole('button',{name:'Voice Assistant',exact:true}).click();await page.getByRole('button',{name:'Type instead',exact:true}).click();await page.getByLabel('Message',{exact:true}).fill('Noodles for lunch');await page.getByRole('button',{name:'Create manual draft',exact:true}).click();await page.getByRole('combobox',{name:/^Nutrition source/}).selectOption('label');
+await page.getByRole('button',{name:'Confirm & save food',exact:true}).click();await page.getByText('Enter a food name and label calories, protein, and sodium per serving. Unknown potassium and phosphorus can stay blank.',{exact:true}).first().waitFor();
+await page.getByLabel('calories (kcal)',{exact:true}).fill('300');await page.getByLabel('protein (g)',{exact:true}).fill('8');await page.getByLabel('sodium (mg)',{exact:true}).fill('500');await page.locator('.voice-draft select').last().selectOption('Lunch');await page.getByRole('button',{name:'Confirm & save food',exact:true}).click();await page.getByText('Food saved after your confirmation.',{exact:true}).waitFor();
+if(row.record.entries.length!==1||row.record.entries[0].meal!=='Lunch')throw Error('Cloud missing meal');
+await page.getByRole('button',{name:'Close voice assistant',exact:true}).click();if(!await page.getByText('Noodles for lunch',{exact:true}).count())throw Error('Today list not updated');
+await page.getByRole('button',{name:'Account & care sharing',exact:true}).click();await page.getByLabel('RD account ID',{exact:true}).fill(reader);await page.getByRole('button',{name:'Grant read access',exact:true}).click();await page.getByRole('button',{name:'Sign out',exact:true}).click();
+await page.getByLabel('Email',{exact:true}).fill('rd@example.test');await page.getByLabel('Password',{exact:true}).fill('Synthetic-password-123');await page.getByRole('button',{name:'Sign in',exact:true}).last().click();await page.getByRole('button',{name:'RD dashboard',exact:true}).click();await page.getByRole('button',{name:'Review record',exact:true}).click();if(!await page.getByRole('heading',{name:'Dietitian dashboard'}).count())throw Error('RD missing');
+if(!await page.locator('.rd-dashboard').getByText('Noodles for lunch',{exact:true}).count())throw Error('RD food missing');
+return {rdAuthorizedRead:true,cloudFoods:row.record.entries.length,meal:row.record.entries[0].meal,original:row.record.entries[0].conversation[0].content,listUpdated:true};
+}
+
+
+
+

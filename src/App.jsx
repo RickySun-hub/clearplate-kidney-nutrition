@@ -39,7 +39,7 @@ import { defaultProfile, recipeImages } from "./data/seed";
 import { mealTimes, nextSortOrder, normalizeEntryOrder, reorderMealEntries } from "./utils/meals";
 import { formatAmount, localDateKey, mealTotals, mealTotalBounds } from "./utils/nutrition";
 import { daySignature, isDayComplete } from "./utils/recording";
-import { saveSnapshot } from "./utils/storage";
+
 import { normalizeProfileDraft } from "./utils/profile";
 
 const appStorageKey = "clearplate-adpkd-mvp-v3";
@@ -79,7 +79,7 @@ export default function App() {
   }, []);
   const [googleAvailable, setGoogleAvailable] = useState(false);
   const initial = useMemo(loadInitialState, []);
-  const savedRaw = useRef(initial.raw);
+
   const saving = useRef(false);
   const [customRecipes, setCustomRecipes] = useState(initial.customRecipes || []);
   const [customRecipeDetails, setCustomRecipeDetails] = useState(initial.customRecipeDetails || {});
@@ -96,6 +96,18 @@ export default function App() {
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [careOpen, setCareOpen] = useState(false);
   const [careSession, setCareSession] = useState(null);
+  const cloud=useRef(null),sessionEpoch=useRef(0);
+  const [cloudReady,setCloudReady]=useState(false),[syncStatus,setSyncStatus]=useState(''),[pendingCloud,setPendingCloud]=useState(null);
+  function applyRecord(record){setProfile(normalizeProfileDraft(record.profile));setEntries(normalizeEntryOrder(record.entries));setDayRecords(record.dayRecords||{});setCustomRecipes(record.customRecipes||[]);setCustomRecipeDetails(record.customRecipeDetails||{});}
+  async function connectSession(session){
+    const epoch=++sessionEpoch.current;cloud.current=null;setCloudReady(false);setPendingCloud(null);setCareSession(session);setVoiceOpen(false);setSharedRecord(null);setSharedIdentity('local');
+    if(!session){applyRecord({profile:defaultProfile,entries:[],dayRecords:{}});return;}
+    setSyncStatus('Loading your private cloud record…');
+    try{const row=await session.client.own();if(epoch!==sessionEpoch.current)return;const record=row?.record||{profile:defaultProfile,entries:[],dayRecords:{}};
+      cloud.current={client:session.client,version:row?.updated_at||null,owner:session.account.id,epoch};applyRecord(record);setCloudReady(true);setSyncStatus('Connected to Supabase. Confirmed changes save automatically.');
+      try{const draft=JSON.parse(localStorage.getItem('renalsync-pending:'+session.account.id));if(draft?.record)setPendingCloud(draft);}catch{}
+    }catch(error){if(epoch===sessionEpoch.current)setSyncStatus(error.message);}
+  }
   const [sharedRecord, setSharedRecord] = useState(null);
   const [sharedIdentity, setSharedIdentity] = useState('local');
   const [profileOpen, setProfileOpen] = useState(false);
@@ -124,33 +136,28 @@ export default function App() {
   const complete = isDayComplete(dayRecords, entries, today);
 
   const persist = async (nextProfile, nextEntries, nextDayRecords = dayRecords, imported = {customRecipes,customRecipeDetails}) => {
-    if (saving.current) return false;
-    saving.current = true;
-    try {
-      const result = await saveSnapshot(localStorage, navigator.locks, appStorageKey, savedRaw.current,
-        { profile: nextProfile, entries: nextEntries, dayRecords: nextDayRecords, ...imported });
-      savedRaw.current = result.raw;
-      if (result.status === "conflict") {
-        const latest = loadInitialState(result.raw);
-        setProfile(latest.profile);
-        setEntries(latest.entries);
-        setDayRecords(latest.dayRecords || {});
-        setCustomRecipes(latest.customRecipes || []);
-        setCustomRecipeDetails(latest.customRecipeDetails || {});
-        setStorageError("Another tab changed your records. The latest saved records are now loaded; your input is still here. Review the changes, then save again to apply your input.");
-        return false;
-      }
-      setStorageError("");
-      return true;
-    } catch {
-      setStorageError(!navigator.locks?.request
-        ? "This browser cannot safely coordinate saves between tabs. Open this app over HTTPS or localhost in a browser that supports Web Locks. Your previous records are unchanged."
-        : "Changes could not be saved on this device. Your previous records are unchanged. Check browser storage and try again.");
-      return false;
-    } finally {
-      saving.current = false;
-    }
+    const target=cloud.current;if(!target||saving.current){setStorageError('The cloud record is still loading or a save is in progress. Please retry.');return false;}
+    if(pendingCloud&&nextEntries!==pendingCloud.record.entries){setStorageError('Retry or download the unsynced draft before saving another change.');return false;}
+    saving.current=true;setSyncStatus('Saving to Supabase…');
+    const record={profile:nextProfile,entries:nextEntries,dayRecords:nextDayRecords,...imported};
+    // Keep recoverable input under this account only, never import another account's local history.
+    const draft={record,version:target.version};
+    try{localStorage.setItem('renalsync-pending:'+target.owner,JSON.stringify(draft));}catch{}
+    try{
+      const saved=await target.client.save(record,target.version);
+      if(cloud.current!==target)return false;
+      target.version=saved.updated_at;
+      try{localStorage.removeItem('renalsync-pending:'+target.owner);}catch{}
+      setPendingCloud(null);setStorageError('');setSyncStatus('Saved to Supabase · '+new Date(saved.updated_at).toLocaleTimeString());return true;
+    }catch(error){if(cloud.current===target){setPendingCloud(draft);setStorageError(error.message);setSyncStatus('Not synced. Your confirmed input is retained for retry.');}return false;}
+    finally{saving.current=false;}
   };
+  async function retryPending(){
+    const target=cloud.current,draft=pendingCloud;if(!target||!draft)return;
+    if(draft.version!==target.version){setStorageError('The cloud has newer changes. Download the retained draft before combining it with the latest record.');return;}
+    if(await persist(draft.record.profile,draft.record.entries,draft.record.dayRecords,{customRecipes:draft.record.customRecipes||[],customRecipeDetails:draft.record.customRecipeDetails||{}}))applyRecord(draft.record);
+  }
+  function downloadPending(){const url=URL.createObjectURL(new Blob([JSON.stringify(pendingCloud?.record,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='renalsync-unsynced-record.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 
   const toggleComplete = async () => {
     const next = { ...dayRecords, [today]: complete ? {...dayRecords[today],completedAt:null,signature:null} : {
@@ -289,8 +296,9 @@ export default function App() {
   return (
     <div className={careSession ? "app-shell" : "auth-shell"}>
       {!careSession && <AuthLanding googleAvailable={googleAvailable} page={authPage} onNavigate={navigateAuth} />}
-      <div hidden={careSession ? !careOpen && activeTab!=='rd' : ['home','how-it-works'].includes(authPage)}><CareConnection onGoogleAvailability={setGoogleAvailable} requestedMode={authPage} onAuthModeChange={navigateAuth} mode={activeTab==='rd'?'rd':'patient'} getRecord={()=>({profile,entries,dayRecords})} onSessionChange={setCareSession} onReviewRecord={(record,meta)=>{setSharedRecord(record);setSharedIdentity(meta?`${meta.ownerId}:${meta.updatedAt}`:'local');}} /></div>
-      {careSession && <>
+      <div hidden={careSession ? !careOpen && activeTab!=='rd' : ['home','how-it-works'].includes(authPage)}><CareConnection onGoogleAvailability={setGoogleAvailable} requestedMode={authPage} onAuthModeChange={navigateAuth} mode={activeTab==='rd'?'rd':'patient'} getRecord={()=>({profile,entries,dayRecords})} onSessionChange={connectSession} onSync={()=>connectSession(careSession)} syncStatus={syncStatus} onReviewRecord={(record,meta)=>{setSharedRecord(record);setSharedIdentity(meta?`${meta.ownerId}:${meta.updatedAt}`:'local');}} /></div>
+      {careSession && <div className="storage-alert" role="status">{syncStatus}{!cloudReady&&<button onClick={()=>connectSession(careSession)}>Retry connection</button>}{pendingCloud&&<><button onClick={retryPending}>Retry unsynced save</button><button onClick={downloadPending}>Download retained draft</button></>}</div>}
+      {careSession && cloudReady && <>
 
       <header className="topbar">
         <button className="logo-button" type="button" onClick={() => navigateTo("today")}><Logo /></button>
@@ -299,7 +307,7 @@ export default function App() {
           <button className={isTabActive("planner") ? "active" : ""} type="button" onClick={() => navigateTo("planner")}><Utensils /> Plan</button>
           <button className={isTabActive("recipes") ? "active" : ""} type="button" onClick={() => navigateTo("recipes")}><BookOpen /> Recipes</button>
           <button className={activeTab === "history" ? "active" : ""} type="button" onClick={() => navigateTo("history")}><History /> History</button>
-          <button className={activeTab === "rd" ? "active" : ""} type="button" onClick={() => navigateTo("rd")}><BookOpen /> RD report</button>
+          <button className={activeTab === "rd" ? "active" : ""} type="button" onClick={() => navigateTo("rd")}><BookOpen /> RD dashboard</button>
           <button type="button" onClick={() => setProfileOpen(true)}><CircleUserRound /> Profile</button>
         </nav>
         <div className="sidebar-profile"><button className="avatar-button" type="button" onClick={() => setProfileOpen(true)} aria-label="Open profile">{profile.name.slice(0, 1).toUpperCase()}</button><div><strong>{profile.name}</strong><span>Your nutrition profile</span></div></div>
