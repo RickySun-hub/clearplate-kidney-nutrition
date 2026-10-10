@@ -201,9 +201,9 @@ export function createCareCloud(config, fetcher = fetch) {
       return request(`/rest/v1/care_grants?owner_id=eq.${account()?.id}&reader_id=eq.${readerId.trim()}`, { method: 'DELETE' });
     },
     async shared() {
-      const rows = await request(`/rest/v1/care_records?owner_id=neq.${account()?.id}&select=owner_id,updated_at&order=updated_at.desc`);
+      const rows = await request(`/rest/v1/care_records?owner_id=neq.${account()?.id}&select=owner_id,updated_at,profile:record->profile&order=updated_at.desc`);
       if (!Array.isArray(rows) || rows.some((row) => !isAccountId(row?.owner_id) || typeof row.updated_at !== 'string')) throw new Error('Cloud returned an unexpected patient list.');
-      return rows.map(({owner_id,updated_at}) => ({owner_id,updated_at}));
+      return rows.map(({owner_id,updated_at,profile}) => ({owner_id,updated_at,profile:Object.fromEntries(['name','condition','stage','treatment'].map(key=>[key,typeof profile?.[key]==='string'?profile[key].trim().slice(0,200):'']))}));
     },
     async read(ownerId) {
       if (!isAccountId(ownerId)) throw new Error('Invalid patient account ID.');

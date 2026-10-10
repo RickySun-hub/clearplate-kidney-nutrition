@@ -296,7 +296,7 @@ export default function App() {
   return (
     <div className={careSession ? "app-shell" : "auth-shell"}>
       {!careSession && <AuthLanding googleAvailable={googleAvailable} page={authPage} onNavigate={navigateAuth} />}
-      <div hidden={careSession ? !careOpen && activeTab!=='rd' : ['home','how-it-works'].includes(authPage)}><CareConnection onGoogleAvailability={setGoogleAvailable} requestedMode={authPage} onAuthModeChange={navigateAuth} mode={activeTab==='rd'?'rd':'patient'} getRecord={()=>({profile,entries,dayRecords})} onSessionChange={connectSession} onSync={()=>connectSession(careSession)} syncStatus={syncStatus} onReviewRecord={(record,meta)=>{setSharedRecord(record);setSharedIdentity(meta?`${meta.ownerId}:${meta.updatedAt}`:'local');}} /></div>
+      <div hidden={careSession ? !careOpen && activeTab!=='rd' : ['home','how-it-works'].includes(authPage)}><CareConnection onGoogleAvailability={setGoogleAvailable} requestedMode={authPage} onAuthModeChange={navigateAuth} mode={activeTab==='rd'?'rd':'patient'} getRecord={()=>({profile,entries,dayRecords})} onSessionChange={connectSession} onSync={()=>connectSession(careSession)} syncStatus={syncStatus} rdContent={sharedRecord ? <RDDashboard key={sharedIdentity} entries={sharedRecord.entries} recipesById={Object.fromEntries([...baseRecipes,...(sharedRecord.customRecipes || [])].map(r=>[r.id,r]))} profile={sharedRecord.profile} sharedIdentity={sharedIdentity} dayRecords={sharedRecord.dayRecords} /> : null} onReviewRecord={(record,meta)=>{setSharedRecord(record);setSharedIdentity(meta?.ownerId || 'local');}} /></div>
       {careSession && <div className="storage-alert" role="status">{syncStatus}{!cloudReady&&<button onClick={()=>connectSession(careSession)}>Retry connection</button>}{pendingCloud&&<><button onClick={retryPending}>Retry unsynced save</button><button onClick={downloadPending}>Download retained draft</button></>}</div>}
       {careSession && cloudReady && <>
 
@@ -314,7 +314,7 @@ export default function App() {
       </header>
 
       {storageError && !mealDialog.open && !customDialog && !profileOpen && <p className="storage-alert" role="alert">{storageError}</p>}
-      <section className="assist-launch" aria-label="Food logging tools">
+      <section className="assist-launch" aria-label="Food logging tools" hidden={activeTab==='rd'}>
         {!voiceOpen && <div className="voice-feature"><div className="voice-feature-icon"><Mic size={30} /></div><div className="voice-feature-copy"><span className="feature-eyebrow">YOUR VOICE, LESS TYPING</span><h2>Say it. Review it. Log it.</h2><p>Tell us what you ate, or follow a recipe hands-free.</p></div><button className="voice-feature-button" type="button" aria-expanded={voiceOpen} onClick={()=>setVoiceOpen(!voiceOpen)}><Mic size={20} />{voiceOpen?'Close voice assistant':'Voice Assistant'}<ChevronRight size={20} /></button></div>}
         <div className="assist-secondary"><button type="button" onClick={()=>setUsdaDialog(true)}>Find a USDA food</button><button type="button" onClick={()=>setCareOpen(!careOpen)}>{careSession ? "Account & care sharing" : "Sign in / Create account"}</button><button type="button" onClick={()=>setImportOpen(!importOpen)}>Import recipe</button></div>
       </section>
@@ -338,7 +338,7 @@ export default function App() {
       {activeTab === "planner" && <PlannerView recipes={recipes} recipeDetails={recipeDetails} profile={profile} todayEntries={todayEntries} todayTotals={totals} plannerSession={plannerSession} onPlannerSessionChange={setPlannerSession} onAddPlan={addPlan} onOpenRecipe={(recipe) => openRecipeDetails(recipe, "planner")} />}
       {activeTab === "recipes" && <RecipeLibrary recipes={recipes} details={recipeDetails} onChoose={(recipe) => openMealDialog(recipe.id)} onOpenRecipe={(recipe) => openRecipeDetails(recipe, "recipes")} />}
       {activeTab === "history" && <HistoryView entries={entries} recipesById={recipesById} profile={profile} dayRecords={dayRecords} />}
-      {activeTab === "rd" && <>{sharedRecord && <p className="input-welcome">Reviewing a shared patient snapshot. <button type="button" onClick={()=>setSharedRecord(null)}>Return to this device's record</button></p>}<RDDashboard key={sharedRecord ? sharedIdentity : 'local'} entries={sharedRecord?.entries || entries} recipesById={recipesById} profile={sharedRecord?.profile || profile} sharedIdentity={sharedRecord ? sharedIdentity : null} dayRecords={sharedRecord?.dayRecords || dayRecords} /></>}
+
       {activeTab === "recipe-detail" && detailView && (
         <RecipeDetailView
           recipe={recipesById[detailView.recipeId]}

@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from 'react';
 import { createCareCloud } from '../utils/careCloud';
 import './care-connection.css';
 
-export default function CareConnection({ mode = 'patient', requestedMode = 'signin', onAuthModeChange, onGoogleAvailability, getRecord, onSync, syncStatus, onReviewRecord, onSessionChange }) {
+export default function CareConnection({ mode = 'patient', requestedMode = 'signin', onAuthModeChange, onGoogleAvailability, getRecord, onSync, syncStatus, onReviewRecord, onSessionChange, rdContent }) {
   const client = useRef(null);
   const mountedRef = useRef(false);
   const busyRef = useRef(false);
   const modeRef = useRef(mode);
   modeRef.current = mode;
-  const callbacks = useRef({ onReviewRecord, onSessionChange });
+  const callbacks = useRef({ onReviewRecord, onSessionChange, rdContent });
   callbacks.current = { onReviewRecord, onSessionChange };
   const [authMode, setAuthMode] = useState('signin');
   useEffect(()=>{if(['signin','signup'].includes(requestedMode))setAuthMode(requestedMode);},[requestedMode]);
@@ -33,14 +33,17 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
   const [readerId, setReaderId] = useState('');
   const [grants, setGrants] = useState([]);
   const [patients, setPatients] = useState([]);
+  const [patientSearch,setPatientSearch]=useState('');
+  const [patientLoading,setPatientLoading]=useState(false);
+  const visiblePatients=patients.filter(p=>[p.profile?.name,p.profile?.condition,p.profile?.stage,p.owner_id].join(' ').toLowerCase().includes(patientSearch.trim().toLowerCase()));
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('Checking cloud connection…');
   const isRD = mode === 'rd';
   const selectedPatient=useRef(null);
   useEffect(()=>{
-    if(!isRD||!account){selectedPatient.current=null;return;}
+    if(!isRD||!account){selectedPatient.current=null;callbacks.current.onReviewRecord?.(null);setPatients([]);setPatientSearch('');return;}
     let active=true,running=false;
-    const refresh=async()=>{if(running||document.hidden)return;running=true;try{const rows=await client.current.shared();if(!active)return;setPatients(rows);const id=selectedPatient.current;if(id){if(!rows.some(r=>r.owner_id===id)){selectedPatient.current=null;callbacks.current.onReviewRecord?.(null);return;}const latest=await client.current.read(id);if(active&&selectedPatient.current===id)callbacks.current.onReviewRecord?.(latest.record,{ownerId:latest.owner_id,updatedAt:latest.updated_at});}}catch{if(active){callbacks.current.onReviewRecord?.(null);setMessage('Could not refresh patient records. Check your connection or sign in again.');}}finally{running=false;}};
+    const refresh=async()=>{if(running||document.hidden)return;running=true;try{const rows=await client.current.shared();if(!active)return;setPatients(rows);const id=selectedPatient.current;if(id){if(!rows.some(r=>r.owner_id===id)){selectedPatient.current=null;callbacks.current.onReviewRecord?.(null);return;}const latest=await client.current.read(id);if(active&&selectedPatient.current===id)callbacks.current.onReviewRecord?.(latest.record,{ownerId:latest.owner_id,updatedAt:latest.updated_at});}}catch{if(active){setPatients([]);callbacks.current.onReviewRecord?.(null);setMessage('Could not refresh patient records. Check your connection or sign in again.');}}finally{running=false;}};
     const timer=setInterval(refresh,15000);window.addEventListener('focus',refresh);return()=>{active=false;clearInterval(timer);window.removeEventListener('focus',refresh);};
   },[isRD,account?.id]);
   useEffect(() => {
@@ -111,8 +114,8 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
 
     });
   }
-  return <section className="care-connection" aria-labelledby="care-connection-title">
-    <header><h2 id="care-connection-title">{!account ? 'Your RenalSync account' : isRD ? 'Connect to shared patient records' : 'Your account & care records'}</h2><p>{!account ? 'Sign in to use voice assistance and securely save your record. New here? Create an account first.' : isRD ? 'Use your own account. Patients grant access using your account ID.' : 'Confirmed changes save to your private cloud record. You control which care-team account can read it.'}</p></header>
+  return <section className={`care-connection${isRD && account ? " rd-workspace" : ""}`} aria-labelledby="care-connection-title">
+    <header><h2 id="care-connection-title">{!account ? 'Your RenalSync account' : isRD ? 'Patient directory' : 'Your account & care records'}</h2><p>{!account ? 'Sign in to use voice assistance and securely save your record. New here? Create an account first.' : isRD ? 'Patient files, food records, and nutrition in one place.' : 'Confirmed changes save to your private cloud record. You control which care-team account can read it.'}</p></header>
     {ready && !account && <form onSubmit={(event) => {
       event.preventDefault();
       if (loginMethod === 'phone') {
@@ -147,22 +150,24 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
       <button className="auth-text-action auth-back" type="button" onClick={()=>onAuthModeChange?.('home')}>Back to home</button>
     </form>}
     {account && <>
-      <div className="care-account"><strong>{account.email || account.phone || 'Signed-in account'}</strong><label>Your account ID<input readOnly value={account.id} onFocus={(event) => event.target.select()} /></label><button disabled={busy} type="button" onClick={() => action(async () => {
+      <details className="care-account-details" open={!isRD}><summary>Account & patient access</summary><div className="care-account"><strong>{account.email || account.phone || 'Signed-in account'}</strong><label>Your account ID<input readOnly value={account.id} onFocus={(event) => event.target.select()} /></label><button disabled={busy} type="button" onClick={() => action(async () => {
         setAccount(null); setGrants([]); setPatients([]); callbacks.current.onSessionChange?.(null); callbacks.current.onReviewRecord?.(null);
         await client.current.signOut();
         setMessage('Signed out.');
-      })}>Sign out</button></div>
-      {isRD ? <div className="care-shared">
-        <button disabled={busy} type="button" onClick={() => action(async () => { setPatients(await client.current.shared()); setMessage('Shared record list refreshed.'); })}>Refresh shared patients</button>
-        <p className="care-help">Patient records refresh every 15 seconds while this dashboard is open. Only patients who grant you access are listed.</p>
-        {patients.length ? <ul>{patients.map((patient) => <li key={patient.owner_id}><span>Patient account <code>{patient.owner_id}</code><small>Updated {new Date(patient.updated_at).toLocaleString()}</small></span><button disabled={busy} type="button" onClick={() => action(async () => {
-          selectedPatient.current=patient.owner_id;
-          callbacks.current.onReviewRecord?.(null);
-          const latest = await client.current.read(patient.owner_id);
-          if (!mountedRef.current || modeRef.current !== 'rd' || selectedPatient.current!==patient.owner_id) return;
-          callbacks.current.onReviewRecord?.(latest.record, { ownerId: latest.owner_id, updatedAt: latest.updated_at });
-          setMessage('Shared snapshot opened for review.');
-        })}>Review record</button></li>)}</ul> : <p>No patient records are shared with this account.</p>}
+      })}>Sign out</button></div><p className="care-help">Patients can use your account ID to grant you read access from Account & care sharing.</p></details>
+      {isRD ? <div className="rd-directory-layout">
+        <aside className="rd-directory" aria-label="Patient directory">
+          <div className="rd-directory-heading"><strong>Patients <span>{patients.length}</span></strong><button disabled={busy} type="button" aria-label="Refresh patients" onClick={()=>action(async()=>{const rows=await client.current.shared();setPatients(rows);if(!rows.some(p=>p.owner_id===selectedPatient.current)){selectedPatient.current=null;callbacks.current.onReviewRecord?.(null);}setMessage('Patient directory updated.');})}>↻</button></div>
+          <label className="rd-search">Find a patient<input type="search" placeholder="Name or condition" value={patientSearch} onChange={e=>setPatientSearch(e.target.value)} /></label>
+          <div className="rd-patient-list">{visiblePatients.map(patient=><button className="rd-patient-card" key={patient.owner_id} aria-label={`Open patient ${patient.profile?.name || 'Unnamed patient'}`} aria-pressed={selectedPatient.current===patient.owner_id} disabled={busy} onClick={()=>action(async()=>{
+            selectedPatient.current=patient.owner_id;setPatientLoading(true);callbacks.current.onReviewRecord?.(null);
+            try{const latest=await client.current.read(patient.owner_id);if(!mountedRef.current||modeRef.current!=='rd'||selectedPatient.current!==patient.owner_id)return;callbacks.current.onReviewRecord?.(latest.record,{ownerId:latest.owner_id,updatedAt:latest.updated_at});}
+            finally{if(mountedRef.current)setPatientLoading(false);}
+          })}><span className="rd-patient-avatar" aria-hidden="true">{(patient.profile?.name || '?').slice(0,1).toUpperCase()}</span><span><strong>{patient.profile?.name || 'Unnamed patient'}</strong><small>{[patient.profile?.condition,patient.profile?.stage].filter(Boolean).join(' · ') || 'No condition recorded'}</small><small>File {patient.owner_id.slice(0,8)} · {new Date(patient.updated_at).toLocaleDateString()}</small></span></button>)}</div>
+          {!visiblePatients.length&&<p className="care-help">{patients.length?'No matching patients.':'No patients have shared a record yet.'}</p>}
+          <p className="rd-directory-note">Only patients who grant you access appear here. Updates every 15 seconds.</p>
+        </aside>
+        <div className="rd-file" aria-busy={patientLoading}>{patientLoading?<div className="rd-file-empty" role="status"><h3>Opening patient file…</h3></div>:rdContent || <div className="rd-file-empty"><span aria-hidden="true">▤</span><h3>Select a patient</h3><p>Open a file to review their profile, meals, nutrients, and original words.</p>{!patients.length&&<p>Share your account ID above with a patient to get started.</p>}</div>}</div>
       </div> : <div className="care-owner">
         <p className="care-help" role="status">{syncStatus || 'Confirmed changes save automatically to Supabase.'}</p>
         <button className="care-upload" disabled={busy} type="button" onClick={()=>onSync?.()}>Refresh cloud record</button>
