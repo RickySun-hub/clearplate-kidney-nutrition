@@ -98,6 +98,16 @@ export function createCareCloud(config, fetcher = fetch) {
   }
   return {
     account,
+    async invitations(action='list',payload={}) {
+      if(!['list','create','get','accept','decline','cancel'].includes(action))throw new Error('Invalid invitation action.');
+      try{return await request('/rest/v1/rpc/care_invitation_action',{method:'POST',body:{action,payload}});}
+      catch(error){if(!this.accessToken())throw error;throw new Error('Could not complete the invitation. Use the invited, verified email; check expiration and try again.');}
+    },
+    async sendInvitationEmail(id) {
+      const token=this.accessToken();if(!token)throw new Error('Please sign in again.');
+      const response=await fetcher('/api/care-invitation-email',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({id}),credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(30000)});
+      const result=await response.json();if(!response.ok)throw new Error(result.error || 'Email was not sent.');return result;
+    },
     async phoneAvailable() {
       const settings=await request('/auth/v1/settings',{authenticated:false});
       return settings?.external?.phone === true;

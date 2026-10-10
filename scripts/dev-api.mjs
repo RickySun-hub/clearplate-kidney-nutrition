@@ -6,6 +6,7 @@ import auditHandler from '../api/recipe-audit.js';
 import liveHandler from '../api/voice-live.js';
 import voiceHandler from '../api/voice.js';
 import voiceStatusHandler from '../api/voice-status.js';
+import invitationEmailHandler from '../api/care-invitation-email.js';
 import careConfigHandler from '../api/care-config.js';
 import recipeImportHandler from '../api/recipe-import.js';
 
@@ -13,6 +14,7 @@ const handlers = new Map([['/api/fdc-search', searchHandler], ['/api/fdc-food', 
 handlers.set('/api/voice-live', liveHandler);
 handlers.set('/api/voice', voiceHandler);
 handlers.set('/api/voice-status', voiceStatusHandler);
+handlers.set('/api/care-invitation-email', invitationEmailHandler);
 handlers.set('/api/care-config', careConfigHandler);
 handlers.set('/api/recipe-import', recipeImportHandler);
 const server = createServer(async (req, res) => {

@@ -28,6 +28,7 @@ import UsdaFoodModal from "./components/UsdaFoodModal";
 import VoiceAssistant from "./components/VoiceAssistant";
 import { appendVoiceMeal } from "./utils/liveMealTools.js";
 import RDDashboard from "./components/RDDashboard";
+import {captureCareInvitation} from './components/CareInvitations';
 import CareConnection from "./components/CareConnection";
 import AuthLanding from "./components/AuthLanding";
 import RecipeImport from "./components/RecipeImport";
@@ -64,7 +65,7 @@ function loadInitialState(rawOverride) {
 }
 
 export default function App() {
-  const [authPage, setAuthPage] = useState(() => /[?&](code|error)=/.test(window.location.search) ? "signin" : ["how-it-works","signin","signup","rd-signin"].includes(window.location.hash.slice(1)) ? window.location.hash.slice(1) : "home");
+  const [authPage, setAuthPage] = useState(() => {const hash=window.location.hash.slice(1);const pending=captureCareInvitation();if(hash.startsWith('care-invite/'))return 'care-invite';if(/[?&](code|error)=/.test(window.location.search))return pending?'care-invite':'signin';return ['how-it-works','signin','signup','rd-signin'].includes(hash)?hash:'home';});
   function navigateAuth(page) {
     setAuthPage(page);
     try{if(page==='rd-signin')sessionStorage.setItem('renalsync-login-destination','rd');else if(page!=='google')sessionStorage.removeItem('renalsync-login-destination');}catch{}
@@ -73,7 +74,7 @@ export default function App() {
     window.scrollTo(0, 0);
   }
   useEffect(() => {
-    const restore = () => { const hash = window.location.hash.slice(1); setAuthPage(['how-it-works','signin','signup','rd-signin'].includes(hash) ? hash : 'home'); };
+    const restore = () => { const hash = window.location.hash.slice(1); if(hash.startsWith('care-invite/')){captureCareInvitation();setAuthPage('care-invite');}else setAuthPage(['how-it-works','signin','signup','rd-signin'].includes(hash)?hash:'home'); };
     window.addEventListener('popstate', restore);
     window.addEventListener('hashchange', restore);
     return () => { window.removeEventListener('popstate', restore); window.removeEventListener('hashchange', restore); };
@@ -96,18 +97,19 @@ export default function App() {
   const [usdaDialog, setUsdaDialog] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [careOpen, setCareOpen] = useState(false);
+  const [careInvites,setCareInvites]=useState(0);
   const [careSession, setCareSession] = useState(null);
   const cloud=useRef(null),sessionEpoch=useRef(0);
   const [cloudReady,setCloudReady]=useState(false),[syncStatus,setSyncStatus]=useState(''),[pendingCloud,setPendingCloud]=useState(null);
   function applyRecord(record){setProfile(normalizeProfileDraft(record.profile));setEntries(normalizeEntryOrder(record.entries));setDayRecords(record.dayRecords||{});setCustomRecipes(record.customRecipes||[]);setCustomRecipeDetails(record.customRecipeDetails||{});}
   async function connectSession(session){
-    const epoch=++sessionEpoch.current;cloud.current=null;setCloudReady(false);setPendingCloud(null);setCareSession(session);setVoiceOpen(false);setSharedRecord(null);setSharedIdentity('local');
+    const epoch=++sessionEpoch.current;cloud.current=null;setCloudReady(false);setPendingCloud(null);setCareSession(session);setCareInvites(0);setVoiceOpen(false);setSharedRecord(null);setSharedIdentity('local');
     if(!session){setActiveTab('today');applyRecord({profile:defaultProfile,entries:[],dayRecords:{}});return;}
     setSyncStatus('Loading your private cloud record…');
     try{const row=await session.client.own();if(epoch!==sessionEpoch.current)return;const record=row?.record||{profile:defaultProfile,entries:[],dayRecords:{}};
       cloud.current={client:session.client,version:row?.updated_at||null,owner:session.account.id,epoch};applyRecord(record);setCloudReady(true);setSyncStatus('Connected to Supabase. Confirmed changes save automatically.');
       let rdRequested=authPage==='rd-signin';try{rdRequested ||= sessionStorage.getItem('renalsync-login-destination')==='rd';sessionStorage.removeItem('renalsync-login-destination');}catch{}
-      if(rdRequested){try{const shared=await session.client.shared();if(epoch!==sessionEpoch.current)return;setActiveTab(shared.length?'rd':'today');}catch{if(epoch===sessionEpoch.current)setActiveTab('today');}}
+      if(rdRequested){try{const shared=await session.client.shared();if(epoch!==sessionEpoch.current)return;setActiveTab('rd');}catch{if(epoch===sessionEpoch.current)setActiveTab('today');}}
       try{const draft=JSON.parse(localStorage.getItem('renalsync-pending:'+session.account.id));if(draft?.record)setPendingCloud(draft);}catch{}
     }catch(error){if(epoch===sessionEpoch.current)setSyncStatus(error.message);}
   }
@@ -299,7 +301,7 @@ export default function App() {
   return (
     <div className={careSession ? "app-shell" : "auth-shell"}>
       {!careSession && <AuthLanding googleAvailable={googleAvailable} page={authPage} onNavigate={navigateAuth} />}
-      <div hidden={careSession ? !careOpen && activeTab!=='rd' : ['home','how-it-works'].includes(authPage)}><CareConnection onGoogleAvailability={setGoogleAvailable} requestedMode={authPage} onAuthModeChange={navigateAuth} mode={activeTab==='rd'?'rd':'patient'} getRecord={()=>({profile,entries,dayRecords})} onSessionChange={connectSession} onSync={()=>connectSession(careSession)} syncStatus={syncStatus} rdContent={sharedRecord ? <RDDashboard key={sharedIdentity} entries={sharedRecord.entries} recipesById={Object.fromEntries([...baseRecipes,...(sharedRecord.customRecipes || [])].map(r=>[r.id,r]))} profile={sharedRecord.profile} sharedIdentity={sharedIdentity} dayRecords={sharedRecord.dayRecords} /> : null} onReviewRecord={(record,meta)=>{setSharedRecord(record);setSharedIdentity(meta?.ownerId || 'local');}} /></div>
+      <div hidden={careSession ? !careOpen && activeTab!=='rd' && authPage!=='care-invite' : ['home','how-it-works'].includes(authPage)}><CareConnection onInvitationCount={setCareInvites} onGoogleAvailability={setGoogleAvailable} requestedMode={authPage} onAuthModeChange={navigateAuth} mode={activeTab==='rd'?'rd':'patient'} getRecord={()=>({profile,entries,dayRecords})} onSessionChange={connectSession} onSync={()=>connectSession(careSession)} syncStatus={syncStatus} rdContent={sharedRecord ? <RDDashboard key={sharedIdentity} entries={sharedRecord.entries} recipesById={Object.fromEntries([...baseRecipes,...(sharedRecord.customRecipes || [])].map(r=>[r.id,r]))} profile={sharedRecord.profile} sharedIdentity={sharedIdentity} dayRecords={sharedRecord.dayRecords} /> : null} onReviewRecord={(record,meta)=>{setSharedRecord(record);setSharedIdentity(meta?.ownerId || 'local');}} /></div>
       {careSession && <div className="storage-alert" role="status">{syncStatus}{!cloudReady&&<button onClick={()=>connectSession(careSession)}>Retry connection</button>}{pendingCloud&&<><button onClick={retryPending}>Retry unsynced save</button><button onClick={downloadPending}>Download retained draft</button></>}</div>}
       {careSession && cloudReady && <>
 
@@ -317,6 +319,7 @@ export default function App() {
       </header>
 
       {storageError && !mealDialog.open && !customDialog && !profileOpen && <p className="storage-alert" role="alert">{storageError}</p>}
+      {careInvites>0&&activeTab!=='rd'&&!careOpen&&<div className="care-invite-banner"><strong>{careInvites} care invitation{careInvites===1?'':'s'}</strong><span>Review who would like to connect with you.</span><button onClick={()=>{setCareOpen(true);window.scrollTo(0,0);}}>Review invitation</button></div>}
       <section className="assist-launch" aria-label="Food logging tools" hidden={activeTab==='rd'}>
         {!voiceOpen && <div className="voice-feature"><div className="voice-feature-icon"><Mic size={30} /></div><div className="voice-feature-copy"><span className="feature-eyebrow">YOUR VOICE, LESS TYPING</span><h2>Say it. Review it. Log it.</h2><p>Tell us what you ate, or follow a recipe hands-free.</p></div><button className="voice-feature-button" type="button" aria-expanded={voiceOpen} onClick={()=>setVoiceOpen(!voiceOpen)}><Mic size={20} />{voiceOpen?'Close voice assistant':'Voice Assistant'}<ChevronRight size={20} /></button></div>}
         <div className="assist-secondary"><button type="button" onClick={()=>setUsdaDialog(true)}>Find a USDA food</button><button type="button" onClick={()=>setCareOpen(!careOpen)}>{careSession ? "Account & care sharing" : "Sign in / Create account"}</button><button type="button" onClick={()=>setImportOpen(!importOpen)}>Import recipe</button></div>
