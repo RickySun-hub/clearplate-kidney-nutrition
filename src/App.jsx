@@ -64,15 +64,16 @@ function loadInitialState(rawOverride) {
 }
 
 export default function App() {
-  const [authPage, setAuthPage] = useState(() => /[?&](code|error)=/.test(window.location.search) ? "signin" : ["how-it-works","signin","signup"].includes(window.location.hash.slice(1)) ? window.location.hash.slice(1) : "home");
+  const [authPage, setAuthPage] = useState(() => /[?&](code|error)=/.test(window.location.search) ? "signin" : ["how-it-works","signin","signup","rd-signin"].includes(window.location.hash.slice(1)) ? window.location.hash.slice(1) : "home");
   function navigateAuth(page) {
     setAuthPage(page);
+    try{if(page==='rd-signin')sessionStorage.setItem('renalsync-login-destination','rd');else if(page!=='google')sessionStorage.removeItem('renalsync-login-destination');}catch{}
     const hash = page === 'home' ? '' : `#${page === 'google' ? 'signin' : page}`;
     if (window.location.hash !== hash) window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${hash}`);
     window.scrollTo(0, 0);
   }
   useEffect(() => {
-    const restore = () => { const hash = window.location.hash.slice(1); setAuthPage(['how-it-works','signin','signup'].includes(hash) ? hash : 'home'); };
+    const restore = () => { const hash = window.location.hash.slice(1); setAuthPage(['how-it-works','signin','signup','rd-signin'].includes(hash) ? hash : 'home'); };
     window.addEventListener('popstate', restore);
     window.addEventListener('hashchange', restore);
     return () => { window.removeEventListener('popstate', restore); window.removeEventListener('hashchange', restore); };
@@ -101,10 +102,12 @@ export default function App() {
   function applyRecord(record){setProfile(normalizeProfileDraft(record.profile));setEntries(normalizeEntryOrder(record.entries));setDayRecords(record.dayRecords||{});setCustomRecipes(record.customRecipes||[]);setCustomRecipeDetails(record.customRecipeDetails||{});}
   async function connectSession(session){
     const epoch=++sessionEpoch.current;cloud.current=null;setCloudReady(false);setPendingCloud(null);setCareSession(session);setVoiceOpen(false);setSharedRecord(null);setSharedIdentity('local');
-    if(!session){applyRecord({profile:defaultProfile,entries:[],dayRecords:{}});return;}
+    if(!session){setActiveTab('today');applyRecord({profile:defaultProfile,entries:[],dayRecords:{}});return;}
     setSyncStatus('Loading your private cloud record…');
     try{const row=await session.client.own();if(epoch!==sessionEpoch.current)return;const record=row?.record||{profile:defaultProfile,entries:[],dayRecords:{}};
       cloud.current={client:session.client,version:row?.updated_at||null,owner:session.account.id,epoch};applyRecord(record);setCloudReady(true);setSyncStatus('Connected to Supabase. Confirmed changes save automatically.');
+      let rdRequested=authPage==='rd-signin';try{rdRequested ||= sessionStorage.getItem('renalsync-login-destination')==='rd';sessionStorage.removeItem('renalsync-login-destination');}catch{}
+      if(rdRequested){try{const shared=await session.client.shared();if(epoch!==sessionEpoch.current)return;setActiveTab(shared.length?'rd':'today');}catch{if(epoch===sessionEpoch.current)setActiveTab('today');}}
       try{const draft=JSON.parse(localStorage.getItem('renalsync-pending:'+session.account.id));if(draft?.record)setPendingCloud(draft);}catch{}
     }catch(error){if(epoch===sessionEpoch.current)setSyncStatus(error.message);}
   }

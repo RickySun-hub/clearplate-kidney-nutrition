@@ -13,7 +13,7 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
   const callbacks = useRef({ onReviewRecord, onSessionChange, rdContent });
   callbacks.current = { onReviewRecord, onSessionChange };
   const [authMode, setAuthMode] = useState('signin');
-  useEffect(()=>{if(['signin','signup'].includes(requestedMode))setAuthMode(requestedMode);},[requestedMode]);
+  useEffect(()=>{if(['signin','signup','rd-signin'].includes(requestedMode)){setAuthMode(requestedMode==='signup'?'signup':'signin');setLoginMethod('email');setEmailStep(false);}},[requestedMode]);
   const [googleAvailable, setGoogleAvailable] = useState(false);
   const [loginMethod, setLoginMethod] = useState('email');
   const [emailStep, setEmailStep] = useState(false);
@@ -126,8 +126,8 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
       } else if (!emailStep) { setEmailStep(true); }
       else authenticate(authMode === 'signup');
     }}>
-      <p className="auth-intro">New here? Continue with Google or create an account with your email.</p>
-      <button className="google-signin" type="button" disabled={busy || !googleAvailable} onClick={() => action(() => client.current.signInWithGoogle())}><GoogleMark />Continue with Google</button>
+      <p className="auth-intro">{requestedMode==='rd-signin'?'Use your Google account or work email. Patient access is managed separately.':'New here? Continue with Google or create an account with your email.'}</p>
+      <button className="google-signin" type="button" disabled={busy || !googleAvailable} onClick={() => action(() => {try{if(requestedMode==='rd-signin')sessionStorage.setItem('renalsync-login-destination','rd');}catch{}return client.current.signInWithGoogle();})}><GoogleMark />Continue with Google</button>
       {!googleAvailable && <p className="care-help">Google sign-in is being set up. You can use email below.</p>}
       <button className="google-signin phone-signin" type="button" disabled={busy} aria-expanded={loginMethod==='phone'} onClick={()=>{setLoginMethod(loginMethod==='phone'?'email':'phone');setMessage('');}}><Smartphone size={19} aria-hidden="true" />Continue with phone{!phoneAvailable && <small>Coming soon</small>}</button>
       {loginMethod==='phone' ? <>
@@ -147,6 +147,7 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
         <button className="auth-text-action" type="button" disabled={busy} onClick={()=>{setEmailStep(true);setAuthMode(authMode==='signup'?'signin':'signup');setMessage('');}}>{authMode==='signup'?'Already have an account? Sign in':'New here? Create an email account'}</button>
       </>}
       <p className="care-help auth-footnote">You choose when to share your food record with your care team.</p>
+      {requestedMode==='rd-signin'&&<button className="auth-text-action" type="button" onClick={()=>onAuthModeChange?.('signin')}>Here to track your meals? Patient sign in →</button>}
       <button className="auth-text-action auth-back" type="button" onClick={()=>onAuthModeChange?.('home')}>Back to home</button>
     </form>}
     {account && <>
