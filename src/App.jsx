@@ -107,7 +107,7 @@ export default function App() {
     if(!session){setActiveTab('today');applyRecord({profile:defaultProfile,entries:[],dayRecords:{}});return;}
     setSyncStatus('Loading your private cloud record…');
     try{const row=await session.client.own();if(epoch!==sessionEpoch.current)return;const record=row?.record||{profile:defaultProfile,entries:[],dayRecords:{}};
-      cloud.current={client:session.client,version:row?.updated_at||null,owner:session.account.id,epoch};applyRecord(record);setCloudReady(true);setSyncStatus('Connected to Supabase. Confirmed changes save automatically.');
+      cloud.current={client:session.client,version:row?.updated_at||null,owner:session.account.id,epoch};applyRecord(record);setCloudReady(true);setSyncStatus('Your changes save automatically.');
       let rdRequested=authPage==='rd-signin';try{rdRequested ||= sessionStorage.getItem('renalsync-login-destination')==='rd';sessionStorage.removeItem('renalsync-login-destination');}catch{}
       if(rdRequested){try{const shared=await session.client.shared();if(epoch!==sessionEpoch.current)return;setActiveTab('rd');}catch{if(epoch===sessionEpoch.current)setActiveTab('today');}}
       try{const draft=JSON.parse(localStorage.getItem('renalsync-pending:'+session.account.id));if(draft?.record)setPendingCloud(draft);}catch{}
@@ -143,7 +143,7 @@ export default function App() {
   const persist = async (nextProfile, nextEntries, nextDayRecords = dayRecords, imported = {customRecipes,customRecipeDetails}) => {
     const target=cloud.current;if(!target||saving.current){setStorageError('The cloud record is still loading or a save is in progress. Please retry.');return false;}
     if(pendingCloud&&nextEntries!==pendingCloud.record.entries){setStorageError('Retry or download the unsynced draft before saving another change.');return false;}
-    saving.current=true;setSyncStatus('Saving to Supabase…');
+    saving.current=true;setSyncStatus('Saving your changes…');
     const record={profile:nextProfile,entries:nextEntries,dayRecords:nextDayRecords,...imported};
     // Keep recoverable input under this account only, never import another account's local history.
     const draft={record,version:target.version};
@@ -153,7 +153,7 @@ export default function App() {
       if(cloud.current!==target)return false;
       target.version=saved.updated_at;
       try{localStorage.removeItem('renalsync-pending:'+target.owner);}catch{}
-      setPendingCloud(null);setStorageError('');setSyncStatus('Saved to Supabase · '+new Date(saved.updated_at).toLocaleTimeString());return true;
+      setPendingCloud(null);setStorageError('');setSyncStatus('Saved · '+new Date(saved.updated_at).toLocaleTimeString());return true;
     }catch(error){if(cloud.current===target){setPendingCloud(draft);setStorageError(error.message);setSyncStatus('Not synced. Your confirmed input is retained for retry.');}return false;}
     finally{saving.current=false;}
   };
@@ -302,7 +302,7 @@ export default function App() {
     <div className={careSession ? "app-shell" : "auth-shell"}>
       {!careSession && <AuthLanding googleAvailable={googleAvailable} page={authPage} onNavigate={navigateAuth} />}
       <div hidden={careSession ? !careOpen && activeTab!=='rd' && authPage!=='care-invite' : ['home','how-it-works'].includes(authPage)}><CareConnection onInvitationCount={setCareInvites} onGoogleAvailability={setGoogleAvailable} requestedMode={authPage} onAuthModeChange={navigateAuth} mode={activeTab==='rd'?'rd':'patient'} getRecord={()=>({profile,entries,dayRecords})} onSessionChange={connectSession} onSync={()=>connectSession(careSession)} syncStatus={syncStatus} rdContent={sharedRecord ? <RDDashboard key={sharedIdentity} entries={sharedRecord.entries} recipesById={Object.fromEntries([...baseRecipes,...(sharedRecord.customRecipes || [])].map(r=>[r.id,r]))} profile={sharedRecord.profile} sharedIdentity={sharedIdentity} dayRecords={sharedRecord.dayRecords} /> : null} onReviewRecord={(record,meta)=>{setSharedRecord(record);setSharedIdentity(meta?.ownerId || 'local');}} /></div>
-      {careSession && <div className="storage-alert" role="status">{syncStatus}{!cloudReady&&<button onClick={()=>connectSession(careSession)}>Retry connection</button>}{pendingCloud&&<><button onClick={retryPending}>Retry unsynced save</button><button onClick={downloadPending}>Download retained draft</button></>}</div>}
+      {careSession && (!cloudReady || pendingCloud) && <div className="storage-alert" role="status">{syncStatus}{!cloudReady&&<button onClick={()=>connectSession(careSession)}>Retry connection</button>}{pendingCloud&&<><button onClick={retryPending}>Retry unsynced save</button><button onClick={downloadPending}>Download retained draft</button></>}</div>}
       {careSession && cloudReady && <>
 
       <header className="topbar">
