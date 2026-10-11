@@ -103,7 +103,7 @@ export default function LiveVoice({accessToken,meal,mode='log',recipes=[],recipe
     <p role="status" hidden={phase==='idle'&&status==='Start a natural voice conversation.'}>{status}</p>
     <div className="voice-composer">
       <button type="button" className="voice-mic" aria-label="Start live conversation" disabled={busy||disabled} onClick={start}><Mic size={44}/></button>
-      <div className="voice-recording-label"><strong>{phase==='connecting'?'Connecting…':phase==='closing'?'Finishing…':busy?'Live conversation':'Talk with RenalSync'}</strong><span>{busy?'Speak naturally — I’m listening':'Tap the microphone to start'}</span></div>
+      <div className="voice-recording-label"><strong>{phase==='connecting'?'Connecting…':phase==='closing'?'Finishing…':busy?'Live conversation':'Talk with Nepholio'}</strong><span>{busy?'Speak naturally — I’m listening':'Tap the microphone to start'}</span></div>
       <div className="voice-waveform" aria-hidden="true">{levels.map((h,i)=><span key={i} style={{height:h}}/>)}</div>
       {phase==='live'&&<div className="voice-record-controls"><button type="button" className="voice-round" aria-label="End conversation" onClick={()=>void close()}><Square size={22}/><span>End</span></button></div>}
     </div>
@@ -115,7 +115,7 @@ export default function LiveVoice({accessToken,meal,mode='log',recipes=[],recipe
     {pending&&!busy&&<button type="button" className="voice-send" disabled={manualSaving} onClick={savePending}>{manualSaving?'Saving…':'Confirm & save meal'}</button>}
     {cooking&&<article className="voice-recipe"><span>Cooking together · not logged</span><h3>{cooking.name}</h3><p>{cooking.servingSize} · Recipe makes {cooking.servings} servings</p><details><summary>Ingredients & steps</summary><ul>{cooking.ingredients?.map((x,i)=><li key={i}>{x}</li>)}</ul><ol>{cooking.steps?.map((x,i)=><li key={i}>{x}</li>)}</ol></details><p>Tell me when you've eaten, and how much. Changes to ingredients affect the nutrition estimate.</p></article>}
     {turns.filter(t=>t.role==='assistant').at(-1)?.content&&<p className="voice-current-question">{turns.filter(t=>t.role==='assistant').at(-1).content}</p>}
-    {!!turns.length&&<details className="voice-transcript"><summary><MessageSquare size={20} aria-hidden="true"/> Conversation <span>{turns.length} messages</span></summary>{turns.map((t,i)=><p key={i}><strong>{t.role==='user'?'You':'RenalSync'}:</strong> {t.content}</p>)}</details>}
+    {!!turns.length&&<details className="voice-transcript"><summary><MessageSquare size={20} aria-hidden="true"/> Conversation <span>{turns.length} messages</span></summary>{turns.map((t,i)=><p key={i}><strong>{t.role==='user'?'You':'Nepholio'}:</strong> {t.content}</p>)}</details>}
     {!busy&&turns.some(t=>t.role==='user')&&<button type="button" className="voice-send" disabled={phase==='connecting'||phase==='closing'||!turns.some(t=>t.role==='user')} onClick={review}><ArrowUp size={20}/> Review unfinished food</button>}
   </div>;
 }

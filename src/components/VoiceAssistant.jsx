@@ -213,7 +213,7 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
     {!recipe && typing && <div className="voice-conversation">
       <nav aria-label="Meal being discussed">{MEALS.map(m=><button type="button" key={m} aria-pressed={meal===m} disabled={pending || recording || liveBusy} onClick={()=>chooseMeal(m)}>{m}{mealReviews[m] ? ' · reviewed' : entries.some(e=>e.date===date && e.meal===m) ? ' · logged' : ''}</button>)}</nav>
       {!liveBusy && <p className="voice-question" aria-live="polite">{reply}</p>}
-      {!!conversation.length && <details><summary>Conversation for this food</summary>{conversation.map((t,i)=><p key={i}><strong>{t.role==='user'?'You':'RenalSync'}:</strong> {t.content}</p>)}</details>}
+      {!!conversation.length && <details><summary>Conversation for this food</summary>{conversation.map((t,i)=><p key={i}><strong>{t.role==='user'?'You':'Nepholio'}:</strong> {t.content}</p>)}</details>}
       <div className="voice-actions"><button type="button" disabled={pending || recording || liveBusy || !!draft} onClick={()=>finishMeal('reviewed')}>Meal finished</button><button type="button" disabled={pending || recording || liveBusy || !!draft || entries.some(e=>e.date===date && e.meal===meal)} onClick={()=>finishMeal('not-eaten')}>I did not eat this meal</button><button type="button" disabled={pending || recording || liveBusy} onClick={()=>chooseMeal(MEALS[(MEALS.indexOf(meal)+1)%MEALS.length])}>Skip for now</button></div>
     </div>}
     {!liveBusy && (!available || typing || draft) && <p className="voice-status" role="status">{message}</p>}

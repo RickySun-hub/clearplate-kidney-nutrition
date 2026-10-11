@@ -162,7 +162,7 @@ export default function App() {
     if(draft.version!==target.version){setStorageError('The cloud has newer changes. Download the retained draft before combining it with the latest record.');return;}
     if(await persist(draft.record.profile,draft.record.entries,draft.record.dayRecords,{customRecipes:draft.record.customRecipes||[],customRecipeDetails:draft.record.customRecipeDetails||{}}))applyRecord(draft.record);
   }
-  function downloadPending(){const url=URL.createObjectURL(new Blob([JSON.stringify(pendingCloud?.record,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='renalsync-unsynced-record.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+  function downloadPending(){const url=URL.createObjectURL(new Blob([JSON.stringify(pendingCloud?.record,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='nepholio-unsynced-record.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 
   const toggleComplete = async () => {
     const next = { ...dayRecords, [today]: complete ? {...dayRecords[today],completedAt:null,signature:null} : {
