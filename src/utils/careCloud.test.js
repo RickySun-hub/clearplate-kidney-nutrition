@@ -164,3 +164,20 @@ test('patient directory returns profile summaries without loading food records',
   assert.deepEqual(Object.keys(rows[0].profile),['name','condition','stage','treatment']);
   assert.equal(rows[0].record,undefined);
 });
+
+test('late 401 body from an old account cannot erase a newer verified session', async () => {
+ let finishBody, bodyStarted;
+ const started=new Promise(resolve=>{bodyStarted=resolve;});
+ let token=0;
+ const client=createCareCloud(config,async url=>{
+  if(url.includes('/token?'))return Response.json({access_token:'test-'+(++token),expires_in:3600});
+  if(url.endsWith('/user'))return Response.json({id:owner});
+  return {ok:false,status:401,json:()=>{bodyStarted();return new Promise(resolve=>{finishBody=resolve;});}};
+ });
+ await client.signIn('old@example.test','test-password');
+ const old=client.shared();const rejected=assert.rejects(old,/Account changed/);
+ await started;
+ client.clearSession();await client.signIn('new@example.test','test-password');
+ finishBody({});await rejected;
+ assert.equal(client.accessToken(),'test-2');assert.equal(client.account().id,owner);
+});

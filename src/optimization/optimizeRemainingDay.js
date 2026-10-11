@@ -225,6 +225,16 @@ export function optimizeRemainingDay({
     return { status: "invalid", message: "Review the sodium and protein targets saved in your profile.", plans: [] };
   }
 
+  const unknownRequired = [['sodium', 'upper'], ['protein', 'lower'], ['protein', 'upper']]
+    .find(([nutrient, bound]) => {
+      const values = loggedTotals?.[bound];
+      const value = values && Object.hasOwn(values, nutrient) ? values[nutrient] : loggedTotals?.[nutrient];
+      return !isNonnegativeNumber(value);
+    });
+  if (unknownRequired) {
+    return { status: 'invalid', message: `The logged ${unknownRequired[0]} amount is unknown, so remaining targets cannot be checked.`, plans: [] };
+  }
+
   const remaining = calculateRemainingBudget(loggedTotals, targets);
   const unknownOptional = [
     ["potassium", "potassiumMax"],

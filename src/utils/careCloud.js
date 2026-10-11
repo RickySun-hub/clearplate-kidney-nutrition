@@ -64,6 +64,9 @@ export function createCareCloud(config, fetcher = fetch) {
     if (generation !== requestGeneration) throw new Error('Account changed. Please retry.');
     if (!response.ok) {
       let problem = {}; try { problem = await response.json(); } catch {}
+      // Reading the error body is asynchronous too; it may belong to a prior account.
+      if (disposed) throw new Error('Cloud connection was closed.');
+      if (generation !== requestGeneration) throw new Error('Account changed. Please retry.');
       if (!authenticated && problem.code === 'email_not_confirmed') throw new Error('Confirm your email before signing in. Open the confirmation message, then return here.');
       if (!authenticated && problem.code === 'invalid_credentials') throw new Error('Email or password is incorrect. New here? Choose Create account first.');
       if (!authenticated && ['email_address_not_authorized','over_email_send_rate_limit'].includes(problem.code)) throw new Error('Confirmation email could not be sent. The email service needs configuration or has reached its sending limit.');

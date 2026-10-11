@@ -11,9 +11,9 @@ import {
   SunMedium,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { buildCalendarMonth, historyDayStatus } from "../utils/history";
+import { buildCalendarMonth, historyDayStatus, historyNutritionState } from "../utils/history";
 import { formatAmount, localDateKey, mealTotals } from "../utils/nutrition";
-import { hasValidProteinTargets } from "../utils/profile";
+
 import { isDayComplete } from "../utils/recording";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -130,25 +130,9 @@ export default function HistoryView({ entries, recipesById, profile: currentProf
     setVisibleMonth(monthStartFor(today));
   };
 
-  const sodiumProgress = profile.sodiumTargetMg > 0
-    ? (selectedReport.totals.sodium / profile.sodiumTargetMg) * 100
-    : 0;
-  const proteinTargetsValid = hasValidProteinTargets(profile);
-  const proteinProgress = proteinTargetsValid
-    ? (selectedReport.totals.protein / profile.proteinMaxG) * 100
-    : undefined;
-  const sodiumStatus = selectedReport.items.length
-    ? (selectedReport.totals.sodium <= profile.sodiumTargetMg ? "Within recorded limit" : "Above recorded limit")
-    : "No foods recorded";
-  const proteinStatus = selectedReport.items.length
-    ? (!proteinTargetsValid
-      ? "Targets need review"
-      : selectedReport.totals.protein < profile.proteinMinG
-      ? `${formatAmount(profile.proteinMinG - selectedReport.totals.protein, 1)} g below range`
-      : selectedReport.totals.protein > profile.proteinMaxG
-        ? `${formatAmount(selectedReport.totals.protein - profile.proteinMaxG, 1)} g above range`
-        : "Within recorded range")
-    : "No foods recorded";
+  const { sodiumProgress, proteinProgress, sodiumStatus, proteinStatus } = historyNutritionState(
+    selectedReport.totals, selectedReport.items.length, profile,
+  );
 
   return (
     <main className="history-page history-calendar-page">
@@ -276,7 +260,7 @@ export default function HistoryView({ entries, recipesById, profile: currentProf
         </section>
 
         <p className="history-report-note"><Info aria-hidden="true" /> Totals describe recorded food only. Review includes incomplete logs, estimated food, or values outside saved targets. A green mark does not certify nutritional adequacy.</p>
-        <p className="history-privacy">MVP privacy: food history is stored only in this browser’s local storage. It is not synced to a clinic or cloud account.</p>
+        <p className="history-privacy">Confirmed food records are saved to your private cloud account. Care-team accounts can read them only when you grant access.</p>
       </section>
     </main>
   );

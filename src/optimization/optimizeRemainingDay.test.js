@@ -169,3 +169,23 @@ test("lowest-sodium does not exceed the balanced plan sodium and results are det
   assert.ok(lowest.totals.sodium <= balanced.totals.sodium);
   assert.deepEqual(first.plans.map((plan) => plan.signature), second.plans.map((plan) => plan.signature));
 });
+
+test("unknown required logged intake or explicit bounds cannot produce compatible plans", () => {
+  for (const loggedTotals of [
+    { sodium: null, protein: 20 },
+    { sodium: 200, protein: null },
+    { sodium: '', protein: 20 },
+    { sodium: 200, protein: 20, upper: { sodium: null } },
+    { sodium: 200, protein: 20, lower: { protein: null } },
+    { sodium: 200, protein: 20, upper: { protein: null } },
+  ]) {
+    const result = optimizeRemainingDay({
+      recipes: [recipe('known', { calories: 300, protein: 20, sodium: 100 })],
+      targets: baseTargets,
+      loggedTotals,
+    });
+    assert.equal(result.status, 'invalid');
+    assert.deepEqual(result.plans, []);
+    assert.match(result.message, /unknown/);
+  }
+});
