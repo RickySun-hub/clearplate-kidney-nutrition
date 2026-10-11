@@ -5,6 +5,8 @@ import { MEALS, dueMeals, nextMeal, mealQuestion, conversationText } from '../ut
 import { Mic, Pause, Play, ArrowUp, X, Utensils, BookOpen } from 'lucide-react';
 import LiveVoice from './LiveVoice';
 import { recordingToWav } from '../utils/voiceAudio';
+import { transcriptAfterInterpretation } from '../utils/voiceTranscript.js';
+import { createUsdaSelection, portionDescription } from '../utils/usdaSelection.js';
 const emptyNutrients = { calories: '', protein: '', sodium: '', potassium: '', phosphorus: '' };
 export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profile = {}, recipe = null, details = null, accessToken = null, autoStart = false, entries = [], date, mealReviews = {}, onReviewMeal, onSignIn, onClose, onSaveMeal, onAddFood }) {
   const [mode,setMode]=useState('choose');
@@ -56,8 +58,16 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
   const [usdaSource, setUsdaSource] = useState('');
   const searchVersion = useRef(0);
   const [searching, setSearching] = useState(false);
-  function clearMatches() { searchVersion.current++; setCandidates([]); setUsdaFood(null); setGrams(''); setSearching(false); }
+  const foodSelection = useRef(null);
+  if (!foodSelection.current) foodSelection.current = createUsdaSelection({
+    onStart: () => { setUsdaFood(null); setGrams(''); setSearching(true); setMessage('Loading USDA food details…'); },
+    onFood: data => { setUsdaFood(data.food); setUsdaSource(data.provenance?.live ? 'USDA live food data' : 'USDA public-download snapshot'); setMessage('Confirm the source portion or measured grams before saving.'); },
+    onError: setMessage,
+    onEnd: () => setSearching(false),
+  });
+  function clearMatches() { foodSelection.current.cancel(); searchVersion.current++; setCandidates([]); setUsdaFood(null); setGrams(''); setSearching(false); }
   async function searchUsda(query) {
+    foodSelection.current.cancel();
     const version = ++searchVersion.current;
     const sessionGeneration = generation.current;
     setSearching(true); setCandidates([]); setUsdaFood(null); setGrams('');
@@ -80,7 +90,7 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
     const sessionGeneration = ++generation.current;
     setConversation([]); setMealTime(''); clearMatches(); setAvailable(false); setDraft(null); setTranscript(''); setRecording(false); setPaused(false); setPending(false);
     fetch('/api/voice-status', { signal: AbortSignal.timeout(15000), headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} }).then(response => response.json()).then(data => { if (alive.current && generation.current === sessionGeneration) { setAvailable(data.available === true); setMessage(data.available ? 'Choose an option or start talking.' : (data.message || data.error?.message || 'Sign in with a verified account to use AI voice. Manual logging is always available.')); } }).catch(() => { if (alive.current && generation.current === sessionGeneration) setMessage('Could not check AI voice. Reload to retry, or type and create a manual draft.'); });
-    return () => { alive.current = false; generation.current++; cancelled.current = true; clearTimeout(timer.current); stopMeter(); if (recorder.current && recorder.current.state !== 'inactive') recorder.current.stop(); stream.current?.getTracks().forEach(track => track.stop()); window.speechSynthesis?.cancel(); };
+    return () => { foodSelection.current.cancel(); alive.current = false; generation.current++; cancelled.current = true; clearTimeout(timer.current); stopMeter(); if (recorder.current && recorder.current.state !== 'inactive') recorder.current.stop(); stream.current?.getTracks().forEach(track => track.stop()); window.speechSynthesis?.cancel(); };
   }, [accessToken]);
   function speak(text) { if (speech && window.speechSynthesis) { window.speechSynthesis.cancel(); window.speechSynthesis.speak(new SpeechSynthesisUtterance(text)); } }
   function navigate(command) {
@@ -98,7 +108,8 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
       const response = await fetch('/api/voice', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) }, body: JSON.stringify({...payload, ...(!recipe ? {conversation:liveConversation || conversation,meal} : {})}), signal: AbortSignal.timeout(60000) });
       const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || 'Voice request failed.');
       if (!alive.current || generation.current !== sessionGeneration) return;
-      setTranscript(''); setNutrients(emptyNutrients);
+      setTranscript(existing => transcriptAfterInterpretation({ recipe:!!recipe, intent:data.draft.intent, recognized:data.transcript, audio:!!payload.audio, existing })); setNutrients(emptyNutrients);
+      if (recipe && data.draft.intent === 'unknown') setTyping(true);
       if (!recipe) {
         const answer={role:'user',content:data.transcript,source:payload.audio?'voice':'typed',at:new Date().toISOString()};
         const question={role:'assistant',content:reply,source:'assistant',at:new Date().toISOString()};
@@ -232,13 +243,13 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
       <label>Cookbook recipe<select disabled={pending || recording || liveBusy} value={draft.recipeId || ''} onChange={event => { setDraft({ ...draft, recipeId:event.target.value || null }); clearMatches(); }}><option value="">Outside food — USDA match or label</option>{recipes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       {!draft.recipeId && <>
         <label>Food name<input disabled={pending || recording || liveBusy} maxLength={120} value={draft.foodName} onChange={event => { setDraft({ ...draft,foodName:event.target.value }); clearMatches(); }} /></label>
-        <label>Nutrition source<select disabled={pending || recording || liveBusy} value={outsideMode} onChange={event => setOutsideMode(event.target.value)}><option value="usda">USDA food match</option><option value="label">My nutrition label</option></select></label>
+        <label>Nutrition source<select disabled={pending || recording || liveBusy} value={outsideMode} onChange={event => { foodSelection.current.cancel(); setSearching(false); setOutsideMode(event.target.value); }}><option value="usda">USDA food match</option><option value="label">My nutrition label</option></select></label>
         {outsideMode === 'usda' ? <>
           <button type="button" disabled={pending || recording || liveBusy || searching || !draft.foodName.trim()} onClick={() => searchUsda(draft.foodName)}>Search USDA</button>
           {searching && <p role="status">Searching USDA source…</p>}
-          {!!candidates.length && <div className="voice-actions" aria-label="USDA food candidates">{candidates.map(food => <button type="button" key={food.fdcId} disabled={pending || recording || liveBusy} aria-pressed={usdaFood?.fdcId === food.fdcId} onClick={() => { setUsdaFood(food); setGrams(''); }}><strong>{food.description}</strong> · {food.dataType} · FDC {food.fdcId}</button>)}</div>}
+          {!!candidates.length && <div className="voice-actions" aria-label="USDA food candidates">{candidates.map(food => <button type="button" key={food.fdcId} disabled={pending || recording || liveBusy} aria-pressed={usdaFood?.fdcId === food.fdcId} onClick={() => foodSelection.current.select(food)}><strong>{food.description}</strong> · {food.dataType} · FDC {food.fdcId}</button>)}</div>}
           {usdaFood && <><p>{usdaSource}. Match and portion are estimates; actual brands and preparation can differ.</p><a href={`https://fdc.nal.usda.gov/food-details/${usdaFood.fdcId}/nutrients`} target="_blank" rel="noreferrer noopener">View USDA source</a>
-            {!!usdaFood.portions?.length && <label>Choose a USDA household portion per serving<select disabled={pending || recording || liveBusy} defaultValue="" key={usdaFood.fdcId} onChange={event => { if (event.target.value !== '') setGrams(String(usdaFood.portions[Number(event.target.value)].gramWeight)); }}><option value="">Choose the portion you ate</option>{usdaFood.portions.map((portion,index) => <option value={index} key={index}>{formatAmount(portion.amount,2)} {portion.description || portion.modifier || portion.unit} ({formatAmount(portion.gramWeight,2)} g)</option>)}</select></label>}
+            {!!usdaFood.portions?.length && <label>Choose a USDA household portion per serving<select disabled={pending || recording || liveBusy} defaultValue="" key={usdaFood.fdcId} onChange={event => { if (event.target.value !== '') setGrams(String(usdaFood.portions[Number(event.target.value)].gramWeight)); }}><option value="">Choose the portion you ate</option>{usdaFood.portions.map((portion,index) => <option value={index} key={index}>{formatAmount(portion.amount,2)} {portionDescription(portion)} ({formatAmount(portion.gramWeight,2)} g)</option>)}</select></label>}
             <label>Grams per serving<input disabled={pending || recording || liveBusy} type="number" min="0.01" max="10000" step="0.01" value={grams} onChange={event => setGrams(event.target.value)} /></label>
             <p>Total eaten: {grams ? formatAmount(Number(grams)*Number(draft.servings),2) : 'Unknown'} g</p>
             <p>{Object.keys(emptyNutrients).map(key => `${key}: ${formatAmount(grams && typeof usdaFood.nutrients?.[key] === 'number' ? usdaFood.nutrients[key]*Number(grams)/100*Number(draft.servings) : null,2)} ${key === 'calories' ? 'kcal' : key === 'protein' ? 'g' : 'mg'}`).join(' · ')}</p><p>Missing nutrients remain unknown; they are never treated as zero.</p>
