@@ -1,3 +1,4 @@
+import { patientPageFromHash, writePatientPage } from './utils/patientNavigation';
 import {
   BookOpen,
   Mic,
@@ -65,7 +66,7 @@ function loadInitialState(rawOverride) {
 }
 
 export default function App() {
-  const [authPage, setAuthPage] = useState(() => {const hash=window.location.hash.slice(1);const pending=captureCareInvitation();if(hash.startsWith('care-invite/'))return 'care-invite';if(/[?&](code|error)=/.test(window.location.search))return pending?'care-invite':'signin';return ['how-it-works','signin','signup','rd-signin'].includes(hash)?hash:'home';});
+  const [authPage, setAuthPage] = useState(() => {const hash=window.location.hash.slice(1);if(patientPageFromHash(window.location.hash))return 'signin';const pending=captureCareInvitation();if(hash.startsWith('care-invite/'))return 'care-invite';if(/[?&](code|error)=/.test(window.location.search))return pending?'care-invite':'signin';return ['how-it-works','signin','signup','rd-signin'].includes(hash)?hash:'home';});
   function navigateAuth(page) {
     setAuthPage(page);
     try{if(page==='rd-signin')sessionStorage.setItem('renalsync-login-destination','rd');else if(page!=='google')sessionStorage.removeItem('renalsync-login-destination');}catch{}
@@ -88,7 +89,7 @@ export default function App() {
   const recipes = useMemo(()=>[...baseRecipes,...customRecipes],[customRecipes]);
   const recipeDetails = useMemo(()=>({...baseRecipeDetails,...customRecipeDetails}),[customRecipeDetails]);
   const [importOpen,setImportOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("today");
+  const [activeTab, setActiveTab] = useState(() => patientPageFromHash(window.location.hash) || "today");
   const [profile, setProfile] = useState(initial.profile);
   const [entries, setEntries] = useState(initial.entries);
   const [dayRecords, setDayRecords] = useState(initial.dayRecords || {});
@@ -104,12 +105,15 @@ export default function App() {
   function applyRecord(record){setProfile(normalizeProfileDraft(record.profile));setEntries(normalizeEntryOrder(record.entries));setDayRecords(record.dayRecords||{});setCustomRecipes(record.customRecipes||[]);setCustomRecipeDetails(record.customRecipeDetails||{});}
   async function connectSession(session){
     const epoch=++sessionEpoch.current;cloud.current=null;setCloudReady(false);setPendingCloud(null);setCareSession(session);setCareInvites(0);setVoiceOpen(false);setSharedRecord(null);setSharedIdentity('local');
-    if(!session){setActiveTab('today');applyRecord({profile:defaultProfile,entries:[],dayRecords:{}});return;}
+    if(!session){if(patientPageFromHash(window.location.hash))window.history.replaceState(null,'',window.location.pathname+window.location.search+'#signin');setActiveTab('today');applyRecord({profile:defaultProfile,entries:[],dayRecords:{}});return;}
+    const requestedPage = patientPageFromHash(window.location.hash);
+    if(requestedPage)setActiveTab(requestedPage);
     setSyncStatus('Loading your private cloud record…');
     try{const row=await session.client.own();if(epoch!==sessionEpoch.current)return;const record=row?.record||{profile:defaultProfile,entries:[],dayRecords:{}};
       cloud.current={client:session.client,version:row?.updated_at||null,owner:session.account.id,epoch};applyRecord(record);setCloudReady(true);setSyncStatus('Your changes save automatically.');
       let rdRequested=authPage==='rd-signin';try{rdRequested ||= sessionStorage.getItem('renalsync-login-destination')==='rd';sessionStorage.removeItem('renalsync-login-destination');}catch{}
       if(rdRequested){try{const shared=await session.client.shared();if(epoch!==sessionEpoch.current)return;setActiveTab('rd');}catch{if(epoch===sessionEpoch.current)setActiveTab('today');}}
+      if(!rdRequested){const page=patientPageFromHash(window.location.hash)||'today';setActiveTab(page);writePatientPage(page,window,true);}
       try{const draft=JSON.parse(localStorage.getItem('renalsync-pending:'+session.account.id));if(draft?.record)setPendingCloud(draft);}catch{}
     }catch(error){if(epoch===sessionEpoch.current)setSyncStatus(error.message);}
   }
@@ -196,7 +200,7 @@ export default function App() {
     if (!await persist(profile, next)) return false;
     setEntries(next);
     setMealDialog({ open: false, recipeId: null, initialMeal: null });
-    setActiveTab("today");
+    navigateTo("today");
   };
 
   const addCustomFood = async ({ customFood, servings, meal, time, conversation, inputMethod }) => {
@@ -215,7 +219,7 @@ export default function App() {
     }];
     if (!await persist(profile, next)) return false;
     setEntries(next);
-    setActiveTab("today");
+    navigateTo("today");
     return true;
   };
 
@@ -265,7 +269,7 @@ export default function App() {
     const next = [...entries, ...nextItems];
     if (!await persist(profile, next)) return false;
     setEntries(next);
-    setActiveTab("today");
+    navigateTo("today");
   };
 
   const openRecipeDetails = (recipeOrEntry, returnTab = "today") => {
@@ -291,9 +295,26 @@ export default function App() {
   };
 
   const navigateTo = (tab) => {
+    if(patientPageFromHash('#patient/'+tab))writePatientPage(tab);
     setActiveTab(tab);
+    if(tab !== activeTab)setVoiceOpen(false);
+    setCareOpen(false); setImportOpen(false);
+    window.scrollTo(0, 0);
     if (tab !== "recipe-detail") setDetailView(null);
   };
+
+  useEffect(() => {
+    const restorePage = () => {
+      const page = patientPageFromHash(window.location.hash);
+      setActiveTab(current => current === 'rd' ? current : page || 'today');
+      setDetailView(null); setVoiceOpen(false); setCareOpen(false); setImportOpen(false);
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener('popstate', restorePage);
+    window.addEventListener('hashchange', restorePage);
+    return () => { window.removeEventListener('popstate', restorePage); window.removeEventListener('hashchange', restorePage); };
+  }, []);
+  useEffect(() => { if (activeTab !== 'today') setVoiceOpen(false); }, [activeTab]);
 
   const isTabActive = (tab) => activeTab === tab
     || (activeTab === "recipe-detail" && detailView?.returnTab === tab);
@@ -308,10 +329,10 @@ export default function App() {
       <header className="topbar">
         <button className="logo-button" type="button" onClick={() => navigateTo("today")}><Logo /></button>
         <nav aria-label="Primary navigation">
-          <button className={isTabActive("today") ? "active" : ""} type="button" onClick={() => navigateTo("today")}><CalendarDays /> Today</button>
-          <button className={isTabActive("planner") ? "active" : ""} type="button" onClick={() => navigateTo("planner")}><Utensils /> Plan</button>
-          <button className={isTabActive("recipes") ? "active" : ""} type="button" onClick={() => navigateTo("recipes")}><BookOpen /> Recipes</button>
-          <button className={activeTab === "history" ? "active" : ""} type="button" onClick={() => navigateTo("history")}><History /> History</button>
+          <button aria-current={isTabActive("today") ? "page" : undefined} className={isTabActive("today") ? "active" : ""} type="button" onClick={() => navigateTo("today")}><CalendarDays /> Today</button>
+          <button aria-current={isTabActive("planner") ? "page" : undefined} className={isTabActive("planner") ? "active" : ""} type="button" onClick={() => navigateTo("planner")}><Utensils /> Plan</button>
+          <button aria-current={isTabActive("recipes") ? "page" : undefined} className={isTabActive("recipes") ? "active" : ""} type="button" onClick={() => navigateTo("recipes")}><BookOpen /> Recipes</button>
+          <button aria-current={isTabActive("history") ? "page" : undefined} className={isTabActive("history") ? "active" : ""} type="button" onClick={() => navigateTo("history")}><History /> History</button>
           <button className={activeTab === "rd" ? "active" : ""} type="button" onClick={() => navigateTo("rd")}><BookOpen /> RD dashboard</button>
           <button type="button" onClick={() => setProfileOpen(true)}><CircleUserRound /> Profile</button>
         </nav>
@@ -320,13 +341,13 @@ export default function App() {
 
       {storageError && !mealDialog.open && !customDialog && !profileOpen && <p className="storage-alert" role="alert">{storageError}</p>}
       {careInvites>0&&activeTab!=='rd'&&!careOpen&&<div className="care-invite-banner"><strong>{careInvites} care invitation{careInvites===1?'':'s'}</strong><span>Review who would like to connect with you.</span><button onClick={()=>{setCareOpen(true);window.scrollTo(0,0);}}>Review invitation</button></div>}
-      <section className="assist-launch" aria-label="Food logging tools" hidden={activeTab==='rd'}>
-        {!voiceOpen && <div className="voice-feature"><div className="voice-feature-icon"><Mic size={30} /></div><div className="voice-feature-copy"><span className="feature-eyebrow">YOUR VOICE, LESS TYPING</span><h2>Say it. Review it. Log it.</h2><p>Tell us what you ate, or follow a recipe hands-free.</p></div><button className="voice-feature-button" type="button" aria-expanded={voiceOpen} onClick={()=>setVoiceOpen(!voiceOpen)}><Mic size={20} />{voiceOpen?'Close voice assistant':'Voice Assistant'}<ChevronRight size={20} /></button></div>}
-        <div className="assist-secondary"><button type="button" onClick={()=>setUsdaDialog(true)}>Find a USDA food</button><button type="button" onClick={()=>setCareOpen(!careOpen)}>{careSession ? "Account & care sharing" : "Sign in / Create account"}</button><button type="button" onClick={()=>setImportOpen(!importOpen)}>Import recipe</button></div>
+      <section className="assist-launch" aria-label="Page tools" hidden={activeTab==='rd'}>
+        {activeTab === "today" && !voiceOpen && <div className="voice-feature"><div className="voice-feature-icon"><Mic size={30} /></div><div className="voice-feature-copy"><span className="feature-eyebrow">YOUR VOICE, LESS TYPING</span><h2>Say it. Review it. Log it.</h2><p>Tell us what you ate, or follow a recipe hands-free.</p></div><button className="voice-feature-button" type="button" aria-expanded={voiceOpen} onClick={()=>setVoiceOpen(!voiceOpen)}><Mic size={20} />{voiceOpen?'Close voice assistant':'Voice Assistant'}<ChevronRight size={20} /></button></div>}
+        <div className="assist-secondary">{activeTab === "today" && <button type="button" onClick={()=>setUsdaDialog(true)}>Find a USDA food</button>}<button type="button" onClick={()=>setCareOpen(!careOpen)}>{careSession ? "Account & care sharing" : "Sign in / Create account"}</button>{activeTab === "recipes" && <button type="button" onClick={()=>setImportOpen(!importOpen)}>Import recipe</button>}</div>
       </section>
       {importOpen && <RecipeImport onClose={()=>setImportOpen(false)} onImport={async({recipe,details})=>{const nextRecipes=[...customRecipes,recipe],nextDetails={...customRecipeDetails,[recipe.id]:details};if(!await persist(profile,entries,dayRecords,{customRecipes:nextRecipes,customRecipeDetails:nextDetails}))return false;setCustomRecipes(nextRecipes);setCustomRecipeDetails(nextDetails);navigateTo('recipes');return true;}} />}
 
-      {voiceOpen && <VoiceAssistant profile={profile} recipeDetails={recipeDetails} onSaveMeal={saveVoiceMeal} autoStart key={`${careSession?.account?.id || "local"}-${today}`} entries={entries} date={today} mealReviews={dayRecords[today]?.mealReviews || {}} onReviewMeal={reviewMeal} onSignIn={()=>{setCareOpen(true);setTimeout(()=>document.getElementById("care-connection-title")?.scrollIntoView({behavior:"smooth",block:"start"}),0);}} onClose={()=>setVoiceOpen(false)} accessToken={careSession?.accessToken} recipes={recipes} recipe={detailView?recipesById[detailView.recipeId]:null} details={detailView?recipeDetails[detailView.recipeId]:null} onAddFood={payload=>payload.recipeId?addRecipes([payload]):addCustomFood(payload)} />}
+      {activeTab === "today" && voiceOpen && <VoiceAssistant profile={profile} recipeDetails={recipeDetails} onSaveMeal={saveVoiceMeal} autoStart key={`${careSession?.account?.id || "local"}-${today}`} entries={entries} date={today} mealReviews={dayRecords[today]?.mealReviews || {}} onReviewMeal={reviewMeal} onSignIn={()=>{setCareOpen(true);setTimeout(()=>document.getElementById("care-connection-title")?.scrollIntoView({behavior:"smooth",block:"start"}),0);}} onClose={()=>setVoiceOpen(false)} accessToken={careSession?.accessToken} recipes={recipes} recipe={detailView?recipesById[detailView.recipeId]:null} details={detailView?recipeDetails[detailView.recipeId]:null} onAddFood={payload=>payload.recipeId?addRecipes([payload]):addCustomFood(payload)} />}
       {activeTab === "today" && <TodayView
         profile={profile}
         entries={todayEntries}
