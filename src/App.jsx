@@ -75,7 +75,7 @@ export default function App() {
     window.scrollTo(0, 0);
   }
   useEffect(() => {
-    const restore = () => { const hash = window.location.hash.slice(1); if(hash.startsWith('care-invite/')){captureCareInvitation();setAuthPage('care-invite');}else setAuthPage(['how-it-works','signin','signup','rd-signin'].includes(hash)?hash:'home'); };
+    const restore = () => { const hash = window.location.hash.slice(1); if(patientPageFromHash(window.location.hash)){setAuthPage('signin');}else if(hash.startsWith('care-invite/')){captureCareInvitation();setAuthPage('care-invite');}else setAuthPage(['how-it-works','signin','signup','rd-signin'].includes(hash)?hash:'home'); };
     window.addEventListener('popstate', restore);
     window.addEventListener('hashchange', restore);
     return () => { window.removeEventListener('popstate', restore); window.removeEventListener('hashchange', restore); };

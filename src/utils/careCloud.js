@@ -107,9 +107,13 @@ export function createCareCloud(config, fetcher = fetch) {
       catch(error){if(!this.accessToken())throw error;throw new Error('Could not complete the invitation. Use the invited, verified email; check expiration and try again.');}
     },
     async sendInvitationEmail(id) {
+      const requestGeneration=generation;
       const token=this.accessToken();if(!token)throw new Error('Please sign in again.');
       const response=await fetcher('/api/care-invitation-email',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({id}),credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(30000)});
-      const result=await response.json();if(!response.ok)throw new Error(result.error || 'Email was not sent.');return result;
+      const result=await response.json();
+      if(disposed)throw new Error('Cloud connection was closed.');
+      if(generation!==requestGeneration)throw new Error('Account changed. Please retry.');
+      if(!response.ok)throw new Error(result.error || 'Email was not sent.');return result;
     },
     async phoneAvailable() {
       const settings=await request('/auth/v1/settings',{authenticated:false});
