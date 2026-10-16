@@ -1,8 +1,8 @@
-import {nutrientCoverage} from './nutrition.js';
+import {nutrientCoverage,detailedNutritionFor} from './nutrition.js';
 import {NUTRIENT_KEYS,normalizeNutrientPreferences} from './nutrientCatalog.js';
 const scaled=(food,factor)=>Object.fromEntries(NUTRIENT_KEYS.map(k=>[k,typeof food[k]==='number'&&Number.isFinite(food[k])?food[k]*factor:null]));
 export function createFoodGuide({recipes=[],details={},getContext=()=>({}),fetcher=fetch,onRecipe=()=>{},id=()=>crypto.randomUUID()}){
- const sources=new Map(),foods=new Map();let selected=null;let searches=0;
+ const sources=new Map(),foods=new Map(),inspected=new Map();let selected=null;let searches=0;
  const remember=value=>{const source_ref=id();sources.set(source_ref,value);return{source_ref,name:value.name,portion:value.servingDescription,nutrition:value.method==='unmeasured'?'unknown':'source-based estimate',instruction:'Read the matched food and portion to the user before preparing a meal. Never describe an estimate as measured.'};};
  async function run(name,args){
   if(name==='search_foods'){
@@ -12,15 +12,18 @@ export function createFoodGuide({recipes=[],details={},getContext=()=>({}),fetch
    let matches=await search(q),relaxed=false;
    const shorter=q.toLowerCase().replace(/\b(plain|without|with|salt|unsalted|please|some|a|the)\b/g,' ').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim();
    if(!matches.length&&shorter&&shorter!==q.toLowerCase()&&searches<8){matches=await search(shorter);relaxed=true;}
-   return {relaxed,foods:matches.map(f=>{foods.set(String(f.fdcId),f);return{fdc_id:f.fdcId,name:f.description,portions:(f.portions||[]).slice(0,10)};}),instruction:'These are candidates, not confirmed matches. A relaxed search may differ in salt or preparation. Ask which preparation/brand fits. Use inspect_food for portions. No match is acceptable; never force a cookbook recipe. After two unsuccessful queries for one food, clarify or retain unknown nutrients.'};
+   return {relaxed,foods:matches.map(f=>{foods.set(String(f.fdcId),f);inspected.delete(String(f.fdcId));return{fdc_id:f.fdcId,name:f.description,portions:(f.portions||[]).slice(0,10)};}),instruction:'These are candidates, not confirmed matches. A relaxed search may differ in salt or preparation. Ask which preparation/brand fits. Use inspect_food for portions. No match is acceptable; never force a cookbook recipe. After two unsuccessful queries for one food, clarify or retain unknown nutrients.'};
   }
   if(name==='inspect_food'){
-   if(!foods.has(String(args.fdc_id)))throw Error('Search for this food first.');
-   const r=await fetcher('/api/fdc-food?fdcId='+encodeURIComponent(args.fdc_id),{signal:AbortSignal.timeout(15000)});const data=await r.json();if(!r.ok||!data.food||data.food.basis!=='per100g')throw Error('Food details unavailable.');foods.set(String(args.fdc_id),data.food);
+   const key=String(args.fdc_id),candidate=foods.get(key);inspected.delete(key);
+   if(!candidate)throw Error('Search for this food first.');
+   const r=await fetcher('/api/fdc-food?fdcId='+encodeURIComponent(args.fdc_id),{signal:AbortSignal.timeout(15000)});const data=await r.json();
+   if(!r.ok||!data.food||data.food.basis!=='per100g'||String(data.food.fdcId)!==key||foods.get(key)!==candidate)throw Error('Food details unavailable or source changed. Search and inspect again.');
+   foods.set(key,data.food);inspected.set(key,data.food);
    return {fdc_id:data.food.fdcId,name:data.food.description,portions:data.food.portions.map((p,index)=>({index,...p})),instruction:'Use a source household portion or the user stated gram weight. Do not invent grams from a bowl or plate.'};
   }
   if(name==='match_food'){
-   const food=foods.get(String(args.fdc_id));if(!food)throw Error('Search and inspect the food first.');
+   const food=foods.get(String(args.fdc_id));if(!food||inspected.get(String(args.fdc_id))!==food)throw Error('Search and inspect the food first.');
    let grams=args.grams;
    if(grams===null){const portion=Number.isInteger(args.portion_index)?food.portions?.[args.portion_index]:null;if(!portion||!(args.quantity>0))throw Error('Ask for a supported household portion or weight.');grams=portion.gramWeight*args.quantity;}
    if(typeof grams!=='number'||!Number.isFinite(grams)||grams<=0||grams>10000)throw Error('Invalid eaten weight.');
@@ -29,8 +32,16 @@ export function createFoodGuide({recipes=[],details={},getContext=()=>({}),fetch
   if(name==='usual_foods'){
    const {entries=[]}=getContext();const seen=new Set();const recent=[];
    for(const entry of [...entries].reverse()){
-    const raw=entry.source==='custom'?entry.customFood:recipes.find(r=>r.id===entry.recipeId);if(!raw?.name||seen.has(raw.name))continue;seen.add(raw.name);
-    const food={...raw,...scaled(raw,entry.servings||1),servingDescription:`Previously: ${raw.servingDescription||entry.servings+' serving(s)'}`,method:raw.method||'recipe-estimate'};
+    const raw=entry.source==='custom'?entry.customFood:recipes.find(r=>r.id===entry.recipeId);if(!raw?.name)continue;
+    const servings=entry.servings??1;if(typeof servings!=='number'||!Number.isFinite(servings)||servings<=0)continue;
+    // Deduplicate only identical source snapshots and portions, never display names.
+    // Sorted object keys keep equivalent snapshots independent of property order.
+    const identity=JSON.stringify([entry.source,entry.recipeId,raw,servings],(_key,value)=>value&&typeof value==='object'&&!Array.isArray(value)?Object.fromEntries(Object.keys(value).sort().map(key=>[key,value[key]])):value);
+    if(seen.has(identity))continue;seen.add(identity);
+    const nutrients=detailedNutritionFor(raw,servings);
+    const food={...raw,...nutrients,servingDescription:`Previously: ${servings} × ${raw.servingDescription||'source serving'}`,method:raw.method||'recipe-estimate'};
+    if(raw.method==='unpackaged'&&raw.baseEstimate)food.baseEstimate={...raw.baseEstimate,...nutrients};
+    if(typeof raw.grams==='number'&&Number.isFinite(raw.grams)&&raw.grams>0)food.grams=raw.grams*servings;
     recent.push({...remember(food),previousMeal:entry.meal});if(recent.length===4)break;
    }
    return {foods:recent,instruction:'These are previous records, not today intake. Ask whether food, preparation and quantity are the same and already eaten before reuse. Changed portions require a fresh match.'};

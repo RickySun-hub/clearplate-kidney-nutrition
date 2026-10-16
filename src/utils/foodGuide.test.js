@@ -22,3 +22,36 @@ test('relaxed search discloses differences and caps repeated lookups',async()=>{
  const result=await guide.run('search_foods',{query:'plain egg without salt'});assert.equal(result.relaxed,true);assert.equal(result.foods.length,1);assert.deepEqual(queries,['plain egg without salt','egg']);
  for(let i=0;i<10;i++)await guide.run('search_foods',{query:'missing'});assert.equal(queries.length,8);assert.match((await guide.run('search_foods',{query:'egg'})).instruction,/limit reached/);
 });
+
+test('recent suggestions retain same-name source and portion alternatives without mixing their nutrition',async()=>{
+ const first={name:'Rice',fdcId:10,method:'usda-estimate',sourceRelease:'A',grams:100,servingDescription:'1 cup',protein:2,potassium:null};
+ const second={...first,fdcId:20,sourceRelease:'B',protein:4,potassium:0};
+ const entries=[{source:'custom',customFood:first,servings:1},{source:'custom',customFood:second,servings:1},{source:'custom',customFood:second,servings:2},{source:'custom',customFood:{...second},servings:2}];
+ const guide=createFoodGuide({getContext:()=>({entries})});const result=await guide.run('usual_foods',{});
+ assert.equal(result.foods.length,3);
+ const resolved=result.foods.map(f=>guide.resolve(f.source_ref));
+ assert.deepEqual(resolved.map(f=>[f.fdcId,f.sourceRelease,f.protein,f.potassium]),[[20,'B',8,0],[20,'B',4,0],[10,'A',2,null]]);
+ assert.equal(resolved[0].grams,200);assert.match(result.foods[0].portion,/2 × 1 cup/);
+ assert.equal(first.grams,100);assert.equal(second.protein,4);
+});
+
+test('USDA matching requires successful identity-checked inspection and fresh searches invalidate inspection',async()=>{
+ let returned=food;let ok=true;
+ const guide=createFoodGuide({fetcher:async url=>({ok,json:async()=>url.includes('fdc-search')?{foods:[food]}:{food:returned}})});
+ const match=()=>guide.run('match_food',{fdc_id:1,grams:50});
+ await guide.run('search_foods',{query:'egg'});assert.equal((await match()).status,'needs_clarification');
+ returned={...food,fdcId:2};assert.equal((await guide.run('inspect_food',{fdc_id:1})).status,'needs_clarification');assert.equal((await match()).status,'needs_clarification');
+ returned=food;await guide.run('inspect_food',{fdc_id:1});const valid=await match();assert.equal(guide.resolve(valid.source_ref).fdcId,1);
+ await guide.run('search_foods',{query:'egg'});assert.equal((await match()).status,'needs_clarification');
+ await guide.run('inspect_food',{fdc_id:1});ok=false;await guide.run('inspect_food',{fdc_id:1});assert.equal((await match()).status,'needs_clarification');
+ assert.equal(guide.resolve(valid.source_ref).fdcId,1,'previously confirmed reference remains intact');
+});
+
+test('legacy estimate reuse scales canonical nutrients and grams once, including subsequent reuse',async()=>{
+ const raw={name:'Soup',method:'unpackaged',protein:12,baseEstimate:{protein:10,potassium:null},grams:100,servingDescription:'1 bowl'};
+ let entries=[{source:'custom',customFood:raw,servings:2}];const guide=createFoodGuide({getContext:()=>({entries})});
+ const reused=guide.resolve((await guide.run('usual_foods',{})).foods[0].source_ref);
+ assert.equal(reused.protein,20);assert.equal(reused.baseEstimate.protein,20);assert.equal(reused.grams,200);assert.equal(reused.potassium,null);
+ entries=[{source:'custom',customFood:reused,servings:.5}];const again=guide.resolve((await guide.run('usual_foods',{})).foods[0].source_ref);
+ assert.equal(again.protein,10);assert.equal(again.baseEstimate.protein,10);assert.equal(again.grams,100);assert.equal(raw.baseEstimate.protein,10);
+});
