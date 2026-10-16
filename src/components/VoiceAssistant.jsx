@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { parseNutrientValues, formatAmount } from '../utils/nutrition';
 import './VoiceAssistant.css';
 import { MEALS, dueMeals, nextMeal, mealQuestion, conversationText } from '../utils/mealConversation.js';
-import { Mic, Pause, Play, ArrowUp, X, Utensils, BookOpen } from 'lucide-react';
+import { X } from 'lucide-react';
 import LiveVoice from './LiveVoice';
+import VoiceOrb from './VoiceOrb';
 import { recordingToWav } from '../utils/voiceAudio';
 import { transcriptAfterInterpretation } from '../utils/voiceTranscript.js';
 import { createUsdaSelection, portionDescription } from '../utils/usdaSelection.js';
@@ -37,6 +38,7 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
     } catch {setMessage('Could not save the meal status. Please retry.');} finally {turnBusy.current=false;setPending(false);}
   }
   const [available, setAvailable] = useState(false);
+  const [voiceChecked,setVoiceChecked]=useState(false);
   const [message, setMessage] = useState('Checking voice availability…');
   const [transcript, setTranscript] = useState('');
   const [draft, setDraft] = useState(null);
@@ -45,10 +47,11 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
   const [recording, setRecording] = useState(false);
   const [paused, setPaused] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [levels, setLevels] = useState(Array(36).fill(4));
+  const [captureConnecting,setCaptureConnecting]=useState(false),[captureError,setCaptureError]=useState(false),[speechPlaying,setSpeechPlaying]=useState(false);
+  const captureLock=useRef(false);
   const [typing, setTyping] = useState(false);
-  const audioContext = useRef(null), frame = useRef(null), clock = useRef(null), elapsedRef = useRef(0);
-  function stopMeter() { cancelAnimationFrame(frame.current); clearInterval(clock.current); audioContext.current?.close().catch(() => {}); audioContext.current = null; }
+  const clock = useRef(null), elapsedRef = useRef(0);
+  function stopMeter() { clearInterval(clock.current); }
   const [speech, setSpeech] = useState(false);
   const [step, setStep] = useState(0);
   const [outsideMode, setOutsideMode] = useState('usda');
@@ -87,7 +90,7 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
   useEffect(() => { setStep(0); }, [recipe?.id]);
   useEffect(() => {
     alive.current = true;
-    const sessionGeneration = ++generation.current;
+    const sessionGeneration = ++generation.current;setVoiceChecked(false);
     setConversation([]); setMealTime(''); clearMatches(); setAvailable(false); setDraft(null); setTranscript(''); setRecording(false); setPaused(false); setPending(false);
     (async () => {
       try {
@@ -99,11 +102,11 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
           setAvailable(data.available === true);
           setMessage(data.available ? 'Choose an option or start talking.' : (data.message || data.error?.message || 'Sign in with a verified account to use AI voice. Manual logging is always available.'));
         }
-      } catch { if (alive.current && generation.current === sessionGeneration) setMessage('Could not check AI voice. Reload to retry, or type and create a manual draft.'); }
+      } catch { if (alive.current && generation.current === sessionGeneration) setMessage('Could not check AI voice. Reload to retry, or type and create a manual draft.'); } finally {if(alive.current&&generation.current===sessionGeneration)setVoiceChecked(true);}
     })();
     return () => { foodSelection.current.cancel(); alive.current = false; generation.current++; cancelled.current = true; clearTimeout(timer.current); stopMeter(); if (recorder.current && recorder.current.state !== 'inactive') recorder.current.stop(); stream.current?.getTracks().forEach(track => track.stop()); window.speechSynthesis?.cancel(); };
   }, [sessionId]);
-  function speak(text) { if (speech && window.speechSynthesis) { window.speechSynthesis.cancel(); window.speechSynthesis.speak(new SpeechSynthesisUtterance(text)); } }
+  function speak(text) { if (speech && window.speechSynthesis) { window.speechSynthesis.cancel(); const utterance=new SpeechSynthesisUtterance(text);utterance.onstart=()=>{if(alive.current)setSpeechPlaying(true);};utterance.onend=utterance.onerror=()=>{if(alive.current)setSpeechPlaying(false);};window.speechSynthesis.speak(utterance); } }
   function navigate(command) {
     if (!steps.length) { setMessage('Source cooking instructions are unavailable for this recipe.'); return; }
     const next = command === 'next' ? Math.min(step + 1, steps.length - 1) : command === 'previous' ? Math.max(step - 1, 0) : step;
@@ -143,10 +146,11 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
     finally { turnBusy.current=false; if (alive.current && generation.current === sessionGeneration) setPending(false); }
   }
   async function start() {
+    if(captureLock.current||recording||pending)return;
     window.speechSynthesis?.cancel();
     const sessionGeneration = generation.current;
-    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { setMessage('This browser cannot record audio. Please type instead.'); return; }
-    setPending(true);
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { setCaptureError(true);setMessage('This browser cannot record audio. Please type instead.'); return; }
+    captureLock.current=true;setCaptureConnecting(true);setCaptureError(false);setPending(true);
     try {
       const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       if (!alive.current || generation.current !== sessionGeneration) { audioStream.getTracks().forEach(track => track.stop()); return; }
@@ -157,12 +161,12 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
       capture.onerror = () => {
         if (!alive.current || generation.current !== sessionGeneration) return;
         cancelled.current = true; stopMeter(); audioStream.getTracks().forEach(track => track.stop());
-        setRecording(false); setPaused(false); setPending(false); setLevels(Array(36).fill(4));
+        setRecording(false); setPaused(false); setPending(false);setCaptureError(true);
         setMessage('Recording was interrupted. Nothing was sent. Please try again or type instead.');
       };
       capture.ondataavailable = event => { size += event.data.size; if (size <= 1800000) chunks.push(event.data); else { cancelled.current = true; if (capture.state !== 'inactive') capture.stop(); setMessage('Recording is too large. Try a shorter recording.'); } };
       capture.onstop = async () => {
-        clearTimeout(timer.current); stopMeter(); audioStream.getTracks().forEach(track => track.stop()); if (!alive.current || generation.current !== sessionGeneration) return; setRecording(false); setPaused(false); setLevels(Array(36).fill(4));
+        clearTimeout(timer.current); stopMeter(); audioStream.getTracks().forEach(track => track.stop()); if (!alive.current || generation.current !== sessionGeneration) return; setRecording(false); setPaused(false);
         if (cancelled.current) { setPending(false); return; }
         if (!sendRequested.current) { setPending(false); setMessage('Recording was interrupted. Nothing was sent. Please try again or type instead.'); return; }
         try {
@@ -179,24 +183,11 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
       clock.current = setInterval(() => {
         if (capture.state !== 'recording') return;
         elapsedRef.current += 1; setElapsed(elapsedRef.current);
-        if (elapsedRef.current >= 60) { capture.pause(); setPaused(true); setMessage('60-second limit reached. Send this recording or discard it.'); }
+        if (elapsedRef.current >= 60) { capture.pause();audioStream.getAudioTracks().forEach(track=>{track.enabled=false;});setPaused(true); setMessage('60-second limit reached. Send this recording or discard it.'); }
       }, 1000);
-      try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (AudioContext) {
-          const context = new AudioContext(); audioContext.current = context;
-          const analyser = context.createAnalyser(); analyser.fftSize = 128;
-          context.createMediaStreamSource(audioStream).connect(analyser);
-          const values = new Uint8Array(analyser.frequencyBinCount);
-          const draw = () => {
-            if (capture.state === 'recording') { analyser.getByteFrequencyData(values); setLevels(Array.from({length:36}, (_, i) => Math.max(4, values[i + 2] / 255 * 52))); }
-            frame.current = requestAnimationFrame(draw);
-          };
-          context.resume().catch(() => {}); draw();
-        }
-      } catch { /* Recording works even when audio visualization is unavailable. */ }
-    } catch { stopMeter(); stream.current?.getTracks().forEach(track => track.stop()); if (alive.current && generation.current === sessionGeneration) setMessage('Microphone unavailable or permission declined. Please type instead.'); }
-    finally { if (alive.current && generation.current === sessionGeneration) setPending(false); }
+
+    } catch { stopMeter(); stream.current?.getTracks().forEach(track => track.stop()); if (alive.current && generation.current === sessionGeneration){setCaptureError(true);setMessage('Microphone unavailable or permission declined. Please type instead.');} }
+    finally { captureLock.current=false;if (alive.current && generation.current === sessionGeneration){setCaptureConnecting(false);setPending(false);} }
   }
   async function saveUnknown() {
     if (saving.current || !onAddFood) return;
@@ -230,10 +221,7 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
   }
   return <section className="voice-assistant" aria-label="Voice and typed assistant">
     <header className="voice-heading">{onClose && <button className="voice-close" type="button" aria-label="Close voice assistant" onClick={onClose}><X size={24}/></button>}<h2>{mode==='cook'?'Let’s find something to cook.':mode==='log'?'What did you eat?':'How can I help with your meal?'}</h2><p>Talk naturally. I’ll help with the details.</p>{!accessToken && <button className="voice-sign-in" type="button" onClick={onSignIn}>Sign in or create an account</button>}</header>
-    {!recipe && <div className="voice-intents" aria-label="Choose how to use the assistant">
-      <button type="button" aria-pressed={mode==='log'} disabled={pending} onClick={()=>{setMode('log');if(!liveBusy)setLiveVersion(v=>v+1);}}><Utensils size={26}/><span><strong>Log what I ate</strong><small>Any meal, from anywhere</small></span></button>
-      <button type="button" aria-pressed={mode==='cook'} disabled={pending} onClick={()=>{setMode('cook');if(!liveBusy)setLiveVersion(v=>v+1);}}><BookOpen size={26}/><span><strong>Find something to cook</strong><small>Ideas using what you have</small></span></button>
-    </div>}
+    {!recipe && <details className="voice-options"><summary>Conversation options</summary><label>What would you like to do?<select value={mode} disabled={pending} onChange={e=>{setMode(e.target.value);if(!liveBusy)setLiveVersion(v=>v+1);}}><option value="choose">Talk about a meal</option><option value="log">Log what I ate</option><option value="cook">Find something to cook</option></select></label></details>}
     {!recipe && typing && <div className="voice-conversation">
       <nav aria-label="Meal being discussed">{MEALS.map(m=><button type="button" key={m} aria-pressed={meal===m} disabled={pending || recording || liveBusy} onClick={()=>chooseMeal(m)}>{m}{mealReviews[m] ? ' · reviewed' : entries.some(e=>e.date===date && e.meal===m) ? ' · logged' : ''}</button>)}</nav>
       {!liveBusy && <p className="voice-question" aria-live="polite">{reply}</p>}
@@ -241,13 +229,12 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
       <div className="voice-actions"><button type="button" disabled={pending || recording || liveBusy || !!draft} onClick={()=>finishMeal('reviewed')}>Meal finished</button><button type="button" disabled={pending || recording || liveBusy || !!draft || entries.some(e=>e.date===date && e.meal===meal)} onClick={()=>finishMeal('not-eaten')}>I did not eat this meal</button><button type="button" disabled={pending || recording || liveBusy} onClick={()=>chooseMeal(MEALS[(MEALS.indexOf(meal)+1)%MEALS.length])}>Skip for now</button></div>
     </div>}
     {!liveBusy && (!available || typing || draft) && <p className="voice-status" role="status">{message}</p>}
-    {!recipe && available && <LiveVoice key={`${meal}-${liveVersion}`} accessToken={accessToken} getAccessToken={getAccessToken} meal={meal} mode={mode} recipes={recipes} recipeDetails={recipeDetails} entries={entries} date={date} profile={profile} conversation={conversation} disabled={pending} autoStart={(autoStart && liveVersion===0)||mode!=='choose'} onSaveMeal={onSaveMeal} onBusy={setLiveBusy} onReview={turns=>{setMode('choose');setTyping(true);setConversation(turns);setLiveVersion(v=>v+1);interpret({transcript:"Prepare a draft of the first food described in the conversation. Keep other foods in the transcript for separate review; do not combine foods. Do not invent missing details."},turns);}} />}
-    <div hidden={!recipe} className={`voice-composer ${paused ? 'is-paused' : ''}`}>
-      <button className="voice-mic" type="button" aria-label="Start microphone" disabled={!available || pending || recording} onClick={start}><Mic size={44} strokeWidth={1.8} /></button>
-      <div className="voice-recording-label"><strong>{pending ? 'Please wait…' : recording ? paused ? 'Paused' : 'Listening…' : 'Tap to speak'}</strong><span>{recording ? `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}` : 'Up to 60 seconds'}</span></div>
-      <div className="voice-waveform" aria-hidden="true">{levels.map((height,i)=><span key={i} style={{height:`${height}px`}} />)}</div>
-      {recording && <div className="voice-record-controls"><div><button className="voice-round" type="button" aria-label={paused ? 'Resume recording' : 'Pause recording'} disabled={pending || (paused && elapsed >= 60)} onClick={()=>{if (recorder.current?.state === 'paused') {recorder.current.resume();setPaused(false);setMessage('Listening. Send when you are ready.');} else if (recorder.current?.state === 'recording') {recorder.current.pause();setPaused(true);setMessage('Recording paused. Resume or send when ready.');}}}>{paused ? <Play size={30} /> : <Pause size={30} />}</button><span>{paused?'Resume':'Pause'}</span></div><div><button className="voice-round voice-send" type="button" aria-label="Send recording" onClick={()=>{if (recorder.current && recorder.current.state !== 'inactive') {sendRequested.current=true;setPending(true);recorder.current.stop();}}} disabled={pending}><ArrowUp size={34} /></button><span>Send</span></div></div>}
-    </div>
+    {!recipe && available && <LiveVoice key={`${meal}-${liveVersion}`} accessToken={accessToken} getAccessToken={getAccessToken} meal={meal} mode={mode} recipes={recipes} recipeDetails={recipeDetails} entries={entries} date={date} profile={profile} conversation={conversation} disabled={pending} autoStart={false} onSaveMeal={onSaveMeal} onBusy={setLiveBusy} onReview={turns=>{setMode('choose');setTyping(true);setConversation(turns);setLiveVersion(v=>v+1);interpret({transcript:"Prepare a draft of the first food described in the conversation. Keep other foods in the transcript for separate review; do not combine foods. Do not invent missing details."},turns);}} />}
+    {!recipe&&!available&&<VoiceOrb error={voiceChecked} label={voiceChecked?undefined:'Checking voice availability'} disabled />}
+    {recipe&&<>
+      <VoiceOrb inputStream={recording?stream.current:null} phase={captureConnecting?'connecting':recording?'live':'idle'} muted={paused} processing={pending&&!captureConnecting} speaking={speechPlaying} error={captureError} disabled={!available||pending} onStart={start} onMute={()=>{const capture=recorder.current;if(!capture||paused&&elapsed>=60)return;const next=!paused;if(next)capture.pause();else capture.resume();stream.current?.getAudioTracks().forEach(track=>{track.enabled=!next;});setPaused(next);}} onEnd={()=>{cancelled.current=true;if(captureConnecting){generation.current++;setCaptureConnecting(false);setPending(false);}if(recorder.current&&recorder.current.state!=='inactive')recorder.current.stop();stream.current?.getTracks().forEach(track=>track.stop());}} />
+      {recording&&<button type="button" disabled={pending} onClick={()=>{sendRequested.current=true;setPending(true);recorder.current?.stop();}}>Send recording</button>}
+    </>}
     <div className="voice-underbar"><p>AI voice uses OpenAI. Confirmed food records include your words. Share them with your dietitian when you choose.</p>{recording ? <button type="button" className="voice-text-button" disabled={pending} onClick={()=>{cancelled.current=true;if (recorder.current?.state !== 'inactive') recorder.current?.stop();setMessage('Recording discarded.');}}><X size={16}/>Discard recording</button> : <button type="button" className="voice-text-button" disabled={pending} onClick={()=>setTyping(!typing)}>{typing?'Hide text':'Type instead'}</button>}</div>
     {!recipe && (conversation.some(t=>t.role==='user') || transcript.trim()) && <button type="button" className="voice-text-button" disabled={pending || recording || liveBusy} onClick={saveUnknown}>Confirm & save description · nutrition unknown</button>}
     {(typing || transcript) && <div className="voice-text-entry"><label>Message<textarea maxLength={2000} value={transcript} disabled={pending || recording || liveBusy} onChange={event => setTranscript(event.target.value)} placeholder="Tell me what you ate…" /></label>
