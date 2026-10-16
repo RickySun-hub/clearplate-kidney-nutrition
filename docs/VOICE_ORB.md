@@ -31,3 +31,11 @@ No credentials, backend settings, database/security changes, merge or deployment
 The orb is now an original 260-dot Fibonacci sphere rendered as a static SVG. Depth controls dot size and opacity in restrained teal/slate colors. Only the existing measured audio amplitude scales the container; no idle motion or new animation loop, capture, dependency, or 3D engine was added. Existing reduced-motion and lifecycle safeguards remain intact. Mobile and desktop browser checks passed with real synthetic audio and mocked WebRTC/auth/backend. Full suite: 208 tests passed; production build passed with the existing bundle-size warning.
 
 Screenshots: mobile `libfile_c5ea90cf919481918d8311ee841f99fb`; desktop `libfile_703118df99108191870369d90e64b152`.
+
+## Gradient refinement (not deployed)
+
+General visual reference: [VoiceOrbs Particles Orb](https://github.com/amunozdev/voiceorbs), whose repository identifies an MIT license. No repository code, scripts, assets or dependencies were imported. Our existing original SVG now interpolates cyan/blue through violet to pink by particle position. Depth increases foreground dot size, opacity and color strength; three faint CSS radial gradients supply a restrained glow. The 260 static dots and existing audio-only container transform remain; no extra animation loop or audio lifecycle changes.
+
+Verified the actual app at 390px and 1440px with `browser-voice-orb.mjs`: no horizontal overflow, real synthetic audio amplitude response, explicit microphone capture, mute/end/unmount cleanup and reduced motion all pass. Auth, WebRTC and backend are mocked. Four voice-meter unit tests, build and diff check pass; the existing bundle-size warning remains. Both screenshots visually inspected.
+
+New screenshot Library IDs: mobile `libfile_3331e9abb0808191807290010cabdb35`; desktop `libfile_ab78fd778ebc8191b7460238bdb63d8c`. This visual follow-up preserves the preceding source-identity fix. Neither follow-up is deployed; production remains `d196e83`.

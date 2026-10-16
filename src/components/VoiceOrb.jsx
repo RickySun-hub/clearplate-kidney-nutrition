@@ -8,9 +8,9 @@ const labels={idle:'Ready to talk',connecting:'Connecting',listening:'Listening'
 const particles=Array.from({length:260},(_,index)=>{
  const y=1-2*(index+.5)/260,radius=Math.sqrt(1-y*y),angle=index*Math.PI*(3-Math.sqrt(5));
  const x=Math.cos(angle)*radius,z=Math.sin(angle)*radius,depth=(z+1)/2;
- return {x:100+x*78,y:100+y*78,z,r:.65+depth*1.25,opacity:.16+depth*.72};
+ return {x:100+x*78,y:100+y*78,z,r:.55+depth*1.65,opacity:.12+depth*.83,color:`hsl(${190+((x+y+2)/4)*130} 78% ${64-depth*18}%)`};
 }).sort((a,b)=>a.z-b.z);
-const sphere=<svg viewBox="0 0 200 200" focusable="false" className="voice-orb-particles">{particles.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r={p.r} opacity={p.opacity} fill={p.z>.25?'#34786f':'#8aa7b2'}/>)}</svg>;
+const sphere=<svg viewBox="0 0 200 200" focusable="false" className="voice-orb-particles">{particles.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r={p.r} opacity={p.opacity} fill={p.color}/>)}</svg>;
 export default function VoiceOrb({inputStream,outputStream,phase='idle',muted=false,processing=false,speaking=false,error=false,disabled=false,label,onStart,onMute,onEnd,onActivity}) {
  const activity=useRef(onActivity);activity.current=onActivity;
  const [input,setInput]=useState(0),[output,setOutput]=useState(0),[reduced,setReduced]=useState(()=>globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false);

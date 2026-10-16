@@ -1,6 +1,7 @@
 .voice-orb-stage { display:grid; justify-items:center; padding:24px 0; }
 .voice-orb-space { width:230px;height:230px;display:grid;place-items:center; }
-.voice-orb { width:200px;height:200px;will-change:transform; }
+.voice-orb { position:relative;width:200px;height:200px;will-change:transform; }
+.voice-orb::before { content:"";position:absolute;inset:12%;border-radius:50%;background:radial-gradient(ellipse at 28% 24%,#22d3ee17,transparent 62%),radial-gradient(ellipse at 68% 70%,#ec48991a,transparent 62%),radial-gradient(ellipse at 50% 50%,#8b5cf614,transparent 70%);pointer-events:none; }
 .voice-orb-particles { display:block;width:100%;height:100%;overflow:visible; }
 .voice-orb-label { font-size:17px;line-height:1.5;min-height:26px;margin:4px 0 20px; }
 .voice-orb-controls { display:flex;gap:24px; }
