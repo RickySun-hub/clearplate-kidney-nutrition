@@ -5,7 +5,7 @@ const config = { url: 'https://example.supabase.co', publishableKey: 'sb_publish
 const user = { id: '11111111-1111-4111-8111-111111111111', email: 'example@example.test' };
 function browser(href = 'https://clearplate.example/') {
   const values = new Map();
-  return { location: { href, assign(url) { this.assigned = url; } }, history: { replaceState(a,b,path) { this.path=path; } }, sessionStorage: { getItem: k => values.get(k), setItem: (k,v) => values.set(k,v), removeItem: k => values.delete(k) }, values };
+  return { location: { href, assign(url) { this.assigned = url; } }, history: { replaceState(a,b,path) { this.path=path; } }, sessionStorage: { getItem: k => values.get(k), setItem: (k,v) => values.set(k,v), removeItem: k => values.delete(k) }, values, events: [], dispatchEvent(event) { this.events.push(event.type); } };
 }
 test('Google PKCE validates the account, clears its verifier and never requests Gmail access', async () => {
   const calls=[];
@@ -34,8 +34,31 @@ test('Missing, expired and wrong-origin verifier cannot exchange a callback code
   for(const pending of [null,{verifier:'a'.repeat(64),createdAt:Date.now()-600001,origin:'https://clearplate.example'},{verifier:'a'.repeat(64),createdAt:Date.now(),origin:'https://other.example'}]){
     let called=false;const client=createCareCloud(config,async()=>{called=true;});const tab=browser('https://clearplate.example/?code=untrusted');
     if(pending)tab.values.set('clearplate-google-pkce',JSON.stringify(pending));
-    await assert.rejects(()=>client.finishGoogleSignIn(tab),/expired/);assert.equal(called,false);assert.equal(client.accessToken(),null);assert.equal(tab.values.size,0);
+    await assert.rejects(()=>client.finishGoogleSignIn(tab),/Start Google sign-in again in this tab/);assert.equal(called,false);assert.equal(client.accessToken(),null);assert.equal(tab.values.size,0);
   }
+});
+
+test('Google preserves a dietitian or invitation route through same-origin callbacks',async()=>{
+ const client=createCareCloud(config,async()=>Response.json({external:{google:true}}));const tab=browser('https://nepholio.com/?unused=1#rd-signin');
+ await client.signInWithGoogle(tab);assert.equal(new URL(tab.location.assigned).searchParams.get('redirect_to'),'https://nepholio.com/');
+ tab.location.href='https://nepholio.com/?error=access_denied';await assert.rejects(()=>client.finishGoogleSignIn(tab),/not completed/);assert.equal(tab.history.path,'/#rd-signin');assert.deepEqual(tab.events,['hashchange']);
+});
+test('missing callback state gives origin guidance without exchanging code',async()=>{
+ const client=createCareCloud(config,()=>{throw Error('must not fetch');});const tab=browser('https://nepholio.com/?code=untrusted');
+ await assert.rejects(()=>client.finishGoogleSignIn(tab),/same website.*redirect configuration/);assert.equal(client.account(),null);
+});
+test('duplicate Google clicks do not replace the pending verifier',async()=>{
+ let release;const settings=new Promise(r=>release=r);let calls=0;const client=createCareCloud(config,async()=>{calls++;await settings;return Response.json({external:{google:true}});});const tab=browser();
+ const first=client.signInWithGoogle(tab);const second=client.signInWithGoogle(tab);release();await Promise.all([first,second]);assert.equal(calls,1);assert.ok(tab.location.assigned);
+});
+test('account change or disposal cancels a pending Google redirect',async()=>{
+ for(const cancel of ['clearSession','dispose']){
+  let release;const settings=new Promise(r=>release=r);const client=createCareCloud(config,async()=>{await settings;return Response.json({external:{google:true}});});const tab=browser();
+  const pending=client.signInWithGoogle(tab);client[cancel]();release();await assert.rejects(()=>pending,/Account changed|closed/);assert.equal(tab.location.assigned,undefined);assert.equal(tab.values.size,0);
+ }
+});
+test('return without a callback does not authenticate or exchange a token',async()=>{
+ const client=createCareCloud(config,()=>{throw Error('must not fetch');});assert.equal(await client.finishGoogleSignIn(browser('https://nepholio.com/#rd-signin')),null);assert.equal(client.account(),null);
 });
 test('Disabled Google and declined consent leave no authenticated session',async()=>{
   const client=createCareCloud(config,async()=>Response.json({external:{google:false}}));const tab=browser();

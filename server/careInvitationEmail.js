@@ -12,7 +12,12 @@ export function createInvitationEmailHandler({env=process.env,fetchImpl=fetch}={
    const body=await readVoiceBody(req);
    if(!/^[0-9a-f-]{36}$/i.test(body?.id||''))return res.status(400).json({error:'Invalid invitation.'});
    if(!emailConfigured(env))return res.status(503).json({error:'Email delivery is not configured. Your invitation is saved; use its QR code or copy its link.'});
-   const base=new URL(env.APP_PUBLIC_URL);if(base.protocol!=='https:')throw Error();
+   let base;
+   try {
+    base=new URL(env.APP_PUBLIC_URL);
+    const retired=['myrenalsync.com','www.myrenalsync.com','clearplate-kidney-nutrition.vercel.app'];
+    if(base.protocol!=='https:'||base.username||base.password||base.pathname!=='/'||base.search||base.hash||retired.includes(base.hostname))throw Error();
+   } catch { return res.status(503).json({error:'Invitation links are not configured correctly. Your invitation is saved; use its QR code or copy its link.'}); }
    if(!/^https:\/\/[a-z0-9]+\.supabase\.co$/.test(env.SUPABASE_URL||''))throw Error();
    const r=await fetchImpl(env.SUPABASE_URL+'/rest/v1/rpc/care_invitation_action',{method:'POST',headers:{apikey:env.SUPABASE_ANON_KEY,Authorization:token,'Content-Type':'application/json'},body:JSON.stringify({action:'claim_email',payload:{id:body.id}}),signal:AbortSignal.timeout(10000)});
    if(!r.ok)return res.status(r.status===401?401:400).json({error:'Invitation cannot be sent. Check access, expiration, or wait a minute before retrying.'});

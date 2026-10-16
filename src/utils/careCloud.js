@@ -50,6 +50,7 @@ export function createCareCloud(config, fetcher = fetch, options = {}) {
   let session = null;
   let disposed = false;
   let generation = 0;
+  let googleStarting = false;
   const now = options.now || Date.now;
   const storageKey = `nepholio-auth:${origin}`;
   let storage = options.storage;
@@ -259,15 +260,22 @@ export function createCareCloud(config, fetcher = fetch, options = {}) {
       return settings?.external?.google === true;
     },
     async signInWithGoogle(browser = window) {
+      if (googleStarting) return;
+      googleStarting = true;
+      const authGeneration = generation;
+      try {
       if (!await this.googleAvailable()) throw new Error('Google sign-in is being set up. Please use email for now.');
       const verifier = Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
       const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
       const challenge = btoa(String.fromCharCode(...digest)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
       const redirect = new URL('/', browser.location.href);
-      browser.sessionStorage.setItem('clearplate-google-pkce', JSON.stringify({ verifier, createdAt: Date.now(), origin: redirect.origin }));
+      if (disposed) throw new Error('Cloud connection was closed.');
+      if (authGeneration !== generation) throw new Error('Account changed. Please retry.');
+      browser.sessionStorage.setItem('clearplate-google-pkce', JSON.stringify({ verifier, createdAt: Date.now(), origin: redirect.origin, returnHash: new URL(browser.location.href).hash }));
       const url = new URL('/auth/v1/authorize', origin);
       url.search = new URLSearchParams({ provider: 'google', redirect_to: redirect.href, code_challenge: challenge, code_challenge_method: 's256', prompt: 'select_account' }).toString();
       browser.location.assign(url.href);
+      } finally { googleStarting = false; }
     },
     async finishGoogleSignIn(browser = window) {
       const url = new URL(browser.location.href);
@@ -275,11 +283,15 @@ export function createCareCloud(config, fetcher = fetch, options = {}) {
       const code = url.searchParams.get('code');
       const denied = url.searchParams.has('error');
       for (const name of ['code', 'error', 'error_code', 'error_description']) url.searchParams.delete(name);
-      browser.history.replaceState(null, '', url.pathname + url.search);
       let pending;
       try { pending = JSON.parse(browser.sessionStorage.getItem('clearplate-google-pkce')); } catch {}
       browser.sessionStorage.removeItem('clearplate-google-pkce');
+      // Restore only a local hash; never navigate to an origin supplied by callback parameters.
+      const returnHash = pending?.origin === url.origin && typeof pending.returnHash === 'string' && /^#(?:rd-signin|care-invite\/[0-9a-f-]{36})$/i.test(pending.returnHash) ? pending.returnHash : url.hash;
+      browser.history.replaceState(null, '', url.pathname + url.search + returnHash);
+      if (returnHash !== url.hash) browser.dispatchEvent?.(new Event('hashchange'));
       if (denied) throw new Error('Google sign-in was not completed. Please try again or use email.');
+      if (!pending || pending.origin !== url.origin) throw new Error('Google sign-in state is missing on this website. Start Google sign-in again in this tab on the same website where you began. If this repeats, the sign-in redirect configuration needs review.');
       if (!pending || !/^[a-f0-9]{64}$/.test(pending.verifier) || pending.origin !== url.origin || !Number.isFinite(pending.createdAt) || Date.now() - pending.createdAt > 600000 || pending.createdAt > Date.now()) throw new Error('This sign-in link has expired. Start Google sign-in again in this tab.');
       clearSession();
       const authGeneration = generation;

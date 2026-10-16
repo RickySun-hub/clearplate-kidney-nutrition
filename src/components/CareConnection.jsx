@@ -163,7 +163,7 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
         <div className="care-actions"><button className="account-submit" disabled={busy} type="submit">{busy ? 'Please wait…' : !emailStep ? 'Continue with email' : authMode === 'signup' ? 'Create account' : 'Sign in'}</button></div>
         <button className="auth-text-action" type="button" disabled={busy} onClick={()=>{setEmailStep(true);setAuthMode(authMode==='signup'?'signin':'signup');setMessage('');}}>{authMode==='signup'?'Already have an account? Sign in':'New here? Create an email account'}</button>
       </>}
-      <p className="care-help auth-footnote">Sign-in is remembered on this browser. Sign out on shared devices. Private browsing or clearing site data removes saved sign-in. You choose when to share your food record.</p>
+      <p className="care-help auth-footnote">Sign-in is remembered on this browser. Sign out on shared devices. Private browsing or clearing site data removes saved sign-in. {isRD ? 'Patients choose which food records to share with you. Sign in to review records shared with your dietitian account.' : 'You choose when to share your food record with your care team.'}</p>
       {requestedMode==='rd-signin'&&<button className="auth-text-action" type="button" onClick={()=>onAuthModeChange?.('signin')}>Here to track your meals? Patient sign in →</button>}
       <button className="auth-text-action auth-back" type="button" onClick={()=>onAuthModeChange?.('home')}>Back to home</button>
     </form>}
