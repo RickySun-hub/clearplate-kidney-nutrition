@@ -23,6 +23,7 @@ import NutrientProgress from "./components/NutrientProgress";
 import PlannerView from "./components/PlannerView";
 import ProfileDrawer from "./components/ProfileDrawer";
 import RecipeLibrary from "./components/RecipeLibrary";
+import RecipeBuilder from "./components/RecipeBuilder";
 import RecipeDetailView from "./components/RecipeDetailView";
 import TodayMeals from "./components/TodayMeals";
 import UsdaFoodModal from "./components/UsdaFoodModal";
@@ -86,7 +87,9 @@ export default function App() {
   const saving = useRef(false);
   const [customRecipes, setCustomRecipes] = useState(initial.customRecipes || []);
   const [customRecipeDetails, setCustomRecipeDetails] = useState(initial.customRecipeDetails || {});
-  const recipes = useMemo(()=>[...baseRecipes,...customRecipes],[customRecipes]);
+  const allRecipes = useMemo(()=>[...baseRecipes,...customRecipes],[customRecipes]);
+  const recipes = useMemo(()=>allRecipes.filter(recipe=>!recipe.retired),[allRecipes]);
+  const [recipeEditor,setRecipeEditor] = useState(null);
   const recipeDetails = useMemo(()=>({...baseRecipeDetails,...customRecipeDetails}),[customRecipeDetails]);
   const [importOpen,setImportOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(() => patientPageFromHash(window.location.hash) || "today");
@@ -104,7 +107,7 @@ export default function App() {
   const [cloudReady,setCloudReady]=useState(false),[syncStatus,setSyncStatus]=useState(''),[pendingCloud,setPendingCloud]=useState(null);
   function applyRecord(record){setProfile(normalizeProfileDraft(record.profile));setEntries(normalizeEntryOrder(record.entries));setDayRecords(record.dayRecords||{});setCustomRecipes(record.customRecipes||[]);setCustomRecipeDetails(record.customRecipeDetails||{});}
   async function connectSession(session){
-    const epoch=++sessionEpoch.current;cloud.current=null;setCloudReady(false);setPendingCloud(null);setCareSession(session);setCareInvites(0);setVoiceOpen(false);setSharedRecord(null);setSharedIdentity('local');
+    const epoch=++sessionEpoch.current;cloud.current=null;setCloudReady(false);setPendingCloud(null);setCareSession(session);setRecipeEditor(null);setCareInvites(0);setVoiceOpen(false);setSharedRecord(null);setSharedIdentity('local');
     if(!session){if(patientPageFromHash(window.location.hash))window.history.replaceState(null,'',window.location.pathname+window.location.search+'#signin');setActiveTab('today');applyRecord({profile:defaultProfile,entries:[],dayRecords:{}});return;}
     const requestedPage = patientPageFromHash(window.location.hash);
     if(requestedPage)setActiveTab(requestedPage);
@@ -139,7 +142,7 @@ export default function App() {
       document.removeEventListener("visibilitychange", refresh);
     };
   }, []);
-  const recipesById = useMemo(() => Object.fromEntries(recipes.map((recipe) => [recipe.id, recipe])), [recipes]);
+  const recipesById = useMemo(() => Object.fromEntries(allRecipes.map((recipe) => [recipe.id, recipe])), [allRecipes]);
   const todayEntries = useMemo(() => entries.filter((entry) => entry.date === today), [entries, today]);
   const totals = useMemo(() => ({ ...mealTotals(todayEntries, recipesById), ...mealTotalBounds(todayEntries, recipesById) }), [recipesById, todayEntries]);
   const complete = isDayComplete(dayRecords, entries, today);
@@ -186,6 +189,7 @@ export default function App() {
         recordedAt: new Date().toISOString(),
         date: today,
         source: "recipe",
+        ...(recipesById[recipeId]?.calculated ? {source:'custom',customFood:structuredClone(recipesById[recipeId])} : {}),
         ...(recipesById[recipeId]?.imported ? {source:'custom',customFood:{...recipesById[recipeId],method:'imported',methodLabel:'Imported recipe · nutrients unknown'}} : {}),
         recipeId,
         servings,
@@ -260,6 +264,7 @@ export default function App() {
         date: today,
         source: "recipe",
         recipeId: item.recipeId || item.id,
+        ...(recipesById[item.recipeId || item.id]?.calculated ? {source:'custom',customFood:structuredClone(recipesById[item.recipeId || item.id])} : {}),
         servings: item.servings || 1,
         meal,
         time: mealTimes[meal],
@@ -275,6 +280,7 @@ export default function App() {
   const openRecipeDetails = (recipeOrEntry, returnTab = "today") => {
     const recipeId = recipeOrEntry.recipeId || recipeOrEntry.id;
     if (!recipeId) return;
+    if (recipesById[recipeId]?.calculated) {setRecipeEditor(recipesById[recipeId]);navigateTo("recipes");return;}
     setDetailView({
       recipeId,
       servings: recipeOrEntry.servings || 1,
@@ -298,6 +304,7 @@ export default function App() {
     if(patientPageFromHash('#patient/'+tab))writePatientPage(tab);
     setActiveTab(tab);
     if(tab !== activeTab)setVoiceOpen(false);
+    if(tab !== "recipes")setRecipeEditor(null);
     setCareOpen(false); setImportOpen(false);
     window.scrollTo(0, 0);
     if (tab !== "recipe-detail") setDetailView(null);
@@ -364,7 +371,14 @@ export default function App() {
         onReorder={reorderMealEntry}
       />}
       {activeTab === "planner" && <PlannerView recipes={recipes} recipeDetails={recipeDetails} profile={profile} todayEntries={todayEntries} todayTotals={totals} plannerSession={plannerSession} onPlannerSessionChange={setPlannerSession} onAddPlan={addPlan} onOpenRecipe={(recipe) => openRecipeDetails(recipe, "planner")} />}
-      {activeTab === "recipes" && <RecipeLibrary recipes={recipes} details={recipeDetails} onChoose={(recipe) => openMealDialog(recipe.id)} onOpenRecipe={(recipe) => openRecipeDetails(recipe, "recipes")} />}
+      {activeTab === "recipes" && !recipeEditor && <RecipeLibrary recipes={recipes} details={recipeDetails} onCreate={()=>setRecipeEditor({})} onChoose={(recipe) => recipe.calculated ? setRecipeEditor(recipe) : openMealDialog(recipe.id)} onOpenRecipe={(recipe) => openRecipeDetails(recipe, "recipes")} />}
+      {activeTab === "recipes" && recipeEditor && <RecipeBuilder key={recipeEditor.id || 'new'} recipe={recipeEditor.calculated?recipeEditor:null} onClose={()=>setRecipeEditor(null)} onLog={addCustomFood} onSave={async(recipe,previousId)=>{
+        const nextRecipes=[...customRecipes.map(r=>r.id===previousId?{...r,retired:true}:r),recipe];
+        const details={servings:Number(recipe.calculation.servings),ingredients:recipe.calculation.ingredients.map(row=>`${row.quantity || 'Unknown amount'} ${row.unit==='g'?'g':'food-specific portions'} ${row.food.description}`),steps:[],source:'Selected USDA records'};
+        const nextDetails={...customRecipeDetails,[recipe.id]:details};
+        if(!await persist(profile,entries,dayRecords,{customRecipes:nextRecipes,customRecipeDetails:nextDetails}))return false;
+        setCustomRecipes(nextRecipes);setCustomRecipeDetails(nextDetails);return true;
+      }} />}
       {activeTab === "history" && <HistoryView entries={entries} recipesById={recipesById} profile={profile} dayRecords={dayRecords} />}
 
       {activeTab === "recipe-detail" && detailView && (

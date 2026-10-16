@@ -6,7 +6,7 @@ import recipeMetadata from "../data/recipeMetadata.json";
 import { formatAmount } from "../utils/nutrition";
 import { DEFAULT_FILTERS, enrichRecipe, filterRecipes } from "../utils/recipeFilters";
 
-export default function RecipeLibrary({ recipes, details = recipeDetails, onChoose, onOpenRecipe }) {
+export default function RecipeLibrary({ recipes, details = recipeDetails, onChoose, onOpenRecipe, onCreate }) {
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [view, setView] = useState('cards');
   const [snackOnly,setSnackOnly] = useState(false);
@@ -21,6 +21,7 @@ export default function RecipeLibrary({ recipes, details = recipeDetails, onChoo
   return (
     <main className="library-page">
       <header className="page-heading"><div><h1>Recipe library</h1><p>Find a recipe. Compare nutrition. Make it your own portion.</p></div><div className="library-count"><strong>{recipes.length}</strong><span>recipes in your library</span></div></header>
+      <button type="button" className="primary-button" onClick={onCreate}>Create recipe from ingredients</button>
       <button type="button" className="smoothie-category" aria-pressed={filters.category === 'Smoothies'} onClick={()=>{setFilters({...DEFAULT_FILTERS,category:'Smoothies'});setSnackOnly(false);}}><span><strong>Smoothies</strong><small>Recipes coming soon</small></span><ArrowUpRight size={20} /></button>
       <div className="library-filter-panel">
         <label className="snack-filter"><input type="checkbox" checked={snackOnly} onChange={event=>setSnackOnly(event.target.checked)} />Snack ideas & small plates</label>
@@ -35,7 +36,7 @@ export default function RecipeLibrary({ recipes, details = recipeDetails, onChoo
           <label className="library-filter-field">Source completeness<select value={filters.source} onChange={setFilter("source")}><option value="">All sources</option><option value="full">Ingredients + steps available</option><option value="nutrition-only">Nutrition only / missing recipe</option></select></label>
           {[['maxSodium', 'Sodium ceiling (mg)'], ['maxProtein', 'Protein ceiling (g)'], ['maxPotassium', 'Potassium ceiling (mg)']].map(([key, label]) => <label className="library-filter-field" key={key}>{label}<input type="number" min="0" step="any" value={filters[key]} onChange={setFilter(key)} placeholder="No ceiling" /></label>)}
         </div>
-        <p className="library-filter-help">Ceilings apply to workbook values per serving and exclude unknown values. Diet and preparation annotations are unreviewed drafts from available ingredients and steps; uncertain diets are excluded. No-cook assembly may require precooked ingredients. These filters do not indicate clinical suitability.</p>
+        <p className="library-filter-help">Ceilings apply to known values per serving and exclude unknown values. Diet and preparation annotations are unreviewed drafts from available ingredients and steps; uncertain diets are excluded. No-cook assembly may require precooked ingredients. These filters do not indicate clinical suitability.</p>
         </details>
       </div>
       <div className="library-filter-summary"><span role="status" aria-live="polite">{filtered.length} of {recipes.length} recipes</span><div className="library-display-actions"><button type="button" className="library-clear-filters" onClick={() => { setFilters({ ...DEFAULT_FILTERS }); setSnackOnly(false); }}>Clear filters</button><div className="view-switch" aria-label="Recipe display"><button type="button" aria-label="Card view" aria-pressed={view === 'cards'} onClick={() => setView('cards')}><LayoutGrid size={18} /></button><button type="button" aria-label="Table view" aria-pressed={view === 'table'} onClick={() => setView('table')}><List size={18} /></button></div></div></div>
@@ -56,7 +57,7 @@ export default function RecipeLibrary({ recipes, details = recipeDetails, onChoo
         </table>
       </div>}
       {filtered.length === 0 && <p className="library-empty" role="status">{filters.category === 'Smoothies' ? 'Smoothie recipes are coming soon. This collection is waiting for recipes to be added.' : 'No recipes match these filters. Clear a filter or raise a ceiling to see more recipes.'}</p>}
-      <p className="library-note">Cookbook nutrition comes from <strong>AA_PKD Direct Study.xlsx</strong>. Imported recipes retain their own source and unknown nutrition. Snack ideas are an editorial grouping; confirm your portion.</p>
+      <p className="library-note">Cookbook nutrition comes from <strong>AA_PKD Direct Study.xlsx</strong>. Calculated recipes use your selected USDA records; incomplete nutrients remain unknown. Imported recipes retain their own source and unknown nutrition. Snack ideas are an editorial grouping; confirm your portion.</p>
     </main>
   );
 }

@@ -46,14 +46,14 @@ export const nutritionFor = (recipe, servings = 1) => {
   // Older records stored an inflated estimate alongside the original values.
   const values = recipe?.method === "unpackaged" && recipe.baseEstimate ? recipe.baseEstimate : recipe;
   return Object.fromEntries(["calories", "protein", "sodium", "potassium", "phosphorus"]
-    .map((key) => [key, !validNutrientValue(values?.[key]) || !validNutrientValue(servings) || Number(servings) <= 0 ? null : round(Number(values[key]) * servings, 2)]));
+    .map((key) => [key, !validNutrientValue(values?.[key]) || !validNutrientValue(servings) || Number(servings) <= 0 ? null : Number(values[key]) * servings]));
 };
 
 export const detailedNutritionFor = (food, servings = 1) => {
   const values = food?.method === 'unpackaged' && food.baseEstimate ? food.baseEstimate : food;
   return Object.fromEntries(NUTRIENT_KEYS.map((key) => [key,
     validNutrientValue(values?.[key]) && validNutrientValue(servings) && Number(servings) > 0
-      ? round(Number(values[key]) * Number(servings), 2) : null]));
+      ? Number(values[key]) * Number(servings) : null]));
 };
 
 // Every recorded item counts in the denominator, including unresolved recipes.
@@ -64,7 +64,7 @@ export function nutrientCoverage(meals, recipesById = {}) {
     const food = meal.source === 'custom' ? meal.customFood : recipesById[meal.recipeId];
     const amount = detailedNutritionFor(food, meal.servings);
     for (const key of NUTRIENT_KEYS) if (amount[key] !== null) {
-      result[key].knownSubtotal = round(result[key].knownSubtotal + amount[key], 2);
+      result[key].knownSubtotal = result[key].knownSubtotal + amount[key];
       result[key].knownCount += 1;
     }
   }
@@ -77,7 +77,7 @@ export function nutrientCoverage(meals, recipesById = {}) {
 
 const addNutritionValue = (current, amount) => current === null || amount === null
   ? null
-  : round(current + amount, 1);
+  : current + amount;
 
 export function mealTotalBounds(meals, recipesById) {
   const lower = { calories: 0, protein: 0, sodium: 0, potassium: 0, phosphorus: 0 };
