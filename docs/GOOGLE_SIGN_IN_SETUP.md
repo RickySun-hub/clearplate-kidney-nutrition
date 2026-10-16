@@ -21,7 +21,7 @@ Google Audience still shows Testing. Owner account was added as a test user. Pub
 
 Preview remains Vercel-protected. The end-to-end test used the local application against real Google and the real ClearPlate Supabase project; the protected deployed page was not independently tested end-to-end in this turn.
 
-Sessions still live in memory: refreshing signs out, as with the existing email flow. The short-lived PKCE verifier lives in sessionStorage only until callback. Google login requests basic profile and email, not Gmail mailbox access. Future preview deployments need their exact return URL added to the Supabase allow list.
+Sessions now restore from browser storage and refresh provider-issued tokens; see SESSION_PERSISTENCE_QA.md for behavior and verification limits. The short-lived PKCE verifier lives in sessionStorage only until callback. Google login requests basic profile and email, not Gmail mailbox access. Future preview deployments need their exact return URL added to the Supabase allow list.
 
 ## Compact login UI and phone preparation
 

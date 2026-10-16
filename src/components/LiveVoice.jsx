@@ -4,7 +4,7 @@ import { liveTurns, liveGreeting } from '../utils/liveVoice.js';
 import { createFoodGuide } from '../utils/foodGuide.js';
 import { createMealTools } from '../utils/liveMealTools.js';
 import { responseToolBridge } from '../utils/liveToolBridge.js';
-export default function LiveVoice({accessToken,meal,mode='log',recipes=[],recipeDetails={},entries=[],date,profile={},conversation=[],autoStart=false,disabled=false,onReview,onBusy,onSaveMeal}) {
+export default function LiveVoice({accessToken,getAccessToken,meal,mode='log',recipes=[],recipeDetails={},entries=[],date,profile={},conversation=[],autoStart=false,disabled=false,onReview,onBusy,onSaveMeal}) {
   const context=useRef({entries,date,profile});context.current={entries,date,profile};
   const [cooking,setCooking]=useState(null);
   const [manualSaving,setManualSaving]=useState(false);
@@ -88,7 +88,9 @@ export default function LiveVoice({accessToken,meal,mode='log',recipes=[],recipe
       await r.pc.setLocalDescription(await r.pc.createOffer());
       if(r.pc.iceGatheringState!=='complete')await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(new Error('Network setup timed out. Please retry.')),10000);r.pc.addEventListener('icegatheringstatechange',()=>{if(r.pc.iceGatheringState==='complete'){clearTimeout(timeout);resolve();}});});
       if(r.released)return;
-      const response=await fetch('/api/voice-live',{method:'POST',headers:{'Content-Type':'application/json',...(accessToken?{Authorization:`Bearer ${accessToken}`}:{})},body:JSON.stringify({sdp:r.pc.localDescription.sdp,meal,mode,conversation:prior,localHour:new Date().getHours()}),signal:r.abort.signal});
+      const token=getAccessToken ? await getAccessToken() : accessToken;
+      if(r.released)return;
+      const response=await fetch('/api/voice-live',{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify({sdp:r.pc.localDescription.sdp,meal,mode,conversation:prior,localHour:new Date().getHours()}),signal:r.abort.signal});
       const result=await response.json();if(!response.ok)throw new Error(result.error?.message||'Could not connect to live voice.');
       if(r.released)return;await r.pc.setRemoteDescription({type:'answer',sdp:result.sdp});
       try {r.context=new AudioContext();const analyser=r.context.createAnalyser();analyser.fftSize=128;r.context.createMediaStreamSource(r.stream).connect(analyser);const data=new Uint8Array(64);const draw=()=>{if(r.released)return;analyser.getByteFrequencyData(data);if(data.some(v=>v>40))r.lastSoundAt=Date.now();setLevels(Array.from({length:36},(_,i)=>Math.max(4,data[i+2]/255*50)));r.frame=requestAnimationFrame(draw);};draw();}catch{/* Audio is usable without a meter. */}

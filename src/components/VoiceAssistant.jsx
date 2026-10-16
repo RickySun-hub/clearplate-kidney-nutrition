@@ -8,7 +8,7 @@ import { recordingToWav } from '../utils/voiceAudio';
 import { transcriptAfterInterpretation } from '../utils/voiceTranscript.js';
 import { createUsdaSelection, portionDescription } from '../utils/usdaSelection.js';
 const emptyNutrients = { calories: '', protein: '', sodium: '', potassium: '', phosphorus: '' };
-export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profile = {}, recipe = null, details = null, accessToken = null, autoStart = false, entries = [], date, mealReviews = {}, onReviewMeal, onSignIn, onClose, onSaveMeal, onAddFood }) {
+export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profile = {}, recipe = null, details = null, accessToken = null, sessionId = accessToken, getAccessToken, autoStart = false, entries = [], date, mealReviews = {}, onReviewMeal, onSignIn, onClose, onSaveMeal, onAddFood }) {
   const [mode,setMode]=useState('choose');
   const [meal, setMeal] = useState(() => nextMeal(entries, mealReviews, date));
   const [conversation, setConversation] = useState([]);
@@ -89,9 +89,20 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
     alive.current = true;
     const sessionGeneration = ++generation.current;
     setConversation([]); setMealTime(''); clearMatches(); setAvailable(false); setDraft(null); setTranscript(''); setRecording(false); setPaused(false); setPending(false);
-    fetch('/api/voice-status', { signal: AbortSignal.timeout(15000), headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {} }).then(response => response.json()).then(data => { if (alive.current && generation.current === sessionGeneration) { setAvailable(data.available === true); setMessage(data.available ? 'Choose an option or start talking.' : (data.message || data.error?.message || 'Sign in with a verified account to use AI voice. Manual logging is always available.')); } }).catch(() => { if (alive.current && generation.current === sessionGeneration) setMessage('Could not check AI voice. Reload to retry, or type and create a manual draft.'); });
+    (async () => {
+      try {
+        const token = getAccessToken ? await getAccessToken() : accessToken;
+        if (!alive.current || generation.current !== sessionGeneration) return;
+        const response = await fetch('/api/voice-status', { signal: AbortSignal.timeout(15000), headers: token ? {Authorization:`Bearer ${token}`} : {} });
+        const data = await response.json();
+        if (alive.current && generation.current === sessionGeneration) {
+          setAvailable(data.available === true);
+          setMessage(data.available ? 'Choose an option or start talking.' : (data.message || data.error?.message || 'Sign in with a verified account to use AI voice. Manual logging is always available.'));
+        }
+      } catch { if (alive.current && generation.current === sessionGeneration) setMessage('Could not check AI voice. Reload to retry, or type and create a manual draft.'); }
+    })();
     return () => { foodSelection.current.cancel(); alive.current = false; generation.current++; cancelled.current = true; clearTimeout(timer.current); stopMeter(); if (recorder.current && recorder.current.state !== 'inactive') recorder.current.stop(); stream.current?.getTracks().forEach(track => track.stop()); window.speechSynthesis?.cancel(); };
-  }, [accessToken]);
+  }, [sessionId]);
   function speak(text) { if (speech && window.speechSynthesis) { window.speechSynthesis.cancel(); window.speechSynthesis.speak(new SpeechSynthesisUtterance(text)); } }
   function navigate(command) {
     if (!steps.length) { setMessage('Source cooking instructions are unavailable for this recipe.'); return; }
@@ -105,7 +116,9 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
     turnBusy.current=true; window.speechSynthesis?.cancel();
     setPending(true); setMessage('Listening to your answer…');
     try {
-      const response = await fetch('/api/voice', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) }, body: JSON.stringify({...payload, ...(!recipe ? {conversation:liveConversation || conversation,meal} : {})}), signal: AbortSignal.timeout(60000) });
+      const token = getAccessToken ? await getAccessToken() : accessToken;
+      if (!alive.current || generation.current !== sessionGeneration) return;
+      const response = await fetch('/api/voice', { method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({...payload, ...(!recipe ? {conversation:liveConversation || conversation,meal} : {})}), signal: AbortSignal.timeout(60000) });
       const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || 'Voice request failed.');
       if (!alive.current || generation.current !== sessionGeneration) return;
       setTranscript(existing => transcriptAfterInterpretation({ recipe:!!recipe, intent:data.draft.intent, recognized:data.transcript, audio:!!payload.audio, existing })); setNutrients(emptyNutrients);
@@ -228,7 +241,7 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
       <div className="voice-actions"><button type="button" disabled={pending || recording || liveBusy || !!draft} onClick={()=>finishMeal('reviewed')}>Meal finished</button><button type="button" disabled={pending || recording || liveBusy || !!draft || entries.some(e=>e.date===date && e.meal===meal)} onClick={()=>finishMeal('not-eaten')}>I did not eat this meal</button><button type="button" disabled={pending || recording || liveBusy} onClick={()=>chooseMeal(MEALS[(MEALS.indexOf(meal)+1)%MEALS.length])}>Skip for now</button></div>
     </div>}
     {!liveBusy && (!available || typing || draft) && <p className="voice-status" role="status">{message}</p>}
-    {!recipe && available && <LiveVoice key={`${meal}-${liveVersion}`} accessToken={accessToken} meal={meal} mode={mode} recipes={recipes} recipeDetails={recipeDetails} entries={entries} date={date} profile={profile} conversation={conversation} disabled={pending} autoStart={(autoStart && liveVersion===0)||mode!=='choose'} onSaveMeal={onSaveMeal} onBusy={setLiveBusy} onReview={turns=>{setMode('choose');setTyping(true);setConversation(turns);setLiveVersion(v=>v+1);interpret({transcript:"Prepare a draft of the first food described in the conversation. Keep other foods in the transcript for separate review; do not combine foods. Do not invent missing details."},turns);}} />}
+    {!recipe && available && <LiveVoice key={`${meal}-${liveVersion}`} accessToken={accessToken} getAccessToken={getAccessToken} meal={meal} mode={mode} recipes={recipes} recipeDetails={recipeDetails} entries={entries} date={date} profile={profile} conversation={conversation} disabled={pending} autoStart={(autoStart && liveVersion===0)||mode!=='choose'} onSaveMeal={onSaveMeal} onBusy={setLiveBusy} onReview={turns=>{setMode('choose');setTyping(true);setConversation(turns);setLiveVersion(v=>v+1);interpret({transcript:"Prepare a draft of the first food described in the conversation. Keep other foods in the transcript for separate review; do not combine foods. Do not invent missing details."},turns);}} />}
     <div hidden={!recipe} className={`voice-composer ${paused ? 'is-paused' : ''}`}>
       <button className="voice-mic" type="button" aria-label="Start microphone" disabled={!available || pending || recording} onClick={start}><Mic size={44} strokeWidth={1.8} /></button>
       <div className="voice-recording-label"><strong>{pending ? 'Please wait…' : recording ? paused ? 'Paused' : 'Listening…' : 'Tap to speak'}</strong><span>{recording ? `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}` : 'Up to 60 seconds'}</span></div>

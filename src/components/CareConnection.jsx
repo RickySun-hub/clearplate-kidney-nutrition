@@ -5,14 +5,14 @@ import { useEffect, useRef, useState } from 'react';
 import { createCareCloud } from '../utils/careCloud';
 import './care-connection.css';
 
-export default function CareConnection({ mode = 'patient', requestedMode = 'signin', onAuthModeChange, onGoogleAvailability, getRecord, onSync, syncStatus, onReviewRecord, onSessionChange, rdContent, onInvitationCount }) {
+export default function CareConnection({ mode = 'patient', requestedMode = 'signin', onAuthModeChange, onGoogleAvailability, getRecord, onSync, syncStatus, onReviewRecord, onSessionChange, onAccessTokenChange, rdContent, onInvitationCount }) {
   const client = useRef(null);
   const mountedRef = useRef(false);
   const busyRef = useRef(false);
   const modeRef = useRef(mode);
   modeRef.current = mode;
-  const callbacks = useRef({ onReviewRecord, onSessionChange, rdContent, onInvitationCount });
-  callbacks.current = { onReviewRecord, onSessionChange };
+  const callbacks = useRef({ onReviewRecord, onSessionChange, onAccessTokenChange, rdContent, onInvitationCount });
+  callbacks.current = { onReviewRecord, onSessionChange, onAccessTokenChange };
   const [authMode, setAuthMode] = useState('signin');
   useEffect(()=>{if(['signin','signup','rd-signin'].includes(requestedMode)){setAuthMode(requestedMode==='signup'?'signup':'signin');setLoginMethod('email');setEmailStep(false);}},[requestedMode]);
   const [googleAvailable, setGoogleAvailable] = useState(false);
@@ -59,22 +59,33 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
       const config = await response.json();
       if (!mounted) return;
       client.current = createCareCloud(config);
-      setReady(true); setMessage('');
+      client.current.onSessionChange(user => {
+        if (!mounted) return;
+        if (user) callbacks.current.onAccessTokenChange?.(client.current.accessToken());
+        else { setAccount(null); setGrants([]); setPatients([]); callbacks.current.onSessionChange?.(null); callbacks.current.onReviewRecord?.(null); }
+      });
+      setMessage('Restoring your sign-in…');
       client.current.phoneAvailable().then(enabled=>{if(mounted)setPhoneAvailable(enabled);}).catch(()=>{});
       client.current.googleAvailable().then(enabled => { if (mounted) { setGoogleAvailable(enabled); onGoogleAvailability?.(enabled); } }).catch(() => {});
       try {
-        const user = await client.current.finishGoogleSignIn();
-        if (mounted && user) { setAccount(user); callbacks.current.onSessionChange?.({ accessToken: client.current.accessToken(), account: user, client: client.current }); setMessage('Signed in with Google.'); }
+        const user = await client.current.finishGoogleSignIn() || await client.current.restoreSession();
+        if (mounted && user) { setAccount(user); callbacks.current.onSessionChange?.({ accessToken: client.current.accessToken(), account: user, client: client.current }); setMessage(client.current.sessionPersistenceAvailable() ? '' : 'Signed in for this tab only. Browser storage is unavailable.'); }
+        if (mounted && !user) setMessage('');
       } catch (error) { if (mounted) setMessage(error.message); }
+      finally { if (mounted) setReady(true); }
     }).catch(() => { if (mounted) setMessage('Cloud connection is not available yet. Your local record stays on this device.'); });
-    const timer = window.setInterval(() => {
-      if (accountRef.current && !client.current?.accessToken()) {
-        client.current.clearSession(); setAccount(null); setGrants([]); setPatients([]);
-        callbacks.current.onSessionChange?.(null); callbacks.current.onReviewRecord?.(null);
-        setMessage('Your session expired. Please sign in again.');
-      }
-    }, 30000);
-    return () => { mounted = false; mountedRef.current = false; clearInterval(timer); client.current?.dispose(); callbacks.current.onSessionChange?.(null); callbacks.current.onReviewRecord?.(null); };
+    let renewing = false;
+    const renew = async () => {
+      if (!accountRef.current || renewing || document.hidden) return;
+      renewing = true;
+      try { await client.current.freshAccessToken(); }
+      catch (error) { if (mounted) setMessage(error.message); }
+      finally { renewing = false; }
+    };
+    const timer = window.setInterval(renew, 30000);
+    window.addEventListener('focus', renew);
+    document.addEventListener('visibilitychange', renew);
+    return () => { mounted = false; mountedRef.current = false; clearInterval(timer); window.removeEventListener('focus', renew); document.removeEventListener('visibilitychange', renew); client.current?.dispose(); };
   }, []);
   useEffect(() => {
     if (!account) return;
@@ -83,7 +94,7 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
       if (current) { if (isRD) setPatients(rows); else setGrants(rows); }
     }).catch(() => { if (current) {
       setMessage('Could not refresh account access. Please refresh or sign in again.');
-      if (!client.current?.accessToken()) { setAccount(null); setGrants([]); setPatients([]); callbacks.current.onSessionChange?.(null); callbacks.current.onReviewRecord?.(null); }
+      if (!client.current?.account()) { setAccount(null); setGrants([]); setPatients([]); callbacks.current.onSessionChange?.(null); callbacks.current.onReviewRecord?.(null); }
     } });
     return () => { current = false; };
   }, [isRD, account?.id]);
@@ -95,7 +106,7 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
     catch (error) {
       if (!mountedRef.current) return;
       setMessage(error.message || 'Cloud action could not be completed.');
-      if (!client.current?.accessToken()) {
+      if (!client.current?.account()) {
         setAccount(null); setGrants([]); setPatients([]);
         callbacks.current.onSessionChange?.(null); callbacks.current.onReviewRecord?.(null);
       }
@@ -115,12 +126,13 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
       setAccount(user);
       if (!user) { setMessage('Check your email to confirm your account, then sign in.'); return; }
       callbacks.current.onSessionChange?.({ accessToken: client.current.accessToken(), account: user, client: client.current });
-      setMessage('Signed in. Your account ID is shown below.');
+      setMessage(client.current.sessionPersistenceAvailable() ? 'Signed in.' : 'Signed in for this tab only. Browser storage is unavailable.');
 
     });
   }
   return <section className={`care-connection${isRD && account ? " rd-workspace" : ""}`} aria-labelledby="care-connection-title">
     <header><h2 id="care-connection-title">{!account ? 'Your Nepholio account' : isRD ? 'Patient directory' : 'Your account & care records'}</h2><p>{!account ? 'Sign in to use voice assistance and securely save your record. New here? Create an account first.' : isRD ? 'Patient files, food records, and nutrition in one place.' : 'Confirmed changes save to your private cloud record. You control which care-team account can read it.'}</p></header>
+    {ready && !account && message && <button type="button" disabled={busy} onClick={()=>action(async()=>{const user=await client.current.restoreSession();if(user){setAccount(user);callbacks.current.onSessionChange?.({accessToken:client.current.accessToken(),account:user,client:client.current});}else setMessage('No saved sign-in. Please sign in below.');})}>Retry saved sign-in</button>}
     {ready && !account && <form onSubmit={(event) => {
       event.preventDefault();
       if (loginMethod === 'phone') {
@@ -151,7 +163,7 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
         <div className="care-actions"><button className="account-submit" disabled={busy} type="submit">{busy ? 'Please wait…' : !emailStep ? 'Continue with email' : authMode === 'signup' ? 'Create account' : 'Sign in'}</button></div>
         <button className="auth-text-action" type="button" disabled={busy} onClick={()=>{setEmailStep(true);setAuthMode(authMode==='signup'?'signin':'signup');setMessage('');}}>{authMode==='signup'?'Already have an account? Sign in':'New here? Create an email account'}</button>
       </>}
-      <p className="care-help auth-footnote">You choose when to share your food record with your care team.</p>
+      <p className="care-help auth-footnote">Sign-in is remembered on this browser. Sign out on shared devices. Private browsing or clearing site data removes saved sign-in. You choose when to share your food record.</p>
       {requestedMode==='rd-signin'&&<button className="auth-text-action" type="button" onClick={()=>onAuthModeChange?.('signin')}>Here to track your meals? Patient sign in →</button>}
       <button className="auth-text-action auth-back" type="button" onClick={()=>onAuthModeChange?.('home')}>Back to home</button>
     </form>}

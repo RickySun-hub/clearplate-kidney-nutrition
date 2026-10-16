@@ -108,13 +108,13 @@ export default function TodayMeals({ entries, recipesById, onAddMeal, onOpenReci
               <header className="meal-group-header">
                 <div className="meal-group-title">
                   <span><Icon size={19} strokeWidth={1.8} /></span>
-                  <div><h3 id={`meal-group-${section.name}`}>{section.name}</h3><small>{section.time}</small></div>
+                  <div><h3 id={`meal-group-${section.name}`}>{section.name}</h3><small>{groupEntries.length ? `${groupEntries.length} recorded food${groupEntries.length === 1 ? "" : "s"}` : "Not recorded"}</small></div>
                 </div>
-                <div className="meal-group-summary" aria-label={`${section.name} nutrition total`}>
+                {!!groupEntries.length && <div className="meal-group-summary" aria-label={`${section.name} nutrition total`}>
                   <span><strong>{formatAmount(totals.calories, 1)} kcal</strong></span>
                   <span><strong>{formatAmount(totals.sodium, 1)} mg</strong> sodium</span>
                   <span><strong>{formatAmount(totals.protein, 1)} g</strong> protein</span>
-                </div>
+                </div>}
                 <button className="meal-group-add" type="button" onClick={() => onAddMeal(section.name)}><Plus size={16} /> Add</button>
               </header>
 

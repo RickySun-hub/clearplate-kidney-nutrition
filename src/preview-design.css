@@ -183,3 +183,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .medical-footer { padding: 20px 16px; }
 }
 @media (prefers-reduced-motion: reduce) { .recipe-card { transition: none; } .recipe-card:hover { transform: none; } }
+
+/* Keep the recording path readable without nested panels. */
+.recording-steps { display:flex; flex-wrap:wrap; list-style:none; gap:12px 24px; padding:0; margin:24px 0; color:#4e5666; font-size:14px; }
+.recording-steps li { display:flex; align-items:center; gap:8px; }
+.recording-steps span { color:#002fa7; font-weight:700; }
+.daily-summary-heading { margin:32px 0 8px; font-size:24px; }
+.dashboard-main .daily-record-summary { border:0; border-top:1px solid var(--border); border-radius:0; margin:0 0 16px; padding:20px 0; }
+.dashboard-rail .plan-summary { border:0; border-radius:0; box-shadow:none; }
+@media(max-width:600px) { .recording-steps { display:grid; gap:10px; margin:18px 0; } }
+
+.dashboard-main .nutrient-band, .dashboard-main .additional-nutrient { border:0; border-top:1px solid var(--border); border-radius:0; background:transparent; padding-inline:0; }
+@media(max-width:1250px){.dashboard-rail { grid-template-columns:minmax(0,1fr); }}

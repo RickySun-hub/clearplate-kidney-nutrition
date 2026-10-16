@@ -42,7 +42,7 @@ export function validateCareRecord(value) {
   if (new TextEncoder().encode(serialized).length > 2000000) throw new Error('This record is too large to upload.');
   return JSON.parse(serialized);
 }
-export function createCareCloud(config, fetcher = fetch) {
+export function createCareCloud(config, fetcher = fetch, options = {}) {
   const base = new URL(config?.url || config?.supabaseUrl || 'https://invalid.example');
   const key = config?.publishableKey;
   if (base.protocol !== 'https:' || base.username || base.password || !key?.startsWith('sb_publishable_')) throw new Error('Cloud connection is not configured.');
@@ -50,10 +50,109 @@ export function createCareCloud(config, fetcher = fetch) {
   let session = null;
   let disposed = false;
   let generation = 0;
-  async function request(path, { method = 'GET', body, prefer, authenticated = true } = {}) {
+  const now = options.now || Date.now;
+  const storageKey = `nepholio-auth:${origin}`;
+  let storage = options.storage;
+  try { if (storage === undefined && typeof window !== 'undefined') storage = window.localStorage; } catch {}
+  const locks = options.locks || globalThis.navigator?.locks;
+  const events = options.events || (typeof window !== 'undefined' ? window : null);
+  let persistenceAvailable = !!storage, storedRaw = null, refreshPromise = null;
+  const listeners = new Set();
+  const emit = () => { for (const listener of listeners) listener(account()); };
+  const tokenChanged = () => { if (session?.verified) emit(); };
+  function readStored() {
+    try { return storage?.getItem(storageKey) || null; } catch { persistenceAvailable = false; return null; }
+  }
+  function writeStored(value) {
+    try {
+      if (!storage) return;
+      if (value) storage.setItem(storageKey, value); else storage.removeItem(storageKey);
+      storedRaw = value;
+    } catch { persistenceAvailable = false; }
+  }
+  function clearSession() { generation++; session = null; writeStored(null); emit(); }
+  function assertCurrent(expectedGeneration, expectedRaw = storedRaw) {
+    if (disposed) throw new Error('Cloud connection was closed.');
+    if (generation !== expectedGeneration) throw new Error('Account changed. Please retry.');
+    if (persistenceAvailable && readStored() !== expectedRaw) {
+      const latest = parseStored(readStored());
+      if (session?.verified && latest?.userId === session.user.id && latest.sessionId === session.sessionId && latest.expiresAt > now()) {
+        storedRaw = readStored();
+        session = {...session,token:latest.token,refreshToken:latest.refreshToken,expiresAt:latest.expiresAt};
+        emit(); return;
+      }
+      generation++; session = null; emit();
+      throw new Error('Account changed in another tab. Please sign in again.');
+    }
+  }
+  function persistSession() {
+    if (session?.verified && session.refreshToken) writeStored(JSON.stringify({
+      token: session.token, refreshToken: session.refreshToken, expiresAt: session.expiresAt, userId: session.user.id, sessionId: session.sessionId,
+    }));
+  }
+  function parseStored(raw) {
+    try {
+      const value = JSON.parse(raw);
+      if (typeof value?.token === 'string' && typeof value.refreshToken === 'string' && value.refreshToken &&
+          Number.isFinite(value.expiresAt) && isAccountId(value.userId) && typeof value.sessionId === 'string') return value;
+    } catch {}
+    return null;
+  }
+  async function ensureSession() {
+    if (!session) throw new Error('Please sign in again.');
+    if (persistenceAvailable && readStored() !== storedRaw) {
+      const latest = parseStored(readStored());
+      if (!latest || latest.userId !== (session.user?.id || session.userId) || latest.sessionId !== session.sessionId) { generation++; session = null; emit(); throw new Error('Account changed. Please sign in again.'); }
+      storedRaw = readStored(); session = {...session,token:latest.token,refreshToken:latest.refreshToken,expiresAt:latest.expiresAt}; tokenChanged();
+    }
+    if (session.expiresAt > now() + 60000) return;
+    if (refreshPromise) return refreshPromise;
+    const expectedGeneration = generation;
+    const run = async () => {
+      if (disposed || generation !== expectedGeneration) throw new Error('Account changed. Please retry.');
+      // A different tab may have rotated this same session while we waited for the lock.
+      if (persistenceAvailable && readStored() !== storedRaw) {
+        const latest = parseStored(readStored());
+        if (!latest || latest.userId !== (session.user?.id || session.userId) || latest.sessionId !== session.sessionId) {
+          session = null; generation++; emit(); throw new Error('Account changed. Please sign in again.');
+        }
+        storedRaw = readStored();
+        session = { ...session, token: latest.token, refreshToken: latest.refreshToken, expiresAt: latest.expiresAt };
+      }
+      if (session.expiresAt > now() + 60000) { tokenChanged(); return; }
+      if (!session.refreshToken) { clearSession(); throw new Error('Please sign in again.'); }
+      const expectedRaw = storedRaw;
+      const result = await request('/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST', authenticated: false, body: { refresh_token: session.refreshToken }, refreshing: true,
+      });
+      assertCurrent(expectedGeneration, expectedRaw);
+      if ((result?.user?.id && result.user.id !== (session.user?.id || session.userId)) || !result?.access_token || !result.refresh_token) { clearSession(); throw new Error('Please sign in again.'); }
+      session = { ...session, token: result.access_token, refreshToken: result.refresh_token,
+        expiresAt: now() + Math.min(Number(result.expires_in) || 3600, 3600) * 1000 };
+      // Store rotation immediately so a transient /user failure never discards the new refresh token.
+      if (session.verified) persistSession();
+      else writeStored(JSON.stringify({token:session.token,refreshToken:session.refreshToken,expiresAt:session.expiresAt,userId:session.userId,sessionId:session.sessionId}));
+      tokenChanged();
+    };
+    const pending = locks?.request ? locks.request(storageKey, run) : run();
+    refreshPromise = pending;
+    try { await pending; } finally { if (refreshPromise === pending) refreshPromise = null; }
+  }
+  const onStorage = (event) => {
+    if ((event.key !== storageKey && event.key !== null) || !session) return;
+    const latest = parseStored(readStored());
+    if (!latest || latest.userId !== (session.user?.id || session.userId) || latest.sessionId !== session.sessionId) {
+      generation++; session = null; emit();
+    }
+  };
+  storedRaw = readStored();
+  events?.addEventListener('storage', onStorage);
+  async function request(path, { method = 'GET', body, prefer, authenticated = true, refreshing = false, verifying = false } = {}) {
     if (disposed) throw new Error('Cloud connection was closed.');
     const requestGeneration = generation;
-    if (authenticated && (!session || session.expiresAt <= Date.now())) { session = null; throw new Error('Please sign in again.'); }
+    if (authenticated && !verifying && (!session || session.expiresAt <= now() + 60000)) await ensureSession();
+    assertCurrent(requestGeneration);
+    if (authenticated && (!session || session.expiresAt <= now())) throw new Error('Please sign in again.');
     const headers = { apikey: key, 'Content-Type': 'application/json' };
     if (authenticated) headers.Authorization = `Bearer ${session.token}`;
     if (prefer) headers.Prefer = prefer;
@@ -61,16 +160,17 @@ export function createCareCloud(config, fetcher = fetch) {
     try { response = await fetcher(`${origin}${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), cache: 'no-store', credentials: 'omit',signal:AbortSignal.timeout(20000) }); }
     catch { throw new Error('Cloud connection failed. Please try again.'); }
     if (disposed) throw new Error('Cloud connection was closed.');
-    if (generation !== requestGeneration) throw new Error('Account changed. Please retry.');
+    assertCurrent(requestGeneration);
     if (!response.ok) {
       let problem = {}; try { problem = await response.json(); } catch {}
       // Reading the error body is asynchronous too; it may belong to a prior account.
       if (disposed) throw new Error('Cloud connection was closed.');
-      if (generation !== requestGeneration) throw new Error('Account changed. Please retry.');
+      assertCurrent(requestGeneration);
       if (!authenticated && problem.code === 'email_not_confirmed') throw new Error('Confirm your email before signing in. Open the confirmation message, then return here.');
       if (!authenticated && problem.code === 'invalid_credentials') throw new Error('Email or password is incorrect. New here? Choose Create account first.');
       if (!authenticated && ['email_address_not_authorized','over_email_send_rate_limit'].includes(problem.code)) throw new Error('Confirmation email could not be sent. The email service needs configuration or has reached its sending limit.');
-      if (response.status === 401) { session = null; throw new Error('Please sign in again. Check your email and password.'); }
+      if (refreshing && [400, 401, 403].includes(response.status)) { clearSession(); throw new Error('Your session ended. Please sign in again.'); }
+      if (response.status === 401 || (verifying && response.status === 403)) { clearSession(); throw new Error('Please sign in again. Check your email and password.'); }
       if (!authenticated && problem.code === 'otp_expired') throw new Error('This code is invalid or expired. Please request a new code.');
       if (response.status === 429) throw new Error('Too many requests. Please wait and try again.');
       throw new Error(authenticated ? 'Cloud action could not be completed. Check account access and try again.' : 'Account action failed. Check your email, password and confirmation email.');
@@ -78,29 +178,49 @@ export function createCareCloud(config, fetcher = fetch) {
     if (response.status === 204) return null;
     const text = await response.text();
     if (disposed) throw new Error('Cloud connection was closed.');
-    if (generation !== requestGeneration) throw new Error('Account changed. Please retry.');
+    assertCurrent(requestGeneration);
     try { return text ? JSON.parse(text) : null; } catch { throw new Error('Cloud returned an unexpected response.'); }
   }
   const account = () => session?.verified ? { id: session.user.id, email: session.user.email, ...(session.user.phone ? {phone:session.user.phone} : {}) } : null;
   async function acceptSession(result, authGeneration) {
     if (!result?.access_token) return null;
-    session = { token: result.access_token, expiresAt: Date.now() + Math.min(Number(result.expires_in) || 3600, 3600) * 1000 };
+    session = { sessionId: crypto.randomUUID(), token: result.access_token, refreshToken: result.refresh_token, expiresAt: now() + Math.min(Number(result.expires_in) || 3600, 3600) * 1000 };
     try {
-      const user = await request('/auth/v1/user');
+      const user = await request('/auth/v1/user', { verifying: true });
       if (!isAccountId(user?.id)) throw new Error('Account response could not be verified.');
       if (generation !== authGeneration) throw new Error('Account changed. Please retry.');
       session.user = { id: user.id, email: typeof user.email === 'string' ? user.email : undefined, phone: typeof user.phone === 'string' ? user.phone : undefined }; session.verified = true;
+      persistSession();
       return account();
     } catch (error) { if (generation === authGeneration) session = null; throw error; }
   }
   async function authenticate(email, password, signup) {
-    session = null;
-    const authGeneration = ++generation;
+    clearSession();
+    const authGeneration = generation;
     const result = await request(signup ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password', { method: 'POST', authenticated: false, body: { email: email.trim(), password } });
     return acceptSession(result, authGeneration);
   }
   return {
     account,
+    sessionPersistenceAvailable: () => persistenceAvailable,
+    onSessionChange(listener) { listeners.add(listener); return () => listeners.delete(listener); },
+    async restoreSession() {
+      const expectedGeneration = generation;
+      storedRaw = readStored();
+      const saved = parseStored(storedRaw);
+      if (!saved) { if (storedRaw) writeStored(null); return null; }
+      session = { ...saved, verified: false };
+      try {
+        await ensureSession();
+        const user = await request('/auth/v1/user', { verifying: true });
+        assertCurrent(expectedGeneration);
+        if (!isAccountId(user?.id) || user.id !== saved.userId) { clearSession(); throw new Error('Please sign in again.'); }
+        session.user = {id:user.id,email:user.email,phone:user.phone}; session.verified = true;
+        persistSession();
+        return account();
+      } catch (error) { if (generation === expectedGeneration) session = null; throw error; }
+    },
+    async freshAccessToken() { await ensureSession(); return this.accessToken(); },
     async invitations(action='list',payload={}) {
       if(!['list','create','get','accept','decline','cancel'].includes(action))throw new Error('Invalid invitation action.');
       try{return await request('/rest/v1/rpc/care_invitation_action',{method:'POST',body:{action,payload}});}
@@ -108,7 +228,7 @@ export function createCareCloud(config, fetcher = fetch) {
     },
     async sendInvitationEmail(id) {
       const requestGeneration=generation;
-      const token=this.accessToken();if(!token)throw new Error('Please sign in again.');
+      const token=await this.freshAccessToken();if(!token)throw new Error('Please sign in again.');
       const response=await fetcher('/api/care-invitation-email',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({id}),credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(30000)});
       const result=await response.json();
       if(disposed)throw new Error('Cloud connection was closed.');
@@ -127,8 +247,8 @@ export function createCareCloud(config, fetcher = fetch) {
     },
     async verifyPhoneCode(phone,token) {
       if (!/^\+[1-9]\d{7,14}$/.test(phone) || !/^\d{6}$/.test(token)) throw new Error('Enter the six-digit code from your text message.');
-      session=null;
-      const authGeneration=++generation;
+      clearSession();
+      const authGeneration=generation;
       const result=await request('/auth/v1/verify',{method:'POST',authenticated:false,body:{phone,token,type:'sms'}});
       const user=await acceptSession(result,authGeneration);
       if(!user)throw new Error('The code could not be verified. Please request a new code.');
@@ -161,24 +281,24 @@ export function createCareCloud(config, fetcher = fetch) {
       browser.sessionStorage.removeItem('clearplate-google-pkce');
       if (denied) throw new Error('Google sign-in was not completed. Please try again or use email.');
       if (!pending || !/^[a-f0-9]{64}$/.test(pending.verifier) || pending.origin !== url.origin || !Number.isFinite(pending.createdAt) || Date.now() - pending.createdAt > 600000 || pending.createdAt > Date.now()) throw new Error('This sign-in link has expired. Start Google sign-in again in this tab.');
-      session = null;
-      const authGeneration = ++generation;
+      clearSession();
+      const authGeneration = generation;
       const result = await request('/auth/v1/token?grant_type=pkce', { method: 'POST', authenticated: false, body: { auth_code: code, code_verifier: pending.verifier } });
       const user = await acceptSession(result, authGeneration);
       if (!user) throw new Error('Google sign-in could not be completed. Please try again.');
       return user;
     },
-    accessToken: () => session?.verified && session.expiresAt > Date.now() ? session.token : null,
-    clearSession: () => { generation++; session = null; },
-    dispose: () => { generation++; disposed = true; session = null; },
+    accessToken: () => session?.verified && session.expiresAt > now() ? session.token : null,
+    clearSession,
+    dispose: () => { generation++; disposed = true; session = null; listeners.clear(); events?.removeEventListener('storage', onStorage); },
     signIn: (email, password) => authenticate(email, password, false),
     signUp: (email, password) => authenticate(email, password, true),
     async signOut() {
       const token = session?.token;
-      generation++; session = null;
+      clearSession();
       if (!token || disposed) return;
       let response;
-      try { response = await fetcher(`${origin}/auth/v1/logout`, { method: 'POST', headers: { apikey: key, Authorization: `Bearer ${token}` }, cache: 'no-store', credentials: 'omit' }); }
+      try { response = await fetcher(`${origin}/auth/v1/logout`, { method: 'POST', headers: { apikey: key, Authorization: `Bearer ${token}` }, cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(20000) }); }
       catch { throw new Error('Signed out on this device. Cloud logout could not be confirmed.'); }
       if (!response.ok) throw new Error('Signed out on this device. Cloud logout could not be confirmed.');
     },

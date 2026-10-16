@@ -39,3 +39,6 @@
 .rd-patient { margin: 0; }
 .rd-patient dt { font-size: .85rem; color: #52645c; }
 .rd-patient dd { margin: 0; font-weight: 600; }
+
+.rd-review-nav { display:flex; flex-wrap:wrap; gap:8px; border-bottom:1px solid #dce5e0; padding-bottom:16px; }
+.rd-dashboard [tabindex="-1"] { scroll-margin-top:24px; }

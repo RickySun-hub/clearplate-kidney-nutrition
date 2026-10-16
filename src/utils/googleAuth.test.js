@@ -7,7 +7,7 @@ function browser(href = 'https://clearplate.example/') {
   const values = new Map();
   return { location: { href, assign(url) { this.assigned = url; } }, history: { replaceState(a,b,path) { this.path=path; } }, sessionStorage: { getItem: k => values.get(k), setItem: (k,v) => values.set(k,v), removeItem: k => values.delete(k) }, values };
 }
-test('Google PKCE roundtrip validates the account without persisting tokens or requesting Gmail access', async () => {
+test('Google PKCE validates the account, clears its verifier and never requests Gmail access', async () => {
   const calls=[];
   const client=createCareCloud(config, async (url,opts) => {
     calls.push({url,...opts});
