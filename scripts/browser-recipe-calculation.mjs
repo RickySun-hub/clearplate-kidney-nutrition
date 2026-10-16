@@ -60,38 +60,39 @@ async function shot(page,name,width){await page.setViewportSize({width,height:10
 try{
  const page=await launch();await page.goto('http://127.0.0.1:5173/#signin');await signIn(page,'patient@example.test');await patientReady(page);
  await page.goto('http://127.0.0.1:5173/#patient/recipes');
- await page.getByRole('button',{name:'Create recipe from ingredients'}).click();
+ await page.getByRole('button',{name:'Create a recipe'}).click();
  await page.getByLabel('Recipe name',{exact:true}).fill('Synthetic grain and vegetables');
- await page.getByLabel('Search USDA foods').fill('grain');await page.getByRole('button',{name:'Search foods',exact:true}).click();
- await page.getByRole('button',{name:/Synthetic grain, raw/}).click();await page.getByRole('button',{name:'Add ingredient',exact:true}).click();
- await page.getByLabel('Ingredient 1 measure').selectOption('portion:0');await page.getByLabel('Ingredient 1 quantity').fill('4');await page.getByLabel('Ingredient 1 preparation').selectOption('raw');
- await page.getByLabel('Search USDA foods').fill('vegetables');await page.getByRole('button',{name:'Search foods',exact:true}).click();
- await page.getByRole('button',{name:/Synthetic vegetables, cooked/}).click();await page.getByRole('button',{name:'Add ingredient',exact:true}).click();await page.getByLabel('Ingredient 2 preparation').selectOption('cooked');
+ await page.getByLabel('Describe an ingredient').fill('grain');await page.getByRole('button',{name:'Find food',exact:true}).click();
+ await page.getByRole('button',{name:/Synthetic grain, raw/}).click();await page.getByRole('button',{name:'Use this food',exact:true}).click();
+ await page.getByLabel('Ingredient 1 measure').selectOption('portion:0');await page.getByLabel('Ingredient 1 quantity').fill('4');await page.getByText('Advanced review & editing',{exact:true}).click();await page.getByLabel('Ingredient 1 preparation').selectOption('raw');
+ await page.getByLabel('Describe an ingredient').fill('vegetables');await page.getByRole('button',{name:'Find food',exact:true}).click();
+ await page.getByRole('button',{name:/Synthetic vegetables, cooked/}).click();await page.getByRole('button',{name:'Use this food',exact:true}).click();await page.getByLabel('Ingredient 2 quantity').fill('100');await page.getByLabel('Ingredient 2 preparation').selectOption('cooked');await page.getByLabel('Number of equal servings').fill('4');
  await page.getByLabel('Measured finished weight (g, optional)',{exact:true}).fill('800');await page.getByLabel('I confirm this finished weight').check();
  const sodium=page.getByRole('article',{name:'Sodium calculation',exact:true});
  assert.match(await sodium.innerText(),/1,000 mg/);assert.match(await sodium.innerText(),/250 mg/);assert.match(await sodium.innerText(),/125 mg/);
  const phosphorus=page.getByRole('article',{name:'Phosphorus calculation',exact:true});assert.match(await phosphorus.innerText(),/Unknown/);assert.match(await phosphorus.innerText(),/1\/2 ingredients with data · Incomplete · Known subtotal: 160 mg/);
- await page.getByRole('button',{name:'Save recipe',exact:true}).click();await page.getByText('Saved. This recipe is available').waitFor();
+ await page.getByRole('button',{name:'Keep recipe for later',exact:true}).click();await page.getByText('Saved in your recipes.').waitFor();
  assert.equal(record.customRecipes.length,1);assert.equal(record.customRecipes[0].sodium,250);assert.equal(record.customRecipes[0].phosphorus,null);
- await page.getByLabel('Portion type').selectOption('grams');await page.getByLabel('Portion amount').fill('200');
+ await page.getByLabel('Portion measure',{exact:true}).selectOption('grams');await page.getByLabel('Portion amount').fill('200');
+ await page.getByText('Advanced review & editing',{exact:true}).click();
+ assert.equal(await page.getByRole('article',{name:'Sodium calculation',exact:true}).isVisible(),false);
  for(const width of [1440,390]){
   await page.setViewportSize({width,height:1000});await page.evaluate(()=>window.scrollTo(0,0));
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
-  await page.screenshot({path:`output/recipe-builder-${width}.png`,fullPage:true});
-  await page.getByRole('heading',{name:'3. Nutrition review'}).scrollIntoViewIfNeeded();
-  await page.screenshot({path:`output/recipe-nutrition-${width}.png`});
+  await page.screenshot({path:`output/patient-recipe-simple-${width}.png`,fullPage:true});
+
  }
- await page.getByRole('button',{name:'Log recipe portion',exact:true}).click();await patientReady(page);
+ await page.getByRole('button',{name:'Save meal',exact:true}).click();await patientReady(page);
  const logged=structuredClone(record.entries.at(-1));assert.equal(logged.customFood.sodium,250);assert.equal(logged.customFood.phosphorus,null);assert.equal(logged.customFood.grams,200);
  await page.goto('http://127.0.0.1:5173/#patient/recipes');await page.getByRole('button',{name:'View Synthetic grain and vegetables recipe'}).click();
- await page.getByLabel('Ingredient 1 quantity').fill('5');assert.equal(await page.getByLabel('I confirm this finished weight').isChecked(),false);
+ await page.getByText('Edit recipe',{exact:true}).click();await page.getByText('Advanced review & editing',{exact:true}).click();await page.getByLabel('Ingredient 1 quantity').fill('5');assert.equal(await page.getByLabel('I confirm this finished weight').isChecked(),false);
  assert.match(await sodium.innerText(),/1,250 mg/);assert.match(await sodium.innerText(),/Unknown/);
- await page.getByRole('button',{name:'Save new recipe version',exact:true}).click();await page.getByRole('alert').filter({hasText:'Confirm a positive measured'}).waitFor();
+ await page.getByRole('button',{name:'Save recipe changes only',exact:true}).click();await page.getByRole('alert').filter({hasText:'Confirm a positive measured'}).waitFor();
  await page.getByLabel('Measured finished weight (g, optional)',{exact:true}).fill('1000');await page.getByLabel('I confirm this finished weight').check();
- await page.getByRole('button',{name:'Save new recipe version',exact:true}).click();await page.getByText('Saved. This recipe is available').waitFor();
+ await page.getByRole('button',{name:'Save recipe changes only',exact:true}).click();await page.getByText('Saved in your recipes.').waitFor();
  assert.equal(record.customRecipes.length,2);assert.equal(record.customRecipes[0].retired,true);assert.equal(record.customRecipes[0].sodium,250);assert.equal(record.customRecipes[1].sodium,312.5);assert.deepEqual(record.entries.at(-1),logged);
- await page.reload();await page.getByRole('button',{name:'View Synthetic grain and vegetables recipe'}).click();assert.equal(await page.getByLabel('Ingredient 1 quantity').inputValue(),'5');assert.equal(await page.getByLabel('Ingredient 1 preparation').inputValue(),'raw');
+ await page.reload();await page.getByRole('button',{name:'View Synthetic grain and vegetables recipe'}).click();await page.getByText('Edit recipe',{exact:true}).click();await page.getByText('Advanced review & editing',{exact:true}).click();assert.equal(await page.getByLabel('Ingredient 1 quantity').inputValue(),'5');assert.equal(await page.getByLabel('Ingredient 1 preparation').inputValue(),'raw');
  await page.getByLabel('Ingredient 2 quantity').fill('');await page.getByLabel('Measured finished weight (g, optional)',{exact:true}).fill('');
- await page.getByText('Weight unresolved —').waitFor();assert.match(await sodium.innerText(),/Unknown/);
+ await page.getByText('Amount unknown. Enter a measured amount').waitFor();assert.match(await sodium.innerText(),/Unknown/);
  assert.deepEqual(errors,[]);console.log('PASS: actual app recipe creation, food-specific portions, state/source persistence, measured yield, nutrient incompleteness, saving, gram logging, immutable history, version edits, reload and mobile/desktop layout.');
 }finally{await context?.close();await rm(dir,{recursive:true,force:true});}

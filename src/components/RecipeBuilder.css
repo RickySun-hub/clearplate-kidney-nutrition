@@ -31,3 +31,19 @@
 .recipe-nutrition p { font-size:13px; }
 .recipe-error { color:#9b2b24; border-left:3px solid; padding:12px; }
 @media(max-width:600px) { .recipe-builder { padding:20px 16px 40px; } .recipe-builder-heading { flex-direction:column; } .recipe-builder h1 { font-size:26px; } .recipe-fields,.recipe-nutrition { grid-template-columns:1fr; } .recipe-search { flex-wrap:wrap; } .recipe-search label { flex-basis:100%; } .recipe-ingredient-title { gap:10px; } .recipe-selected { flex-direction:column; } }
+.recipe-edit,.recipe-advanced { border-top:1px solid #d8e2df; margin:24px 0; padding:18px 0; }
+.recipe-builder summary { cursor:pointer; font-size:16px; font-weight:600; padding:8px 0; min-height:44px; }
+.recipe-builder .recipe-edit section { border-top:0; margin-top:20px; padding-top:0; }
+.recipe-uncertainty { color:#684d1e; border-left:3px solid #b99450; padding-left:12px; }
+.recipe-save-only { margin-left:12px; background:transparent; }
+.recipe-builder .recipe-describe { margin:12px 0 6px; min-height:52px; }
+.patient-recipes { max-width:850px; }
+.patient-recipe-list { list-style:none; padding:0; margin:16px 0; }
+.patient-recipe-list li { display:flex; align-items:center; gap:12px; border-bottom:1px solid #d8e2df; padding:14px 0; }
+.patient-recipe-list .recipe-row-name { flex:1; text-align:left; border:0; background:transparent; padding-left:0; }
+.recipe-row-name span { display:block; font-size:13px; color:#586b66; margin-top:6px; }
+@media(max-width:600px) { .recipe-save-only { margin:12px 0 0; width:100%; } .recipe-builder .primary-button { width:100%; } }
+.recipe-log-meta { margin:8px 0 16px; }
+.recipe-builder-heading { align-items:center; }
+.recipe-builder-heading p { margin-bottom:0; }
+@media(max-width:600px) { .recipe-fields.recipe-log-fields { grid-template-columns:1fr 1fr; } .recipe-builder-heading { align-items:start; gap:12px; } .recipe-edit,.recipe-advanced { margin:16px 0; padding:10px 0; } .recipe-builder section { margin-top:20px; padding-top:20px; } }

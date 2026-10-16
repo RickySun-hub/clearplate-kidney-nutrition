@@ -33,3 +33,17 @@ Only general recipe/yield concepts are used; no Cronometer proprietary food data
 - https://support.cronometer.com/hc/en-us/articles/4406291608724-Set-Cooked-Recipe-Weight
 
 Limitations: selected USDA values are estimates and require a suitable food/preparation match. Per-100-ml records and unweighted portions are not converted. Recipe nutrient retention and discarded-liquid adjustments are not modeled. Saves require the existing signed-in care connection. Database completeness is never a clinical safety judgment.
+
+## Patient experience redesign
+
+The default Recipes page now starts with the existing speak/type description flow and a short reusable-recipe list. Cookbook browsing and source import are optional disclosures. Reusable recipes open to a portion and Save meal; editing is optional. A new recipe can be saved and logged in one action, or kept for later.
+
+Food matching still requires review. Ingredient quantities start at one explicitly displayed, food-specific household measure when available; no-measure foods start with a blank gram amount, never an invented 100 g. New recipes default to one whole-recipe portion, stated beside logging. Sources, conversion weights, preparation annotations, yield, and nutrient tables are in Advanced review & editing. Important missing-nutrient and unconfirmed-yield warnings remain outside it. Meal/time editing is collapsible. Calculations, source snapshots, retired versions, and RD detail are preserved.
+
+Focused verification: 36 tests passed (calculation, nutrition, recipe filters, care records), production build passed with the existing bundle warning, and both browser scripts passed at 390/1440 px. Visual inspection checked navigation, readable labels, primary save placement, collapsed detail, visible uncertainty and no horizontal overflow. The existing design system was retained; no external visual assets were copied.
+
+### What browser testing actually used
+
+- The original b1787de browser test and `browser-recipe-calculation.mjs` use **mocked USDA food records**, auth and storage. These deterministic inputs verify 1,000 mg sodium calculations, missing phosphorus, changed yield, immutable logs, and saved version reload.
+- `browser-patient-recipes.mjs` uses **real local HTTP USDA search and food-detail handlers backed by the repository's public USDA snapshot**, with `USDA_FDC_API_KEY` unset. It asserts `provenance.live === false` and `mode === 'snapshot'`, selects Bananas, raw, uses an actual returned household portion, saves/logs and repeats that saved recipe. Only auth/storage are mocked. This is not a live USDA API test.
+- The describe-food button and text-entry path are tested. No live AI/audio inference or real cloud account was used. If the existing assistant backend is unavailable, existing manual/unknown-nutrition paths remain available.
