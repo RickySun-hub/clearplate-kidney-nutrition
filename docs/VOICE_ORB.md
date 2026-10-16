@@ -39,3 +39,11 @@ General visual reference: [VoiceOrbs Particles Orb](https://github.com/amunozdev
 Verified the actual app at 390px and 1440px with `browser-voice-orb.mjs`: no horizontal overflow, real synthetic audio amplitude response, explicit microphone capture, mute/end/unmount cleanup and reduced motion all pass. Auth, WebRTC and backend are mocked. Four voice-meter unit tests, build and diff check pass; the existing bundle-size warning remains. Both screenshots visually inspected.
 
 New screenshot Library IDs: mobile `libfile_3331e9abb0808191807290010cabdb35`; desktop `libfile_ab78fd778ebc8191b7460238bdb63d8c`. This visual follow-up preserves the preceding source-identity fix. Neither follow-up is deployed; production remains `d196e83`.
+
+## Selected design A — glass/light sphere (not deployed)
+
+Inspected the directly attached concept board, left panel A. Replaced the particle/rainbow rendering with an original CSS blue-white sphere: layered smooth gradients, broad frosted highlights, a thin cyan rim, and a soft halo. Uses one decorative span with pseudo-elements; no images, third-party dependencies, canvas or new animation loop. Existing amplitude-driven container scaling and all state/accessibility/audio lifecycle logic remain unchanged.
+
+Actual application screenshots at 390px and 1440px were visually inspected with no horizontal page overflow. Browser voice checks pass for real synthetic microphone/playback amplitude, intentional capture, mute/unmute, end/unmount cleanup, state labels and reduced motion. Auth, WebRTC and backend remain mocked; this is not live voice-service verification. Eleven focused voice-meter and food-guide tests pass, including the preserved source-identity regressions. Build and diff checks pass; existing bundle-size warning remains.
+
+Library screenshots: mobile `libfile_2e9418be9ae88191938228789a263b8f`; desktop `libfile_2213662340508191bad0e5770cdfd45c`. Prior commits including `82cf5fb` and `6898332` remain in history. No deployment or push performed.
