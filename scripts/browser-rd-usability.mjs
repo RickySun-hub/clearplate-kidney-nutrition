@@ -11,9 +11,16 @@ try {
  assert.equal(await page.getByText(/JSON/).count(),0);
  const range=page.getByRole('region',{name:'Range totals · known amounts'});
  const sodium=range.locator('article').filter({has:page.getByText('Sodium',{exact:true})});
- assert.match(await sodium.innerText(),/0 mg/);assert.match(await sodium.innerText(),/1\/2 items known · Incomplete/);
+ assert.match(await sodium.innerText(),/0 mg/);assert.match(await sodium.innerText(),/2\/3 items known · Incomplete/);
  const potassium=range.locator('article').filter({has:page.getByText('Potassium',{exact:true})});
- assert.match(await potassium.innerText(),/Unknown mg/);assert.match(await potassium.innerText(),/0\/2 items known/);
+ assert.match(await potassium.innerText(),/Unknown mg/);assert.match(await potassium.innerText(),/0\/3 items known/);
+ assert.match(await range.innerText(),/400 kcal/);
+ const daily=page.locator('.rd-daily');assert.match(await daily.innerText(),/280 kcal/);
+ assert.match(await daily.innerText(),/Above saved limit/);
+ assert.equal(await page.getByText('Record access & export notes',{exact:true}).count(),1);
+ await daily.locator('summary').filter({hasText:'2026-10-15'}).click();
+ assert.match(await daily.innerText(),/120 kcal/);
+ await daily.locator('summary').filter({hasText:'2026-10-15'}).click();
  const downloadPromise=page.waitForEvent('download');await page.getByRole('button',{name:'Export CSV for Excel'}).click();const download=await downloadPromise;
  assert.match(download.suggestedFilename(),/\.csv$/);const csv=await readFile(await download.path(),'utf8');
  assert.match(csv,/Sodium \(mg\)/);assert.match(csv,/Unknown/);assert.match(csv,/Known items \/ recorded items/);assert.ok(csv.startsWith('\uFEFF'));

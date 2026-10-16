@@ -42,3 +42,12 @@
 
 .rd-review-nav { display:flex; flex-wrap:wrap; gap:8px; border-bottom:1px solid #dce5e0; padding-bottom:16px; }
 .rd-dashboard [tabindex="-1"] { scroll-margin-top:24px; }
+
+/* Existing data-quality/target labels carry meaning independently of color. */
+.rd-summary .rd-status-attention { color:#794600;font-weight:600;border-left:3px solid #b77914;padding-left:8px; }
+.rd-controls .secondary-button { color:#fff;background:#174b89;border:1px solid #174b89; }
+.rd-controls .secondary-button:disabled { opacity:.55; }
+.rd-secondary { border-top:1px solid #dce5e0;padding-top:8px; }
+.rd-secondary>summary { color:#174b89;font-weight:600; }
+.rd-notice { border:0;margin-bottom:0; }
+.rd-dashboard .rd-daily>details>summary { color:#174b89; }
