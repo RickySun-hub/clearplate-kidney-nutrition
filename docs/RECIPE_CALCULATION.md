@@ -47,3 +47,13 @@ Focused verification: 36 tests passed (calculation, nutrition, recipe filters, c
 - The original b1787de browser test and `browser-recipe-calculation.mjs` use **mocked USDA food records**, auth and storage. These deterministic inputs verify 1,000 mg sodium calculations, missing phosphorus, changed yield, immutable logs, and saved version reload.
 - `browser-patient-recipes.mjs` uses **real local HTTP USDA search and food-detail handlers backed by the repository's public USDA snapshot**, with `USDA_FDC_API_KEY` unset. It asserts `provenance.live === false` and `mode === 'snapshot'`, selects Bananas, raw, uses an actual returned household portion, saves/logs and repeats that saved recipe. Only auth/storage are mocked. This is not a live USDA API test.
 - The describe-food button and text-entry path are tested. No live AI/audio inference or real cloud account was used. If the existing assistant backend is unavailable, existing manual/unknown-nutrition paths remain available.
+
+### Recipe and ingredient search
+
+Before this update, the simplified patient library used case-insensitive title substring matching only. It did not connect ingredient text or typo matching to the visible search field. The older standalone filtering utility had ingredient search, but was not used by this patient screen.
+
+The patient field now says “Search recipes or ingredients”. It searches titles, stored recipe-detail ingredient lines, and saved calculation food descriptions. Active searches combine saved and cookbook results in ranked order instead of hiding cookbook matches in a disclosure. Ingredient hints quote actual stored lines; fuzzy matches are labeled possible matches. Empty results suggest a shorter food name or another ingredient.
+
+Normalization covers case, whitespace, punctuation and diacritics, plus a small explicit English list (for example banana/bananas, tomato/tomatoes, yogurt/yoghurt and chili/chilli). Tokens support prefixes of at least two characters and a single insertion, deletion, replacement or adjacent-letter swap for words at least four characters long. Every query token must match. Exact title/ingredient matches rank above prefix matches, which rank above fuzzy matches. No translation, semantic ingredient inference, arbitrary-language support or new food data is introduced.
+
+Verification: 12 focused search/filter tests passed, production build passed with the existing bundle-size warning, and the actual mobile/desktop UI passed ingredient, typo, partial, no-result and reset checks. Browser search used the real bundled recipe ingredient text with mocked auth/storage; no USDA or AI request was needed. Mobile screenshot: `output/recipe-ingredient-search-390.png`.
