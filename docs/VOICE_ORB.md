@@ -25,3 +25,9 @@ Meter ownership is separate from capture ownership: meters disconnect sources/an
 - Screenshots at 390 px and 1440 px; no horizontal page overflow or browser exceptions. Mobile inspected for orb framing, readable state, accessible microphone/end buttons, and flat layout. Screenshot motion is driven by synthetic microphone audio; a static PNG cannot demonstrate the animation.
 
 No credentials, backend settings, database/security changes, merge or deployment.
+
+## Particle sphere refinement
+
+The orb is now an original 260-dot Fibonacci sphere rendered as a static SVG. Depth controls dot size and opacity in restrained teal/slate colors. Only the existing measured audio amplitude scales the container; no idle motion or new animation loop, capture, dependency, or 3D engine was added. Existing reduced-motion and lifecycle safeguards remain intact. Mobile and desktop browser checks passed with real synthetic audio and mocked WebRTC/auth/backend. Full suite: 208 tests passed; production build passed with the existing bundle-size warning.
+
+Screenshots: mobile `libfile_c5ea90cf919481918d8311ee841f99fb`; desktop `libfile_703118df99108191870369d90e64b152`.
