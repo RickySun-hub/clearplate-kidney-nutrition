@@ -349,7 +349,7 @@ export default function App() {
 
       {storageError && !mealDialog.open && !customDialog && !profileOpen && <p className="storage-alert" role="alert">{storageError}</p>}
       {careInvites>0&&activeTab!=='rd'&&!careOpen&&<div className="care-invite-banner"><strong>{careInvites} care invitation{careInvites===1?'':'s'}</strong><span>Review who would like to connect with you.</span><button onClick={()=>{setCareOpen(true);window.scrollTo(0,0);}}>Review invitation</button></div>}
-      <section className="assist-launch" aria-label="Page tools" hidden={activeTab==='rd'}>
+      <section className="assist-launch" aria-label="Page tools" hidden={activeTab==='rd'||(activeTab==='today'&&voiceOpen)}>
         {activeTab === "today" && !voiceOpen && <div className="voice-feature"><div className="voice-feature-icon"><Mic size={30} /></div><div className="voice-feature-copy"><span className="feature-eyebrow">YOUR VOICE, LESS TYPING</span><h2>Record a meal, your way.</h2><p>Speak or type what you ate. Check the food and your portion before saving.</p></div><button className="voice-feature-button" type="button" aria-expanded={voiceOpen} onClick={()=>setVoiceOpen(!voiceOpen)}><Mic size={20} />{voiceOpen?'Close voice assistant':'Speak or type a meal'}<ChevronRight size={20} /></button></div>}
         <div className="assist-secondary">{activeTab === "today" && <button type="button" onClick={()=>setUsdaDialog(true)}>Find a USDA food</button>}<button type="button" onClick={()=>setCareOpen(!careOpen)}>{careSession ? "Account & care sharing" : "Sign in / Create account"}</button></div>
       </section>

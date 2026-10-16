@@ -75,6 +75,8 @@ try{
  await page.goto('http://127.0.0.1:5173/#signin');await signIn(page,'patient@example.test');await patientReady(page);await page.getByRole('button',{name:'Speak or type a meal',exact:true}).click();
  await page.getByRole('button',{name:'Start microphone',exact:true}).waitFor();assert.equal(await page.evaluate(()=>audioQA.requests),0);
  await page.getByText('Conversation options',{exact:true}).click();await page.getByLabel('What would you like to do?').selectOption('log');assert.equal(await page.evaluate(()=>audioQA.requests),0);await page.getByText('Conversation options',{exact:true}).click();
+ assert.equal(await page.getByRole('button',{name:'Find a USDA food',exact:true}).isVisible(),false);
+ assert.equal(await page.getByRole('button',{name:'Account & care sharing',exact:true}).isVisible(),false);
  const orb=page.locator('.voice-orb');const stage=page.locator('.voice-orb-stage');
  assert.equal(await orb.evaluate(el=>el.style.transform),'scale(1)');
  await page.getByRole('button',{name:'Start microphone',exact:true}).click();await page.getByRole('button',{name:'Mute microphone',exact:true}).waitFor();
@@ -96,5 +98,7 @@ try{
  await page.getByRole('button',{name:'Confirm & save description · nutrition unknown',exact:true}).click();await page.getByText('Description saved after your confirmation.',{exact:true}).waitFor();assert.equal(record.entries.at(-1).customFood.method,'unmeasured');
  await page.evaluate(()=>{audioQA.reject=false;});await page.getByRole('button',{name:'Start microphone',exact:true}).click();await page.getByRole('button',{name:'Mute microphone',exact:true}).waitFor();
  await page.getByRole('button',{name:'Close voice assistant',exact:true}).click();await page.waitForTimeout(100);assert.equal(await page.evaluate(()=>audioQA.mic.stream.getTracks().every(t=>t.readyState==='ended')),true);assert.equal(await page.evaluate(()=>audioQA.frames.size),0);
+ await page.getByRole('button',{name:'Find a USDA food',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Account & care sharing',exact:true}).waitFor();
  assert.deepEqual(errors,[]);console.log('PASS: actual app UI, intentional mic start, no duplicate stream, synthetic microphone and playback amplitude, listen/mute/process/speak/error states, reduced motion, end/unmount cleanup, preserved typed confirmation. WebRTC/auth/backend mocked; audio is real oscillator-generated synthetic MediaStream.');
 }finally{await context?.close();await rm(dir,{recursive:true,force:true});}
