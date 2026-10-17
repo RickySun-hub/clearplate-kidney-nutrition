@@ -103,3 +103,28 @@ test('missing or invalid estimate ranges remain unknown rather than zero uncerta
   }
   assert.equal(nutritionFor(undefined).calories, null);
 });
+
+test('tiny positive display preserves distinction from exact zero and unknown',()=>{
+ assert.equal(formatAmount(.004,2),'<0.01');
+ assert.equal(formatAmount(.04,1),'<0.1');
+ assert.equal(formatAmount(.4,0),'<1');
+ assert.equal(formatAmount(0,2),'0');assert.equal(formatAmount(null,2),'Unknown');
+ assert.equal(formatAmount(.01,2),'0.01');
+});
+
+test('patient, RD and bounds totals preserve small values regardless of entry order',async()=>{
+ const {nutrientCoverage}=await import('./nutrition.js');
+ const items=[.1,.2,.3].map(protein=>({source:'custom',servings:1,customFood:{calories:1,protein,sodium:0,potassium:null,phosphorus:0}}));
+ const permutations=[items,[items[2],items[1],items[0]],[items[1],items[2],items[0]]];
+ const expected=mealTotals(items,{});
+ for(const entries of permutations){
+  assert.deepEqual(mealTotals(entries,{}),expected);
+  assert.equal(nutrientCoverage(entries).protein.total,expected.protein);
+  assert.equal(mealTotalBounds(entries,{}).lower.protein,expected.protein);
+  assert.equal(mealTotalBounds(entries,{}).upper.protein,expected.protein);
+  assert.equal(mealTotals(entries,{}).potassium,null);
+ }
+ const tiny=items.map(e=>({...e,customFood:{...e.customFood,protein:.04}}));
+ assert.equal(mealTotals(tiny,{}).protein,.12);
+ assert.equal(mealTotals([],{}).protein,0);
+});

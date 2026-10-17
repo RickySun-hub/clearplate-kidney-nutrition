@@ -23,3 +23,9 @@ Three added regression tests failed before the fix and passed after it. They cov
 - Totals still depend on input-order floating-point accumulation; they do not sort nonnegative contributions or derive all patient totals from the RD coverage calculation. A synthetic arithmetic stress probe confirms the order dependence; it is not a clinical magnitude estimate.
 
 These two gaps are documented, not silently counted as repaired by this focused source/reuse patch. No deployment, UI change, schema/security change, or production write was performed for this follow-up. Production remains the prior `d196e83` release.
+
+## October 17 release follow-up
+
+Recovered clean branch at `67f4fd4`. Both previously outstanding issues reproduced with new regressions: `formatAmount(0.004,2)` displayed zero, and permutations of 0.1/0.2/0.3 changed floating-point totals. Formatting now labels positive values below display precision as `<threshold`, retaining exact zero and unknown separately. Coverage and bounds sort nonnegative contributions before summation; patient totals derive from coverage. Empty patient totals retain the previous zero behavior. No stored records are rewritten. This is deterministic ordinary floating-point arithmetic, not arbitrary decimal precision.
+
+The new regressions fail before and pass after the fix. Twenty focused nutrition/source-identity/daily-review tests and the production build pass. Existing large-bundle warning remains. Production rollback retained: `dpl_AUPJ2fGsiD25vdz3kTBTWiPhBXUu`, application commit `d196e83a462af769d32f5035365635ab29141f2a`. Remote main was still `8e30558`; remote working branch was `940e57f`, with no intervening work found.
