@@ -32,3 +32,7 @@ pnpm build
 ## Medical boundary
 
 This prototype does not diagnose kidney disease or replace a nephrologist or renal dietitian. Nutrient targets should be confirmed with the patient's kidney care team. Potassium, phosphorus, calcium, fluid, and other nutrient considerations must be individualized.
+
+## Maintenance and debugging
+
+Before editing a workflow, read [the debugging guide](docs/DEBUGGING.md) and [bug ledger](docs/BUG_LEDGER.md) for known failure modes, focused regression commands, verification limits, and rollback references. Update the ledger when fixing a reproduced bug; preserve existing safeguards and unrelated work.
