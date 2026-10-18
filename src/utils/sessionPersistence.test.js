@@ -65,3 +65,47 @@ test('a reopened offline browser retains credentials for a later retry',async()=
  await assert.rejects(()=>b.restoreSession());assert.equal(b.account(),null);assert.equal(h.data.size,1);
  h.offline(false);assert.equal((await b.restoreSession()).id,owner);
 });
+
+test('restore survives same-session rotation while identity verification is pending',async()=>{
+ const h=harness();await h.make().signIn('synthetic@example.test','password');
+ let release,started;const entered=new Promise(resolve=>started=resolve);
+ const storage={getItem:k=>h.data.get(k)||null,setItem:(k,v)=>h.data.set(k,v),removeItem:k=>h.data.delete(k)};
+ const client=createCareCloud(config,async()=>{started();return new Promise(resolve=>release=resolve);},{storage});
+ const events=[];client.onSessionChange(user=>events.push(user));
+ const pending=client.restoreSession();await entered;
+ assert.equal(client.account(),null,'identity must remain unverified');
+ const [key,raw]=[...h.data][0];const saved=JSON.parse(raw);
+ h.data.set(key,JSON.stringify({...saved,token:'rotated-access',refreshToken:'rotated-refresh',expiresAt:Date.now()+3600000}));
+ release(Response.json({id:owner,email:'synthetic@example.test'}));
+ assert.equal((await pending).id,owner);
+ assert.equal(client.accessToken(),'rotated-access');
+ assert.equal(JSON.parse(h.data.get(key)).refreshToken,'rotated-refresh');
+ assert.deepEqual(events,[],'restoring must not emit a false sign-out');
+});
+
+test('pending restore rejects another session and cannot revive a disposed client',async()=>{
+ for(const action of ['replace','dispose']){
+  const h=harness();await h.make().signIn('synthetic@example.test','password');
+  let release,started;const entered=new Promise(resolve=>started=resolve);
+  const storage={getItem:k=>h.data.get(k)||null,setItem:(k,v)=>h.data.set(k,v),removeItem:k=>h.data.delete(k)};
+  const client=createCareCloud(config,async()=>{started();return new Promise(resolve=>release=resolve);},{storage});
+  const pending=client.restoreSession();const rejected=assert.rejects(pending,/Account changed|closed/);await entered;
+  const [key,raw]=[...h.data][0];
+  if(action==='replace')h.data.set(key,JSON.stringify({...JSON.parse(raw),sessionId:'different-session'}));
+  else client.dispose();
+  const expected=h.data.get(key);release(Response.json({id:owner}));await rejected;
+  assert.equal(client.account(),null);assert.equal(h.data.get(key),expected);
+ }
+});
+
+test('late rejection of the pre-rotation token preserves the newer session for verified retry',async()=>{
+ const h=harness();await h.make().signIn('synthetic@example.test','password');
+ let release,started,calls=0;const entered=new Promise(resolve=>started=resolve);
+ const storage={getItem:k=>h.data.get(k)||null,setItem:(k,v)=>h.data.set(k,v),removeItem:k=>h.data.delete(k)};
+ const client=createCareCloud(config,async()=>{if(++calls===1){started();return new Promise(resolve=>release=resolve);}return Response.json({id:owner});},{storage});
+ const pending=client.restoreSession();const rejected=assert.rejects(pending,/renewed.*retry/);await entered;
+ const [key,raw]=[...h.data][0];const rotated=JSON.stringify({...JSON.parse(raw),token:'new-access',refreshToken:'new-refresh',expiresAt:Date.now()+3600000});h.data.set(key,rotated);
+ release(Response.json({}, {status:401}));await rejected;
+ assert.equal(client.account(),null);assert.equal(h.data.get(key),rotated);
+ assert.equal((await client.restoreSession()).id,owner);
+});

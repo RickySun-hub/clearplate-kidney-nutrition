@@ -77,10 +77,12 @@ export function createCareCloud(config, fetcher = fetch, options = {}) {
     if (generation !== expectedGeneration) throw new Error('Account changed. Please retry.');
     if (persistenceAvailable && readStored() !== expectedRaw) {
       const latest = parseStored(readStored());
-      if (session?.verified && latest?.userId === session.user.id && latest.sessionId === session.sessionId && latest.expiresAt > now()) {
+      // A restoring tab is still unverified, but can adopt a rotation of its
+      // exact saved session. /user must still verify the original identity.
+      if (session && latest?.userId === (session.user?.id || session.userId) && latest.sessionId === session.sessionId && latest.expiresAt > now()) {
         storedRaw = readStored();
         session = {...session,token:latest.token,refreshToken:latest.refreshToken,expiresAt:latest.expiresAt};
-        emit(); return;
+        tokenChanged(); return;
       }
       generation++; session = null; emit();
       throw new Error('Account changed in another tab. Please sign in again.');
@@ -171,6 +173,9 @@ export function createCareCloud(config, fetcher = fetch, options = {}) {
       if (!authenticated && problem.code === 'invalid_credentials') throw new Error('Email or password is incorrect. New here? Choose Create account first.');
       if (!authenticated && ['email_address_not_authorized','over_email_send_rate_limit'].includes(problem.code)) throw new Error('Confirmation email could not be sent. The email service needs configuration or has reached its sending limit.');
       if (refreshing && [400, 401, 403].includes(response.status)) { clearSession(); throw new Error('Your session ended. Please sign in again.'); }
+      // A delayed rejection of the previous access token must not erase a
+      // newer same-session rotation. Retry can verify that token normally.
+      if (authenticated && (response.status === 401 || (verifying && response.status === 403)) && headers.Authorization !== `Bearer ${session?.token}`) throw new Error('Sign-in renewed in another tab. Please retry.');
       if (response.status === 401 || (verifying && response.status === 403)) { clearSession(); throw new Error('Please sign in again. Check your email and password.'); }
       if (!authenticated && problem.code === 'otp_expired') throw new Error('This code is invalid or expired. Please request a new code.');
       if (response.status === 429) throw new Error('Too many requests. Please wait and try again.');
