@@ -15,7 +15,11 @@ function matchTerm(term,words){
   return Infinity;
 }
 export function searchRecipes(recipes,details={},query=''){
-  const terms=tokens(query.trim().slice(0,160));
+  const queryTokens=tokens(query.trim().slice(0,160));
+  // Treat 'and' as an ingredient-list separator, like a comma. Keep all
+  // substantive terms required; do not reinterpret 'or' or excluded foods.
+  const terms=queryTokens.length>1?queryTokens.filter(term=>term!=='and'):queryTokens;
+  if(queryTokens.length&&!terms.length)return [];
   return recipes.map(recipe=>{
     const title=tokens(recipe.name);
     const ingredients=[...new Set([...(Array.isArray(details[recipe.id]?.ingredients)?details[recipe.id].ingredients:[]),...(recipe.calculation?.ingredients || []).map(row=>row.food?.description)].filter(text=>typeof text==='string'&&text.trim()))];

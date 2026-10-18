@@ -23,3 +23,10 @@ test('no match, short typo, absent ingredients and unrelated languages stay unma
  for(const query of ['quartz','rz','香蕉','salmon'])assert.equal(searchRecipes(recipes,details,query).length,0);
  assert.equal(searchRecipes(recipes,details,'banana quinoa').length,0);
 });
+
+test('ingredient lists accept and without weakening all-ingredient matching',()=>{
+ assert.deepEqual(searchRecipes(recipes,details,'banana and yogurt').map(m=>m.recipe.id),['a']);
+ assert.deepEqual(searchRecipes(recipes,details,'banana, AND yoghurt').map(m=>m.recipe.id),['a']);
+ assert.equal(searchRecipes(recipes,details,'banana and quinoa').length,0);
+ assert.equal(searchRecipes(recipes,details,'and').length,0);
+});

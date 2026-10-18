@@ -61,6 +61,8 @@ try{
  const page=await launch();await page.goto('http://127.0.0.1:5173/#signin');await signIn(page,'patient@example.test');await patientReady(page);
  await page.goto('http://127.0.0.1:5173/#patient/recipes');const search=page.getByPlaceholder('Search recipes or ingredients');
  await search.fill('cucumber');await page.getByText(/Ingredient:.*cucumber/i).first().waitFor();assert.ok(await page.getByRole('button',{name:'View Mango Salsa Wontons recipe'}).count() || await page.locator('.recipe-search-hint').count());
+ await search.fill('mango and cucumber');await page.getByRole('button',{name:'Log Mango Salsa Wontons',exact:true}).waitFor();
+ await search.fill('mango and quartz');await page.getByRole('status').filter({hasText:'No recipes match.'}).waitFor();
  await search.fill('cucmber');await page.getByText(/Possible ingredient match:.*cucumber/i).first().waitFor();
  for(const width of [390,1440]){await page.setViewportSize({width,height:900});await page.evaluate(()=>window.scrollTo(0,0));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);await page.screenshot({path:`output/recipe-ingredient-search-${width}.png`,fullPage:true});}
  await search.fill('zzzzquartz');await page.getByRole('status').filter({hasText:'No recipes match.'}).waitFor();assert.equal(await page.locator('.patient-recipe-list li').count(),0);
