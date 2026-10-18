@@ -161,10 +161,12 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
         <button type="button" className="auth-text-action" disabled={busy} onClick={()=>{setLoginMethod('email');setMessage('');}}>Use email instead</button>
       </> : <>
         <div className="auth-divider">or use email</div>
+        {!emailStep && <p className="care-help">Email sign-in uses your account password.</p>}
         <label>Email<input autoComplete="username" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
         {emailStep && <><label>Password<input autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'} type="password" minLength="8" required value={password} onChange={(event) => setPassword(event.target.value)} /></label><p className="care-help">{authMode==='signup'?'Use at least 8 characters. We will email you a confirmation link.':'Enter the password for your Nepholio account.'}</p></>}
         <div className="care-actions"><button className="account-submit" disabled={busy} type="submit">{busy ? 'Please wait…' : !emailStep ? 'Continue with email' : authMode === 'signup' ? 'Create account' : 'Sign in'}</button></div>
-        <button className="auth-text-action" type="button" disabled={busy} onClick={()=>{setEmailStep(true);setAuthMode(authMode==='signup'?'signin':'signup');setMessage('');}}>{authMode==='signup'?'Already have an account? Sign in':'New here? Create an email account'}</button>
+        {emailStep && <button className="auth-text-action" type="button" disabled={busy} onClick={()=>{setEmailStep(false);setPassword('');setMessage('');}}>Back to email entry</button>}
+        <button className="auth-text-action" type="button" disabled={busy} onClick={()=>{setEmailStep(authMode!=='signup');setAuthMode(authMode==='signup'?'signin':'signup');setPassword('');setMessage('');}}>{authMode==='signup'?'Already have an account? Sign in':'New here? Create an email account'}</button>
       </>}
       <p className="care-help auth-footnote">Sign-in is remembered on this browser. Sign out on shared devices. Private browsing or clearing site data removes saved sign-in. {isRD ? 'Patients choose which food records to share with you. Sign in to review records shared with your dietitian account.' : 'You choose when to share your food record with your care team.'}</p>
       {requestedMode==='rd-signin'&&<button className="auth-text-action" type="button" onClick={()=>onAuthModeChange?.('signin')}>Here to track your meals? Patient sign in →</button>}
