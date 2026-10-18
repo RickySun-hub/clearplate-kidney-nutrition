@@ -83,8 +83,8 @@ test('restore survives same-session rotation while identity verification is pend
  assert.deepEqual(events,[],'restoring must not emit a false sign-out');
 });
 
-test('pending restore rejects another session and cannot revive a disposed client',async()=>{
- for(const action of ['replace','dispose']){
+test('pending restore rejects expired rotations, account/session changes, logout and disposal',async()=>{
+ for(const action of ['replace','expired','account','logout','dispose']){
   const h=harness();await h.make().signIn('synthetic@example.test','password');
   let release,started;const entered=new Promise(resolve=>started=resolve);
   const storage={getItem:k=>h.data.get(k)||null,setItem:(k,v)=>h.data.set(k,v),removeItem:k=>h.data.delete(k)};
@@ -92,6 +92,9 @@ test('pending restore rejects another session and cannot revive a disposed clien
   const pending=client.restoreSession();const rejected=assert.rejects(pending,/Account changed|closed/);await entered;
   const [key,raw]=[...h.data][0];
   if(action==='replace')h.data.set(key,JSON.stringify({...JSON.parse(raw),sessionId:'different-session'}));
+  else if(action==='expired')h.data.set(key,JSON.stringify({...JSON.parse(raw),expiresAt:Date.now()-1}));
+  else if(action==='account')h.data.set(key,JSON.stringify({...JSON.parse(raw),userId:'22222222-2222-4222-8222-222222222222'}));
+  else if(action==='logout')h.data.delete(key);
   else client.dispose();
   const expected=h.data.get(key);release(Response.json({id:owner}));await rejected;
   assert.equal(client.account(),null);assert.equal(h.data.get(key),expected);
@@ -99,13 +102,15 @@ test('pending restore rejects another session and cannot revive a disposed clien
 });
 
 test('late rejection of the pre-rotation token preserves the newer session for verified retry',async()=>{
+ for(const status of [401,403]){
  const h=harness();await h.make().signIn('synthetic@example.test','password');
  let release,started,calls=0;const entered=new Promise(resolve=>started=resolve);
  const storage={getItem:k=>h.data.get(k)||null,setItem:(k,v)=>h.data.set(k,v),removeItem:k=>h.data.delete(k)};
  const client=createCareCloud(config,async()=>{if(++calls===1){started();return new Promise(resolve=>release=resolve);}return Response.json({id:owner});},{storage});
  const pending=client.restoreSession();const rejected=assert.rejects(pending,/renewed.*retry/);await entered;
  const [key,raw]=[...h.data][0];const rotated=JSON.stringify({...JSON.parse(raw),token:'new-access',refreshToken:'new-refresh',expiresAt:Date.now()+3600000});h.data.set(key,rotated);
- release(Response.json({}, {status:401}));await rejected;
+ release(Response.json({}, {status}));await rejected;
  assert.equal(client.account(),null);assert.equal(h.data.get(key),rotated);
  assert.equal((await client.restoreSession()).id,owner);
+ }
 });

@@ -35,3 +35,20 @@
 - Request only nonsecret observations: browser/version, OS, normal/private mode, exact site origin, login method (Google/email), route before closing and after reopening, approximate closed duration, whether other tabs/windows were open, whether site data is auto-cleared, exact visible error, and whether “Retry saved sign-in” recovers. If authorized authenticated QA becomes available, record only request path/status/timing and whether storage exists; never token values or clinical records.
 - Interrupted network/provider refresh and device storage policy remain live investigation boundaries. No extension of expiry, disabling revocation, broadening grants, or speculative auth redesign is justified by this report.
 - Patient/RD workspace mode is not clinician credential verification. Existing grant/consent logic passed mocked checks; live database enforcement was not retested. No production access-setting change is part of these fixes.
+
+### AUTH-01 final review evidence
+
+Final application diff versus `d6f296e` is limited to two guards in `careCloud.js`: same-user/same-session unexpired rotation adoption during restore (without emitting an unverified account), and preserving a newer token after an old token's delayed rejection. The `/user` identity comparison, expiry checks, refresh revocation handling, generation checks and sign-out clearing remain in force.
+
+Focused command in DEBUGGING.md: 36 tests pass, including:
+- `pending restore rejects expired rotations, account/session changes, logout and disposal` (five independent race scenarios).
+- `late rejection of the pre-rotation token preserves the newer session for verified retry` (both 401 and 403 `/user` responses; account remains null until fresh verification).
+- `offline refresh keeps the recoverable session; revoked refresh removes it`.
+- `deliberate logout removes persistence immediately even offline`.
+- `logout while refresh is pending cannot resurrect saved credentials`.
+- `rejected restored identity never exposes an account`.
+- `stale account response cannot return private records or clear a newer session`.
+- `Missing, expired and wrong-origin verifier cannot exchange a callback code`.
+- `A token response cannot authenticate an unverified user`.
+
+These are synthetic responses, not authenticated live provider tests. Build passed for the application fix; subsequent changes are regression coverage and documentation only. Deployment remains paused. Dedicated review branch: `fix/session-restore-rotation-20261018`, based on released `d6f296e`; no unrelated application changes included.
