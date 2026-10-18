@@ -136,6 +136,7 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
     {ready && !account && <form onSubmit={(event) => {
       event.preventDefault();
       if (loginMethod === 'phone') {
+        if (!phoneAvailable) return;
         action(async () => {
           if (!sentTo) { await client.current.sendPhoneCode(phone); setSentTo(phone.replace(/[\s()-]/g,'')); setResendAt(Date.now()+60000); setNow(Date.now()); setMessage('Enter the code from your text message.'); }
           else { const user=await client.current.verifyPhoneCode(sentTo,otp); setAccount(user); setOtp(''); callbacks.current.onSessionChange?.({accessToken:client.current.accessToken(),account:user,client:client.current}); setMessage('Signed in.'); }
@@ -148,13 +149,15 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
       {!googleAvailable && <p className="care-help">Google sign-in is being set up. You can use email below.</p>}
       <button className="google-signin phone-signin" type="button" disabled={busy} aria-expanded={loginMethod==='phone'} onClick={()=>{setLoginMethod(loginMethod==='phone'?'email':'phone');setMessage('');}}><Smartphone size={19} aria-hidden="true" />Continue with phone{!phoneAvailable && <small>Coming soon</small>}</button>
       {loginMethod==='phone' ? <>
-        <div className="auth-divider">use a text message code</div>
         {!phoneAvailable && <p className="phone-notice" role="status">Phone sign-in is not available yet. Please continue with Google or email.</p>}
+        {phoneAvailable && <>
+        <div className="auth-divider">use a text message code</div>
         <label>Mobile phone number<input type="tel" inputMode="tel" autoComplete="tel" placeholder="+1 555 123 4567" required disabled={!phoneAvailable || !!sentTo} value={phone} onChange={e=>setPhone(e.target.value)} /></label>
         <p className="care-help">Include your country code, such as +1 for the US and Canada. We will text you a sign-in code.</p>
         {sentTo && <label>Verification code<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={otp} onChange={e=>setOtp(e.target.value.replace(/\D/g,''))} /></label>}
         <div className="care-actions"><button className="account-submit" disabled={busy || !phoneAvailable}>{busy?'Please wait…':sentTo?'Verify and continue':'Send code'}</button></div>
         {sentTo && <><button className="auth-text-action" type="button" disabled={busy || now<resendAt} onClick={()=>action(async()=>{await client.current.sendPhoneCode(sentTo);setResendAt(Date.now()+60000);setNow(Date.now());setMessage('A new code was sent.');})}>{now<resendAt?`Resend in ${Math.ceil((resendAt-now)/1000)}s`:'Resend code'}</button><button className="auth-text-action" type="button" disabled={busy} onClick={()=>{setSentTo('');setOtp('');setMessage('');}}>Use a different number</button></>}
+        </>}
         <button type="button" className="auth-text-action" disabled={busy} onClick={()=>{setLoginMethod('email');setMessage('');}}>Use email instead</button>
       </> : <>
         <div className="auth-divider">or use email</div>
