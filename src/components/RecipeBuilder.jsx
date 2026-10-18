@@ -45,9 +45,9 @@ export default function RecipeBuilder({recipe, onSave, onLog, onClose}) {
   }
   async function log(){
     if(pending.current)return;
+    if(!Number.isFinite(Number(amount)) || Number(amount)<=0 || (basis==='grams' && !result.weightGrams)){setError('Enter a positive portion and resolve the recipe weight for gram portions.');return;}
     const current=dirty||!saved ? await save() : saved;
     if(!current)return;
-    if(!Number.isFinite(Number(amount)) || Number(amount)<=0 || (basis==='grams' && !result.weightGrams)){setError('Enter a positive portion and resolve the recipe weight for gram portions.');return;}
     pending.current=true;setBusy(true);setError('');
     try{
       const customFood={...current,...recipePortion(current.calculation,basis,amount),servingDescription:`${amount} ${basis==='grams'?'g':'equal servings'}`,grams:basis==='grams'?Number(amount):result.weightGrams?result.weightGrams*Number(amount)/result.servings:null,recipeVersionId:current.id};

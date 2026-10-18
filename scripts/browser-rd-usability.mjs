@@ -8,6 +8,16 @@ try {
  const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:5173/scripts/fixtures/rd-usability.html');
  await page.getByRole('heading',{name:'Profile',exact:true}).waitFor();
+ for(const [label,id] of [['Profile','rd-profile'],['Daily review','rd-daily-review'],['Food log','rd-food-log']]){
+  await page.getByRole('button',{name:label,exact:true}).click();
+  assert.equal(await page.evaluate(()=>document.activeElement.id),id);
+ }
+ const from=page.getByLabel('From',{exact:true});const original=await from.inputValue();
+ await from.fill('2099-01-01');
+ await page.getByRole('alert').filter({hasText:'Choose an end date'}).waitFor();
+ assert.equal(await page.getByRole('button',{name:'Export CSV for Excel'}).isDisabled(),true);
+ await from.fill(original);
+ assert.equal(await page.getByRole('button',{name:'Export CSV for Excel'}).isEnabled(),true);
  assert.equal(await page.getByText(/JSON/).count(),0);
  const range=page.getByRole('region',{name:'Range totals · known amounts'});
  const sodium=range.locator('article').filter({has:page.getByText('Sodium',{exact:true})});

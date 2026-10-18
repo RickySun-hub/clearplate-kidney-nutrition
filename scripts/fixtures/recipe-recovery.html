@@ -1,0 +1,10 @@
+<meta name="viewport" content="width=device-width, initial-scale=1"><div id="root"></div><script type="module">
+import React from 'react';import {createRoot} from 'react-dom/client';
+import RecipeBuilder from '../../src/components/RecipeBuilder.jsx';
+window.qa={saves:[],logs:[],closed:0,failSave:false,failLog:false};
+createRoot(document.getElementById('root')).render(React.createElement(RecipeBuilder,{
+ onSave:recipe=>{window.qa.saves.push(recipe);return !window.qa.failSave;},
+ onLog:entry=>{window.qa.logs.push(entry);return !window.qa.failLog;},
+ onClose:()=>window.qa.closed++
+}));
+</script>
