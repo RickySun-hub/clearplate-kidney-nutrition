@@ -82,7 +82,7 @@ try{
  }
  await page.getByRole('button',{name:'Undo eaten',exact:true}).click();await page.getByRole('button',{name:'Mark eaten',exact:true}).first().waitFor();assert.equal(record.entries.length,count);
  await page.reload();await page.getByRole('button',{name:'Mark eaten',exact:true}).first().waitFor();assert.equal(await page.getByRole('button',{name:'Undo eaten',exact:true}).count(),0);
- await page.getByRole('button',{name:'Profile',exact:true}).click();
+ await page.getByRole('button',{name:'Open profile',exact:true}).click();
  await page.getByLabel('Milk',{exact:true}).check();
  await page.getByLabel('Other food allergies (comma separated)').fill('Synthetic unknown allergen');
  await page.getByRole('button',{name:'Save plan',exact:true}).click();
