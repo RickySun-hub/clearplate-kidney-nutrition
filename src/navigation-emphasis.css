@@ -1,0 +1,24 @@
+/* Shared app navigation: clear destinations and selected state, without nested frames. */
+.app-shell .topbar { background:#faf9fd; border-color:#c9c3d9; }
+.app-shell .topbar nav { gap:8px; }
+.app-shell .topbar nav button { min-height:52px; font-size:16px; font-weight:700; line-height:1.25; color:#493d62; padding:10px 12px; }
+.app-shell .topbar nav button svg { width:22px; height:22px; stroke-width:2; flex-shrink:0; }
+.app-shell .topbar nav button span { min-width:0; white-space:normal; overflow-wrap:normal; }
+.app-shell .topbar nav button.active,
+.app-shell .topbar nav button[aria-current='page'] { background:#59427e; color:white; font-weight:750; }
+.app-shell .topbar nav button:not(.active):hover { background:#eae5f3; color:#493d62; }
+.app-shell .topbar nav button:focus-visible { outline:3px solid #59427e; outline-offset:3px; }
+.app-shell .daily-record-summary { background:#f0edf7; border:0; border-radius:8px; }
+.app-shell .nutrient-band.neutral,.app-shell .nutrient-band.good { background:#f2f4f9; border:0; }
+.app-shell .today-meals>header { border-bottom:2px solid #c9c3d9; padding-bottom:12px; }
+.app-shell .rd-chart-coverage { background:#f1eef7; border:0; padding:20px; border-radius:6px; }
+.app-shell .rd-review-nav { border-bottom-color:#bcb3cf; }
+@media(max-width:900px){
+ .app-shell .topbar { padding:16px 12px 0; gap:12px; border-bottom:2px solid #c9c3d9; }
+ .app-shell .topbar nav { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)) minmax(0,1.35fr); height:auto; width:100%; min-width:0; gap:4px; overflow:visible; padding:0 0 12px; }
+ .app-shell .topbar nav button { min-width:0; width:100%; min-height:72px; flex-direction:column; justify-content:flex-start; gap:6px; padding:8px 2px; font-size:13px; }
+ .app-shell .topbar nav button:last-child { display:none; }
+ .app-shell .topbar nav button span { display:block; text-align:center; }
+ .app-shell .sidebar-profile .avatar-button { min-width:44px; min-height:44px; }
+}
+@media(max-width:350px){.app-shell .topbar{padding-inline:8px}.app-shell .topbar nav{gap:2px}.app-shell .topbar nav button{font-size:12px}}

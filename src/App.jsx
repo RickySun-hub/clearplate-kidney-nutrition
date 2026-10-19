@@ -1,3 +1,4 @@
+import './navigation-emphasis.css';
 import { createDayPlan, markPlanItem, undoPlanItem } from './utils/dayPlan.js';
 import { assessRecipeAllergies } from './utils/recipeAllergies.js';
 import { patientPageFromHash, writePatientPage } from './utils/patientNavigation';
@@ -327,12 +328,12 @@ export default function App() {
       <header className="topbar">
         <button className="logo-button" type="button" onClick={() => navigateTo("today")}><Logo /></button>
         <nav aria-label="Primary navigation">
-          <button aria-current={isTabActive("today") ? "page" : undefined} className={isTabActive("today") ? "active" : ""} type="button" onClick={() => navigateTo("today")}><CalendarDays /> Today</button>
-          <button aria-current={isTabActive("planner") ? "page" : undefined} className={isTabActive("planner") ? "active" : ""} type="button" onClick={() => navigateTo("planner")}><Utensils /> Plan</button>
-          <button aria-current={isTabActive("recipes") ? "page" : undefined} className={isTabActive("recipes") ? "active" : ""} type="button" onClick={() => navigateTo("recipes")}><BookOpen /> Recipes</button>
-          <button aria-current={isTabActive("history") ? "page" : undefined} className={isTabActive("history") ? "active" : ""} type="button" onClick={() => navigateTo("history")}><History /> History</button>
-          <button className={activeTab === "rd" ? "active" : ""} type="button" onClick={() => navigateTo("rd")}><BookOpen /> RD dashboard</button>
-          <button type="button" onClick={() => setProfileOpen(true)}><CircleUserRound /> Profile</button>
+          <button aria-current={isTabActive("today") ? "page" : undefined} className={isTabActive("today") ? "active" : ""} type="button" onClick={() => navigateTo("today")}><CalendarDays aria-hidden="true" /><span>Today</span></button>
+          <button aria-current={isTabActive("planner") ? "page" : undefined} className={isTabActive("planner") ? "active" : ""} type="button" onClick={() => navigateTo("planner")}><Utensils aria-hidden="true" /><span>Plan</span></button>
+          <button aria-current={isTabActive("recipes") ? "page" : undefined} className={isTabActive("recipes") ? "active" : ""} type="button" onClick={() => navigateTo("recipes")}><BookOpen aria-hidden="true" /><span>Recipes</span></button>
+          <button aria-current={isTabActive("history") ? "page" : undefined} className={isTabActive("history") ? "active" : ""} type="button" onClick={() => navigateTo("history")}><History aria-hidden="true" /><span>History</span></button>
+          <button aria-current={activeTab === "rd" ? "page" : undefined} className={activeTab === "rd" ? "active" : ""} type="button" onClick={() => navigateTo("rd")}><BookOpen aria-hidden="true" /><span>RD dashboard</span></button>
+          <button type="button" onClick={() => setProfileOpen(true)}><CircleUserRound aria-hidden="true" /><span>Profile</span></button>
         </nav>
         <div className="sidebar-profile"><button className="avatar-button" type="button" onClick={() => setProfileOpen(true)} aria-label="Open profile">{profile.name.slice(0, 1).toUpperCase()}</button><div><strong>{profile.name}</strong><span>Your nutrition profile</span></div></div>
       </header>

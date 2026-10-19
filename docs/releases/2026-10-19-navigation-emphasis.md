@@ -1,0 +1,11 @@
+# Shared navigation and surface emphasis
+
+Based on verified production 4078ce48e7eae47df77d532805dc5495c70edce4 (READY deployment dpl_DbTiyoxKo6nVQAADMuZwTTgsRn99). 28ece72 only adds the prior release record. Isolated branch ui/navigation-emphasis-20261019; no dff12e7 ancestor.
+
+User feedback explicitly targets the shared Today/Plan/Recipes/History/RD dashboard navigation, not only RD charts. Retained logo and all functions. Reused pinned project UI UX Pro Max guidance for visible labels, selected-state distinction, touch targets, contrast and reflow. Reference Library metadata resolved, but downloading the two original chat images returned 403; implementation follows the parent's inspected-image requirements, not an assertion that original images were locally viewed.
+
+Changes: stronger 700-weight labels (16px desktop; 13px mobile, 12px at <=350px), 22px icons, solid purple selected state, pale header surface and clearer single dividing line. Mobile five-column navigation gives the long RD label a wider column and allows wrapping. Profile remains in desktop navigation and mobile avatar (44px target); no hidden loss of access. RD button now exposes aria-current; decorative icons are hidden from accessibility tree. Light surfaces distinguish Today record/nutrient sections and RD coverage; no new nested frames. No nutrition, source units, status, Plan, allergy, timing, auth or permission logic changes.
+
+Verification: actual App with synthetic auth/cloud records; all five destinations clicked and selected state checked at 320/375/390/768/1440px. Asserted no page/nav horizontal overflow or clipped labels, bold text and >=44px buttons. Mobile profile dialog remains reachable. Actual mobile Today/RD screenshots explicitly labelled synthetic. Build and diff check passed. No extra unit suite added for presentation-only changes. Initial test found 320px long-label overflow, corrected by column allocation. A synthetic shared-record owner-ID mismatch was corrected in the test mock only. No production data used.
+
+Rollback branch: release/nepholio-before-nav-emphasis-20261019 -> 4078ce48e7eae47df77d532805dc5495c70edce4. Publication is authorized only after these checks; exact deployment result recorded separately.
