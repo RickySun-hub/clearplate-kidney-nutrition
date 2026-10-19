@@ -1,0 +1,10 @@
+<meta name="viewport" content="width=device-width, initial-scale=1"><div id="root"></div><script type="module">
+import React from 'react';import {createRoot} from 'react-dom/client';
+import '../../src/styles.css';import '../../src/preview-design.css';import '../../src/accessibility.css';
+import UsdaFoodModal from '../../src/components/UsdaFoodModal.jsx';
+import CareConnection from '../../src/components/CareConnection.jsx';
+window.qa={entries:[],closed:0};
+createRoot(document.getElementById('root')).render(new URLSearchParams(location.search).has('rd')
+ ?React.createElement(CareConnection,{mode:'rd',requestedMode:'rd-signin'})
+ :React.createElement(UsdaFoodModal,{open:true,onAdd:entry=>{qa.entries.push(entry);return true;},onClose:()=>qa.closed++}));
+</script>

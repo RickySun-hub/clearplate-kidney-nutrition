@@ -37,6 +37,7 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
   const [invitationConnections,setInvitationConnections]=useState([]);
   const connected=invitationConnections.filter(i=>i.reader_id===account?.id&&i.status==='accepted'&&i.active);
   const directoryPatients=[...patients.map(p=>({...p,email:connected.find(i=>i.owner_id===p.owner_id)?.recipient_email})),...connected.filter((i,index,all)=>!patients.some(p=>p.owner_id===i.owner_id)&&all.findIndex(j=>j.owner_id===i.owner_id)===index).map(i=>({owner_id:i.owner_id,updated_at:i.responded_at,profile:{name:i.patient_name},email:i.recipient_email,noRecord:true}))];
+  const waitingForRecord = directoryPatients.length > 0 && patients.length === 0;
   const [patientSearch,setPatientSearch]=useState('');
   const [patientLoading,setPatientLoading]=useState(false);
   const exactEmail=patientSearch.trim().toLowerCase();
@@ -191,7 +192,7 @@ export default function CareConnection({ mode = 'patient', requestedMode = 'sign
           {!visiblePatients.length&&<p className="care-help">{directoryPatients.length?'No connected patient matches this exact email.':'No connected patients yet. Use Add patient above to send an invitation.'}</p>}
           <p className="rd-directory-note">This filters your connected patients only. Enter their full email address. To invite someone new, use Add patient above.</p>
         </aside>
-        <div className="rd-file" aria-busy={patientLoading}>{patientLoading?<div className="rd-file-empty" role="status"><h3>Opening patient file…</h3></div>:rdContent || <div className="rd-file-empty"><FolderOpen size={42} aria-hidden="true"/><h3>Select a patient</h3><p>Open a file to review their profile, meals, nutrients, and original words.</p>{!patients.length&&<p>Use Add patient above, enter their full email, and share the invitation. Their file appears after they accept.</p>}</div>}</div>
+        <div className="rd-file" aria-busy={patientLoading}>{patientLoading?<div className="rd-file-empty" role="status"><h3>Opening patient file…</h3></div>:rdContent || <div className="rd-file-empty"><FolderOpen size={42} aria-hidden="true"/><h3>{waitingForRecord ? 'Waiting for a saved record' : 'Select a patient'}</h3><p>{waitingForRecord ? 'Your patient is connected. Their file will be available after they save their first record. Use Refresh patients to check again.' : 'Open a file to review their profile, meals, nutrients, and original words.'}</p>{!directoryPatients.length&&<p>Use Add patient above, enter their full email, and share the invitation. Their file appears after they accept and save a record.</p>}</div>}</div>
       </div> : <div className="care-owner">
         <p className="care-help" role="status">{syncStatus || 'Confirmed changes save automatically to Supabase.'}</p>
         <button className="care-upload" disabled={busy} type="button" onClick={()=>onSync?.()}>Refresh cloud record</button>
