@@ -1,0 +1,5 @@
+<meta name="viewport" content="width=device-width, initial-scale=1"><div id="root"></div><script type="module">
+import React from 'react';import {createRoot} from 'react-dom/client';import RecipeBuilder from '../../src/components/RecipeBuilder.jsx';import {buildCalculatedRecipe} from '../../src/utils/recipeCalculation.js';
+window.qa={logs:[]};const recipe=buildCalculatedRecipe({name:'Synthetic six-serving soup',servings:6,ingredients:[{food:{basis:'per100g',description:'Synthetic grain',nutrients:{calories:100,sodium:0,potassium:null}},quantity:600,unit:'g'}],finishedGrams:'',yieldConfirmed:false},'synthetic-six');
+createRoot(document.getElementById('root')).render(React.createElement(RecipeBuilder,{recipe,onSave:()=>true,onLog:entry=>{qa.logs.push(entry);return true;},onClose:()=>{}}));
+</script>

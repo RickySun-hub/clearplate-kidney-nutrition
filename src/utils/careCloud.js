@@ -1,3 +1,4 @@
+import { validStoredPlan } from './dayPlan.js';
 import { validConversation, MEALS } from './mealConversation.js';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const isAccountId = (value) => typeof value === 'string' && UUID.test(value.trim());
@@ -6,6 +7,8 @@ const object = (value) => value && typeof value === 'object' && !Array.isArray(v
 const textFields = (value, keys) => keys.every((key) => value[key] == null || (typeof value[key] === 'string' && value[key].length <= 10000));
 const nutrientFields = (value) => NUTRIENT_KEYS.every((key) => value[key] == null || validNutrientValue(value[key]));
 const profileValid = (profile) => object(profile)
+  && (profile.foodAllergies===undefined||(Array.isArray(profile.foodAllergies)&&profile.foodAllergies.length<=30&&profile.foodAllergies.every(v=>typeof v==='string'&&v.length<=80)))
+  && (profile.otherFoodAllergies===undefined||(typeof profile.otherFoodAllergies==='string'&&profile.otherFoodAllergies.length<=500))
   && textFields(profile, ['name', 'condition', 'stage', 'treatment', 'reviewedAt'])
   && ['weightKg', 'heightCm', 'sodiumTargetMg', 'proteinMinG', 'proteinMaxG'].every((key) => profile[key] == null || validNutrientValue(profile[key]))
   && (profile.trackedNutrients === undefined || (Array.isArray(profile.trackedNutrients) && profile.trackedNutrients.every((key) => NUTRIENT_KEYS.includes(key))))
@@ -27,6 +30,7 @@ export function validateCareRecord(value) {
     }
   }
   for (const [date, day] of Object.entries(value.dayRecords)) {
+    if(day?.plan!==undefined&&!validStoredPlan(day.plan))invalid();
     if (day?.mealReviews !== undefined && (!object(day.mealReviews) || Object.entries(day.mealReviews).some(([meal,r])=> !MEALS.includes(meal) || !object(r) || !['reviewed','not-eaten'].includes(r.status) || !validConversation(r.conversation) || typeof r.reviewedAt !== 'string' || !Number.isFinite(Date.parse(r.reviewedAt))))) invalid();
     if (!validDate(date) || (day !== null && (!object(day) || !textFields(day, ['completedAt','signature']) || (day.profile !== undefined && !profileValid(day.profile))))) invalid();
   }

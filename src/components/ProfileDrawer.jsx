@@ -1,11 +1,12 @@
 import { ExternalLink, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { FOOD_ALLERGIES, normalizeFoodAllergies } from "../utils/recipeAllergies.js";
 import useDialogFocus from "../hooks/useDialogFocus";
 import { isGuidelineProteinEligible, normalizeProfileDraft, updateProfileDraft } from "../utils/profile";
 import { NUTRIENTS, normalizeNutrientPreferences, validNutrientValue } from '../utils/nutrientCatalog.js';
 
 export default function ProfileDrawer({ open, profile, saveError, onClose, onSave }) {
-  const [draft, setDraft] = useState(() => ({ ...normalizeProfileDraft(profile), ...normalizeNutrientPreferences(profile) }));
+  const [draft, setDraft] = useState(() => ({ ...normalizeProfileDraft(profile), ...normalizeNutrientPreferences(profile), ...normalizeFoodAllergies(profile) }));
   const [validationError, setValidationError] = useState("");
   const [submissionError, setSubmissionError] = useState("");
   const [pending, setPending] = useState(false);
@@ -18,7 +19,7 @@ export default function ProfileDrawer({ open, profile, saveError, onClose, onSav
 
   useEffect(() => {
     if (open && !wasOpenRef.current) {
-      setDraft({ ...normalizeProfileDraft(profile), ...normalizeNutrientPreferences(profile) });
+      setDraft({ ...normalizeProfileDraft(profile), ...normalizeNutrientPreferences(profile), ...normalizeFoodAllergies(profile) });
       setValidationError("");
       setSubmissionError("");
     }
@@ -59,6 +60,7 @@ export default function ProfileDrawer({ open, profile, saveError, onClose, onSav
       const saved = await onSave({
         ...draft,
         ...normalizeNutrientPreferences(draft),
+        ...normalizeFoodAllergies(draft),
         name: draft.name.trim(),
         weightKg: Number(draft.weightKg),
         heightCm: Number(draft.heightCm),
@@ -95,6 +97,14 @@ export default function ProfileDrawer({ open, profile, saveError, onClose, onSav
           </div>
           <p className="field-note">Race is intentionally not collected. This tracker does not diagnose or calculate eGFR. In ADPKD, enlarged kidney or liver weight can also make ordinary BMI less representative.</p>
         </div>
+
+        <fieldset className="form-section" style={{ border: 0, padding: 0 }}>
+          <legend><h3>Food allergies</h3></legend>
+          <p className="field-note" id="allergy-help">Used to filter recipes and plans. Check ingredient labels and cross-contact; filtering cannot guarantee safety.</p>
+          <div className="form-grid" aria-describedby="allergy-help">{FOOD_ALLERGIES.map(({ id, label }) => <label className="check-row" key={id}><input type="checkbox" disabled={pending} checked={draft.foodAllergies.includes(id)} onChange={(event) => update('foodAllergies', event.target.checked ? [...draft.foodAllergies, id] : draft.foodAllergies.filter(value => value !== id))} /><span>{label}</span></label>)}</div>
+          <label><span>Other food allergies (comma separated)</span><input disabled={pending} maxLength={500} value={draft.otherFoodAllergies} onChange={(event) => update('otherFoodAllergies', event.target.value)} aria-describedby="other-allergy-help" /></label>
+          <p className="field-note" id="other-allergy-help">Other allergies require manual review. Recipes with unknown matches are excluded from automatic recommendations.</p>
+        </fieldset>
 
         <div className="form-section">
           <h3>Daily targets</h3>

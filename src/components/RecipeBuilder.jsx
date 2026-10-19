@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NUTRIENTS } from '../utils/nutrientCatalog.js';
-import { formatAmount } from '../utils/nutrition.js';
+import { formatAmount, localDateKey } from '../utils/nutrition.js';
 import { createUsdaSelection, portionDescription } from '../utils/usdaSelection.js';
 import { buildCalculatedRecipe, calculateRecipe, editRecipeIngredients, recipePortion } from '../utils/recipeCalculation.js';
 import './RecipeBuilder.css';
@@ -11,7 +11,8 @@ export default function RecipeBuilder({recipe, onSave, onLog, onClose}) {
   const [saved,setSaved] = useState(recipe || null), [dirty,setDirty] = useState(!recipe);
   const [query,setQuery] = useState(''), [results,setResults] = useState([]), [food,setFood] = useState(null);
   const [busy,setBusy] = useState(false), [error,setError] = useState(''), [searched,setSearched] = useState(false);
-  const [basis,setBasis] = useState('servings'), [amount,setAmount] = useState('1'), [meal,setMeal] = useState('Lunch');
+  const [basis,setBasis] = useState('servings'), [amount,setAmount] = useState('1'), [meal,setMeal] = useState('');
+  const [date,setDate] = useState(localDateKey);
   const [time,setTime] = useState(()=>new Date().toTimeString().slice(0,5));
   const [allNutrients,setAllNutrients] = useState(false);
   const [editing,setEditing] = useState(!recipe), [advanced,setAdvanced] = useState(false);
@@ -45,13 +46,14 @@ export default function RecipeBuilder({recipe, onSave, onLog, onClose}) {
   }
   async function log(){
     if(pending.current)return;
+    if(!date || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)){setError('Enter the date and time eaten.');return;}
     if(!Number.isFinite(Number(amount)) || Number(amount)<=0 || (basis==='grams' && !result.weightGrams)){setError('Enter a positive portion and resolve the recipe weight for gram portions.');return;}
     const current=dirty||!saved ? await save() : saved;
     if(!current)return;
     pending.current=true;setBusy(true);setError('');
     try{
       const customFood={...current,...recipePortion(current.calculation,basis,amount),servingDescription:`${amount} ${basis==='grams'?'g':'equal servings'}`,grams:basis==='grams'?Number(amount):result.weightGrams?result.weightGrams*Number(amount)/result.servings:null,recipeVersionId:current.id};
-      if(await onLog({customFood,servings:1,meal,time})===false)throw Error('Meal not saved. Review the storage message and retry.');onClose();
+      if(await onLog({customFood,servings:1,meal,time,date,timeSource:'user-recorded'})===false)throw Error('Meal not saved. Review the storage message and retry.');onClose();
     }catch(err){setError(err.message);}finally{pending.current=false;setBusy(false);}
   }
   const display=(value,unit)=>value===null?'Unknown':`${formatAmount(value,3)} ${unit}`;
@@ -77,13 +79,13 @@ export default function RecipeBuilder({recipe, onSave, onLog, onClose}) {
     </details>
     {draft.ingredients.length>0&&<p className="recipe-uncertainty" role="status">{NUTRIENTS.slice(0,5).filter(n=>!result.nutrients[n.key].complete).map(n=>n.label).join(', ') ? `Incomplete: ${NUTRIENTS.slice(0,5).filter(n=>!result.nutrients[n.key].complete).map(n=>n.label).join(', ')}. Unknown is not zero.` : 'Nutrition is estimated from your selected foods.'}{NUTRIENTS.slice(5).some(n=>!result.nutrients[n.key].complete)&&' Other nutrient data is also missing; see advanced review.'}</p>}
     {draft.finishedGrams!==''&&!draft.yieldConfirmed&&<p className="recipe-uncertainty">Ingredients changed. Reconfirm the finished weight in advanced review, or clear it before saving.</p>}
-    <section aria-labelledby="recipe-log-title"><h2 id="recipe-log-title">Your portion</h2><p>{Number(draft.servings)===1?'One portion is the whole recipe.':`One portion is 1 of ${draft.servings} equal parts.`}</p><div className="recipe-fields recipe-log-fields"><label>Portion amount<input type="number" min="0" step="any" value={amount} onChange={e=>setAmount(e.target.value)} /></label><label>Measure<select aria-label="Portion measure" value={basis} onChange={e=>setBasis(e.target.value)}><option value="servings">Recipe portions</option><option value="grams">Grams of finished recipe</option></select></label></div><details className="recipe-log-meta"><summary>{meal} · {time || 'Time not set'}</summary><div className="recipe-fields"><label>Meal<select value={meal} onChange={e=>setMeal(e.target.value)}>{['Breakfast','Lunch','Dinner','Snack'].map(m=><option key={m}>{m}</option>)}</select></label><label>Time eaten<input type="time" value={time} onChange={e=>setTime(e.target.value)} /></label></div></details>
+    <section aria-labelledby="recipe-log-title"><h2 id="recipe-log-title">Your portion</h2><p>{result.servings ? `Whole recipe makes ${result.servings} personal serving${result.servings===1?'':'s'}. Choose how much you ate.` : 'Whole recipe yield unknown. Enter its serving count before logging.'}</p><div role="group" aria-label="Personal serving presets">{[0.5,1,2].map(value=><button type="button" key={value} disabled={busy} aria-pressed={basis==='servings'&&Number(amount)===value} onClick={()=>{setBasis('servings');setAmount(String(value));}}>{value} serving{value===1?'':'s'}</button>)}<button type="button" disabled={busy||!result.servings} onClick={()=>{setBasis('servings');setAmount(String(result.servings));}}>Whole recipe{result.servings ? ` · ${result.servings} servings` : ' · yield unknown'}</button></div><div className="recipe-fields recipe-log-fields"><label>Portion amount<input type="number" min="0" step="any" value={amount} onChange={e=>setAmount(e.target.value)} /></label><label>Measure<select aria-label="Portion measure" value={basis} onChange={e=>setBasis(e.target.value)}><option value="servings">Personal servings</option><option value="grams">Grams of finished recipe</option></select></label></div><div className="recipe-fields"><label>Date eaten<input type="date" value={date} onChange={e=>setDate(e.target.value)} /></label><label>Time eaten<input type="time" value={time} onChange={e=>setTime(e.target.value)} /></label><label>Meal label (optional)<input list="recipe-meal-labels" value={meal} onChange={e=>setMeal(e.target.value)} /></label><datalist id="recipe-meal-labels">{['Breakfast','Brunch','Lunch','Dinner','Snack'].map(m=><option key={m} value={m}/>)}</datalist></div>
       <button type="button" className="primary-button" disabled={busy||!draft.ingredients.length||(basis==='grams'&&!result.weightGrams)} onClick={log}>{dirty||!saved?'Save recipe & log portion':'Save meal'}</button>
       {dirty&&<button type="button" className="recipe-save-only" disabled={busy} onClick={save}>{saved?'Save recipe changes only':'Keep recipe for later'}</button>}
       {saved&&!dirty&&<p role="status">Saved in your recipes.</p>}
     </section>
     <details className="recipe-advanced" open={advanced} onToggle={e=>setAdvanced(e.currentTarget.open)}><summary>Advanced review & editing</summary>
-    <section aria-labelledby="recipe-yield-title"><h2 id="recipe-yield-title">Recipe size & weight</h2><div className="recipe-fields"><label>Number of equal servings<input type="number" min="1" max="1000" step="any" value={draft.servings} disabled={busy} onChange={e=>change('servings',e.target.value)} /></label><label>Measured finished weight (g, optional)<input type="number" min="0" step="any" value={draft.finishedGrams} disabled={busy} onChange={e=>{setDraft(current=>({...current,finishedGrams:e.target.value,yieldConfirmed:false}));setDirty(true);}} placeholder="After cooking, excluding container" /></label></div>
+    <section aria-labelledby="recipe-yield-title"><h2 id="recipe-yield-title">Recipe size & weight</h2><div className="recipe-fields"><label>Whole recipe makes (personal servings)<input type="number" min="1" max="1000" step="any" value={draft.servings} disabled={busy} onChange={e=>change('servings',e.target.value)} /></label><label>Measured finished weight (g, optional)<input type="number" min="0" step="any" value={draft.finishedGrams} disabled={busy} onChange={e=>{setDraft(current=>({...current,finishedGrams:e.target.value,yieldConfirmed:false}));setDirty(true);}} placeholder="After cooking, excluding container" /></label></div>
       {draft.finishedGrams!==''&&<label className="recipe-confirm"><input type="checkbox" checked={draft.yieldConfirmed} disabled={busy} onChange={e=>change('yieldConfirmed',e.target.checked)} />I confirm this finished weight for the current ingredients.</label>}
       {draft.finishedGrams!==''&&!draft.yieldConfirmed&&<p role="status">Confirm the measured weight after ingredient or weight changes. Weight-based amounts are unavailable until confirmed.</p>}
       <p><strong>{result.weightBasis}:</strong> {display(result.weightGrams,'g')}</p><p>Finished weight changes concentration, not total nutrients. Draining, discarded liquid, and cooking retention are not estimated.</p>

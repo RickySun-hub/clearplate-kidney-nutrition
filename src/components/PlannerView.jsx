@@ -1,119 +1,36 @@
-import { AlertTriangle, CheckCircle2, ChevronRight, Sparkles } from "lucide-react";
-import { useMemo } from "react";
-import { recipeImages } from "../data/seed.js";
-import { mealOptions, optimizeRemainingDay } from "../optimization/optimizeRemainingDay.js";
-import { formatAmount } from "../utils/nutrition.js";
+import { useMemo, useRef, useState } from 'react';
+import { mealOptions, optimizeRemainingDay } from '../optimization/optimizeRemainingDay.js';
+import { formatAmount, localDateKey } from '../utils/nutrition.js';
+import { planEntryId } from '../utils/dayPlan.js';
+import { assessRecipeAllergies } from '../utils/recipeAllergies.js';
+import './PlannerView.css';
 
-const objectiveLabels = {
-  balanced: ["Balanced", "Balances the remaining protein gap, calories, and sodium."],
-  "lowest-sodium": ["Lowest sodium", "Uses less sodium among strong target-compatible options."],
-  simplest: ["Simplest preparation", "Uses the fewest known cooking steps."],
-};
-
-const formatRemaining = (value, unit) => value >= 0
-  ? `${formatAmount(value, 1)} ${unit} remaining`
-  : `${formatAmount(Math.abs(value), 1)} ${unit} over`;
-
-export default function PlannerView({ recipes, recipeDetails, profile, todayEntries, todayTotals, plannerSession, onPlannerSessionChange, onAddPlan, onOpenRecipe }) {
-  const initialMeals = useMemo(() => {
-    const loggedMeals = new Set(todayEntries.map((entry) => entry.meal));
-    const remainingMeals = mealOptions.filter((meal) => !loggedMeals.has(meal));
-    return remainingMeals.length ? remainingMeals : ["Snack"];
-  }, [todayEntries]);
-  const selectedMeals = plannerSession.selectedMeals?.length ? plannerSession.selectedMeals : initialMeals;
-  const caloriesPerMeal = plannerSession.caloriesPerMeal;
-  const activeObjective = plannerSession.activeObjective;
-
-  const result = useMemo(() => optimizeRemainingDay({
-    recipes,
-    detailsById: recipeDetails,
-    loggedTotals: todayTotals,
-    targets: {
-      sodiumMax: profile.sodiumTargetMg,
-      proteinMin: profile.proteinMinG,
-      proteinMax: profile.proteinMaxG,
-      potassiumMax: profile.potassiumTargetMg ?? null,
-      phosphorusMax: profile.phosphorusTargetMg ?? null,
-    },
-    selectedMeals,
-    calorieReference: Number(caloriesPerMeal) * selectedMeals.length,
-    maxRecipes: 4,
-  }), [caloriesPerMeal, profile, recipeDetails, recipes, selectedMeals, todayTotals]);
-
-  const activePlan = result.plans?.find((plan) => plan.objective === activeObjective) || result.plans?.[0];
-
-  const toggleMeal = (meal) => {
-    const nextMeals = selectedMeals.includes(meal)
-      ? (selectedMeals.length === 1 ? selectedMeals : selectedMeals.filter((item) => item !== meal))
-      : mealOptions.filter((item) => selectedMeals.includes(item) || item === meal);
-    onPlannerSessionChange((current) => ({ ...current, selectedMeals: nextMeals }));
-  };
-
-  return (
-    <main className="planner-page">
-      <header className="page-heading"><div><h1>Build the rest of your day</h1><p>Explore meal ideas based on what you have already logged and the targets saved in your profile.</p></div></header>
-      {todayTotals.estimatedCount > 0 && <p className="estimate-note">Your log includes estimates. Planning uses their upper bounds for nutrient ceilings and their lower protein bound for the remaining protein gap. Results depend on your user-set ranges.</p>}
-
-      <section className="planner-controls">
-        <div className="meal-planning-control">
-          <span className="control-label">Meals to plan</span>
-          <div className="meal-selector" role="group" aria-label="Meals to plan">
-            {mealOptions.map((meal) => <button className={selectedMeals.includes(meal) ? "selected" : ""} type="button" aria-pressed={selectedMeals.includes(meal)} key={meal} onClick={() => toggleMeal(meal)}><span aria-hidden="true" className="meal-selection-mark">{selectedMeals.includes(meal) ? "✓" : "+"}</span>{meal}</button>)}
-            <button type="button" className="smoothie-pending" disabled><span>Smoothies</span><small>Recipes coming soon</small></button>
-          </div>
-        </div>
-        <label><span>Approx. calories per meal</span><div className="inline-unit"><input type="number" min="100" max="1500" step="50" value={caloriesPerMeal} onChange={(event) => onPlannerSessionChange((current) => ({ ...current, caloriesPerMeal: event.target.value }))} /><span>kcal</span></div></label>
-        <div className="constraint-summary">
-          {result.remainingBefore ? <>
-            <span>Sodium <strong>{formatRemaining(result.remainingBefore.sodiumMax, "mg")}</strong></span>
-            <span>Protein <strong>{formatAmount(result.remainingBefore.proteinMin, 1)}–{formatAmount(Math.max(0, result.remainingBefore.proteinMax), 1)} g remaining</strong></span>
-          </> : <span>Targets <strong>Review required</strong></span>}
-          <span>Up to <strong>4 dishes</strong> · 0.5–2 servings</span>
-        </div>
-      </section>
-
-      {result.status === "over-limit" && <section className="plan-status closest"><AlertTriangle size={22} /><div><strong>No option stays within every current upper limit</strong><p>The closest options are shown with their exact overages. They are not labeled target-compatible, and you can still compare or adjust your choice.</p></div></section>}
-      {result.status === "invalid" && <section className="plan-status closest"><AlertTriangle size={22} /><div><strong>{result.message}</strong></div></section>}
-      {result.status === "empty" && <section className="plan-status closest"><AlertTriangle size={22} /><div><strong>No meal idea is available</strong><p>{result.message}</p></div></section>}
-
-      {activePlan && <>
-        <div className="plan-variants" role="tablist" aria-label="Meal idea type">
-          {result.plans.map((plan) => <button className={plan.objective === activePlan.objective ? "active" : ""} type="button" role="tab" aria-selected={plan.objective === activePlan.objective} key={plan.objective} onClick={() => onPlannerSessionChange((current) => ({ ...current, activeObjective: plan.objective }))}><strong>{objectiveLabels[plan.objective][0]}</strong><span>{objectiveLabels[plan.objective][1]}</span></button>)}
-        </div>
-
-        <section className={`plan-status ${activePlan.withinUpperLimits ? "" : "closest"}`}>
-          {activePlan.withinUpperLimits ? <CheckCircle2 size={22} /> : <AlertTriangle size={22} />}
-          <div><strong>{activePlan.withinUpperLimits ? "Within current upper limits" : "Closest available option"}</strong><p>{activePlan.reason}</p></div>
-        </section>
-
-        <div className="plan-list">
-          {activePlan.items.map((item) => <button className="plan-row plan-row-button" type="button" key={`${item.recipeId}-${item.meal}`} onClick={() => onOpenRecipe(item)} aria-label={`View ${item.recipe.name} recipe`}>
-            {recipeImages[item.recipeId] ? <img src={recipeImages[item.recipeId]} alt="" loading="lazy" decoding="async" /> : <span className="plan-index">{item.meal.slice(0, 1)}</span>}
-            <div><small>{item.meal}</small><strong>{item.recipe.name}</strong><span>{formatAmount(item.servings, 1)} serving{item.servings === 1 ? "" : "s"} · {formatAmount(item.nutrition.calories, 1)} kcal · {formatAmount(item.nutrition.protein, 1)} g protein · {formatAmount(item.nutrition.sodium, 1)} mg sodium</span><span className="plan-row-link">View recipe</span></div>
-            <ChevronRight className="plan-row-arrow" size={20} />
-          </button>)}
-        </div>
-
-        <section className="plan-summary-grid">
-          <div className="plan-totals">
-            <div><span>Calories</span><strong>{formatAmount(activePlan.totals.calories, 1)} kcal</strong></div>
-            <div><span>Protein</span><strong>{formatAmount(activePlan.totals.protein, 1)} g</strong></div>
-            <div><span>Sodium</span><strong>{formatAmount(activePlan.totals.sodium, 1)} mg</strong></div>
-          </div>
-          <div className={`remaining-card ${activePlan.withinUpperLimits ? "" : "over"}`}>
-            <span>After these meals</span>
-            <strong>{formatRemaining(activePlan.remainingAfter.sodiumMax, "mg sodium")}</strong>
-            <small>{activePlan.remainingAfter.proteinMax < 0
-              ? `${formatAmount(Math.abs(activePlan.remainingAfter.proteinMax), 1)} g over the protein maximum`
-              : activePlan.proteinGap > 0
-                ? `${formatAmount(activePlan.proteinGap, 1)} g protein remains to reach the daily range`
-                : `${formatAmount(activePlan.remainingAfter.proteinMax, 1)} g remains before the protein maximum`}</small>
-          </div>
-          <button className="primary-button" type="button" onClick={() => onAddPlan(activePlan.items)}>Add this idea to Today</button>
-        </section>
-      </>}
-
-      <section className="optimization-note"><Sparkles size={20} /><div><strong>How these ideas are generated</strong><p>A deterministic browser-based search uses only stored nutrition values, today’s logged intake, 0.5–2 serving options, and the upper limits in your profile. Sodium is treated as a ceiling, not a target to fill. “Simplest preparation” uses known cooking-step counts because reliable preparation times are not yet stored.</p></div></section>
-    </main>
-  );
+export default function PlannerView({recipes,recipeDetails,profile,todayEntries,todayTotals,plannerSession,onPlannerSessionChange,onAddPlan,onOpenRecipe,savedPlan,entries=[],onChangePlan,onTogglePlan}){
+ const [error,setError]=useState(''),[busy,setBusy]=useState(false),[addId,setAddId]=useState('');const pending=useRef(false);
+ const [eatenDate,setEatenDate]=useState(localDateKey),[eatenTime,setEatenTime]=useState(()=>new Date().toTimeString().slice(0,5));
+ const selectedMeals=plannerSession.selectedMeals?.length?plannerSession.selectedMeals:mealOptions.filter(m=>!todayEntries.some(e=>e.meal===m));
+ const meals=selectedMeals.length?selectedMeals:['Snack'];
+ const eligible=useMemo(()=>recipes.filter(r=>assessRecipeAllergies(r,recipeDetails[r.id],profile).eligible),[recipes,recipeDetails,profile]);
+ const result=useMemo(()=>optimizeRemainingDay({recipes:eligible,detailsById:recipeDetails,loggedTotals:todayTotals,targets:{sodiumMax:profile.sodiumTargetMg,proteinMin:profile.proteinMinG,proteinMax:profile.proteinMaxG,potassiumMax:profile.potassiumTargetMg??null,phosphorusMax:profile.phosphorusTargetMg??null},selectedMeals:meals,calorieReference:Number(plannerSession.caloriesPerMeal)*meals.length,maxRecipes:4}),[eligible,recipeDetails,todayTotals,profile,plannerSession.caloriesPerMeal,meals.join('|')]);
+ const proposal=result.plans?.find(p=>p.objective===plannerSession.activeObjective)||result.plans?.[0];
+ const run=async fn=>{if(pending.current)return;pending.current=true;setBusy(true);setError('');try{if(await fn()===false)setError('Not saved. Check the sync message and retry.');}catch(e){setError(e.message||'Not saved. Please retry.');}finally{pending.current=false;setBusy(false);}};
+ const edit=(id,patch)=>run(()=>onChangePlan({...savedPlan,items:savedPlan.items.map(i=>i.id===id?{...i,...patch}:i)}));
+ const rows=savedPlan?.items||proposal?.items||[];
+ return <main className="simple-plan"><header><p className="plan-eyebrow">TODAY</p><h1>Your plan</h1><p>Plan first. Count food only when marked eaten.</p></header>
+ <details className="plan-options"><summary>Plan options</summary><div className="plan-option-fields"><fieldset><legend>Meals to suggest</legend>{mealOptions.map(meal=><label key={meal}><input type="checkbox" checked={meals.includes(meal)} onChange={()=>onPlannerSessionChange(c=>({...c,selectedMeals:meals.includes(meal)?meals.filter(m=>m!==meal):[...meals,meal]}))}/>{meal}</label>)}</fieldset><label>Calories per meal<input type="number" min="100" max="1500" value={plannerSession.caloriesPerMeal} onChange={e=>onPlannerSessionChange(c=>({...c,caloriesPerMeal:e.target.value}))}/></label><label>Preference<select value={plannerSession.activeObjective} onChange={e=>onPlannerSessionChange(c=>({...c,activeObjective:e.target.value}))}><option value="balanced">Balanced</option><option value="lowest-sodium">Lower sodium</option><option value="simplest">Simpler preparation</option></select></label></div></details>
+ {(profile.foodAllergies?.length||profile.otherFoodAllergies)&&<p className="plan-warning">Allergy filter: matching foods and uncertain ingredient lists are excluded. Check labels and cross-contact.</p>}
+ {!savedPlan&&result.status==='invalid'&&<p role="alert">{result.message}</p>}
+ {!savedPlan&&!rows.length&&<p role="status">No matching plan. Review allergy settings, available ingredients and saved targets.</p>}
+ {!savedPlan&&proposal&&!proposal.withinUpperLimits&&<p className="plan-warning">This suggestion exceeds a saved limit. Review details before choosing.</p>}
+ {savedPlan&&<div className="plan-eaten-time"><label>Date eaten<input type="date" value={eatenDate} onChange={e=>setEatenDate(e.target.value)}/></label><label>Time eaten <small>(editable)</small><input type="time" value={eatenTime} onChange={e=>setEatenTime(e.target.value)}/></label></div>}
+ <ul className="simple-plan-list">{rows.map((item,index)=>{const food=item.recipe||recipes.find(r=>r.id===item.recipeId);const detail=item.details||recipeDetails[item.recipeId];const logged=savedPlan&&entries.find(e=>e.id===planEntryId(item)&&e.planItemId===item.id);const allergy=assessRecipeAllergies(food,detail,profile);const yieldCount=Number(food?.calculation?.servings||detail?.servings);const missing=(profile.trackedNutrients||['calories','protein','sodium']).filter(key=>food?.[key]==null);return <li key={item.id||`${item.recipeId}-${index}`} className={logged?'is-eaten':''}>
+ <div className="plan-slot"><strong>{item.time||item.meal||'Any time'}</strong>{item.time&&item.meal&&<small>{item.meal}</small>}</div><div className="plan-food"><button className="plan-food-name" onClick={()=>onOpenRecipe(item)}>{food?.name||'Food unavailable'}</button><p>{formatAmount(item.servings,2)} personal portion{item.servings===1?'':'s'}{yieldCount>0?` · Whole recipe makes ${yieldCount}`:' · Recipe yield unknown'}</p>{missing.length>0&&<p>Missing nutrient data: {missing.join(', ')}.</p>}{!allergy.eligible&&<p className="plan-warning">{allergy.message}</p>}{logged&&<p className="plan-done">Eaten · {logged.date} · {logged.timeSource==='user-recorded'&&logged.time?logged.time:'Time unknown'}</p>}
+ {savedPlan&&!logged&&<details><summary>Edit portion / schedule</summary><div className="plan-edit"><label>Personal portions<input aria-label={`Portions for ${food?.name}`} type="number" min="0.01" step="any" defaultValue={item.servings} key={item.servings} onBlur={e=>{const value=Number(e.target.value);if(!(value>0&&Number.isFinite(value))){setError('Enter a positive personal portion.');e.target.value=item.servings;}else if(value!==item.servings)edit(item.id,{servings:value});}} disabled={busy}/></label><div className="portion-shortcuts">{[.5,1,2].map(n=><button key={n} disabled={busy} onClick={()=>edit(item.id,{servings:n})}>{n}</button>)}{yieldCount>0&&<button disabled={busy} onClick={()=>edit(item.id,{servings:yieldCount})}>Whole recipe ({yieldCount})</button>}</div><label>Planned time<input type="time" defaultValue={item.time} onBlur={e=>edit(item.id,{time:e.target.value})} disabled={busy}/></label><label>Meal label (optional)<input defaultValue={item.meal} placeholder="Brunch, after work…" maxLength={80} onBlur={e=>edit(item.id,{meal:e.target.value.trim()})} disabled={busy}/></label>{rows.length>1&&<label>Move into another meal<select value="" disabled={busy} onChange={e=>{const target=rows.find(r=>r.id===e.target.value);if(target)edit(item.id,{meal:target.meal,time:target.time});}}><option value="">Choose meal</option>{rows.filter(r=>r.id!==item.id).map(r=><option key={r.id} value={r.id}>{r.time||r.meal||'Any time'} · {r.recipe.name}</option>)}</select></label>}</div></details>}</div>
+ {savedPlan?<button className={logged?'plan-undo':'plan-check'} disabled={busy||(!logged&&(!allergy.eligible||!eatenDate))} onClick={()=>run(()=>onTogglePlan(item,Boolean(logged),{date:eatenDate,time:eatenTime,meal:item.meal}))}>{logged?'Undo eaten':'Mark eaten'}</button>:<span className="plan-proposed">Suggested</span>}
+ </li>;})}</ul>
+ {!savedPlan&&proposal&&<button className="primary-button" disabled={busy} onClick={()=>run(()=>onAddPlan(proposal.items))}>Use this plan</button>}
+ {savedPlan&&<details className="plan-options"><summary>Add a food or change plan</summary><div className="plan-add"><label>Food<select value={addId} onChange={e=>setAddId(e.target.value)}><option value="">Choose a recipe</option>{eligible.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label><button disabled={busy||!addId} onClick={()=>run(()=>{const recipe=eligible.find(r=>r.id===addId);return onChangePlan({...savedPlan,items:[...savedPlan.items,{id:crypto.randomUUID(),recipeId:recipe.id,recipe:structuredClone(recipe),details:structuredClone(recipeDetails[recipe.id]||{}),servings:1,meal:'',time:''}]});})}>Add food</button><button disabled={busy} onClick={()=>run(()=>onChangePlan(null))}>Choose a new plan</button></div><p>Logged foods stay in your record when you change plans.</p></details>}
+ {error&&<p role="alert">{error}</p>}
+ <details className="plan-options"><summary>Nutrition & calculation details</summary>{!savedPlan&&proposal&&<><p>{proposal.reason}</p><p>Suggested total: {formatAmount(proposal.totals.calories,1)} kcal · {formatAmount(proposal.totals.protein,1)} g protein · {formatAmount(proposal.totals.sodium,1)} mg sodium</p></>}<p>Suggestions use stored per-serving nutrition and saved targets. Missing values are unknown. Estimates and ingredient changes affect totals. Nutrient details are available in each recipe.</p></details>
+ </main>;
 }

@@ -95,7 +95,7 @@ export default function LiveVoice({accessToken,getAccessToken,meal,mode='log',re
       if(r.released)return;
       const token=getAccessToken ? await getAccessToken() : accessToken;
       if(r.released)return;
-      const response=await fetch('/api/voice-live',{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify({sdp:r.pc.localDescription.sdp,meal,mode,conversation:prior,localHour:new Date().getHours()}),signal:r.abort.signal});
+      const response=await fetch('/api/voice-live',{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`}:{})},body:JSON.stringify({sdp:r.pc.localDescription.sdp,meal,mode,conversation:prior,localHour:new Date().getHours(),localDate:context.current.date}),signal:r.abort.signal});
       const result=await response.json();if(!response.ok)throw new Error(result.error?.message||'Could not connect to live voice.');
       if(r.released)return;await r.pc.setRemoteDescription({type:'answer',sdp:result.sdp});
 

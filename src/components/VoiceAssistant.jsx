@@ -1,5 +1,6 @@
+import { recipeYield, recipePortionLabel, resolveRecipeServings } from '../utils/recipePortions.js';
 import { useEffect, useRef, useState } from 'react';
-import { parseNutrientValues, formatAmount } from '../utils/nutrition';
+import { parseNutrientValues, formatAmount, localDateKey } from '../utils/nutrition';
 import './VoiceAssistant.css';
 import { MEALS, dueMeals, nextMeal, mealQuestion, conversationText } from '../utils/mealConversation.js';
 import { X } from 'lucide-react';
@@ -15,6 +16,7 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
   const [conversation, setConversation] = useState([]);
   const [reply, setReply] = useState(() => mealQuestion(nextMeal(entries, mealReviews, date)));
   const [mealTime, setMealTime] = useState('');
+  const [mealDate,setMealDate] = useState(()=>date||localDateKey());
   const [liveBusy,setLiveBusy]=useState(false);
   const [liveVersion,setLiveVersion]=useState(0);
   const turnBusy = useRef(false);
@@ -138,10 +140,10 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
       }
       if (data.draft.intent === 'cooking') { if (data.draft.command !== 'none') navigate(data.draft.command); else setMessage('Use next, previous, or repeat for source cooking steps.'); clearMatches(); setDraft(null); }
       else if (data.draft.intent === 'food' && (data.draft.recipeId || data.draft.foodName?.trim())) {
-        clearMatches(); setDraft({...data.draft,meal:recipe?data.draft.meal:meal}); setOutsideMode('usda');
+        clearMatches(); setDraft({...data.draft,meal:typeof data.draft.meal==='string'?data.draft.meal:meal}); setOutsideMode('usda');
         setMessage('Review the food, portion, and meal. Nutrition comes only from selected source data.');
         if (!data.draft.recipeId && data.draft.foodName?.trim()) searchUsda(data.draft.foodName);
-      } else { clearMatches(); setDraft(null); setMessage('No food or cooking command recognized. Edit your transcript or create a manual food draft.'); }
+      } else { clearMatches(); setDraft(null); setMessage(data.reply || 'No food or cooking command recognized. Edit your transcript or create a manual food draft.'); }
     } catch (error) { if (alive.current && generation.current === sessionGeneration) setMessage(error.message || 'Voice is unavailable. Please type instead.'); }
     finally { turnBusy.current=false; if (alive.current && generation.current === sessionGeneration) setPending(false); }
   }
@@ -196,16 +198,17 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
     if (!description.trim()) {setMessage('First tell me what you ate.');return;}
     saving.current=true;setPending(true);
     try {
-      const ok=await onAddFood({meal,time:mealTime || undefined,servings:1,conversation:turns,inputMethod:'conversation',customFood:{name:transcript.trim().slice(0,120) || draft?.foodName || description.slice(0,120),method:'unmeasured',methodLabel:'Patient description · nutrition unknown'}});
+      const ok=await onAddFood({date:mealDate,meal,time:mealTime || undefined,servings:1,conversation:turns,inputMethod:'conversation',customFood:{name:transcript.trim().slice(0,120) || draft?.foodName || description.slice(0,120),method:'unmeasured',methodLabel:'Patient description · nutrition unknown'}});
       if(ok===false){setMessage('Could not save. Please retry.');return;}
       setConversation([]);setTranscript('');setDraft(null);clearMatches();assistantReply('Saved your description with nutrition marked unknown. What else did you have?');setMessage('Description saved after your confirmation.');
     } catch {setMessage('Could not save your description. Please retry.');} finally {saving.current=false;setPending(false);}
   }
   async function save(turns = conversation) {
     if (saving.current || !draft || !onAddFood) return;
-    const servings = Number(draft.servings);
-    if (!Number.isFinite(servings) || servings < 0.25 || servings > 20) { setMessage('Use 0.25–20 servings.'); return; }
     const selectedRecipe = recipes.find(item => item.id === draft.recipeId);
+    let servings;
+    try { servings=selectedRecipe ? resolveRecipeServings(selectedRecipe,recipeDetails[selectedRecipe.id],draft.servings,draft.portionBasis||'servings') : Number(draft.servings); } catch(error) {setMessage(error.message);return;}
+    if (!Number.isFinite(servings) || servings <= 0 || servings > 1000) { setMessage('Enter a positive personal serving amount (up to 1,000).'); return; }
     const weight = Number(grams);
     const useUsda = !selectedRecipe && outsideMode === 'usda';
     if (useUsda && (!usdaFood || usdaFood.basis !== 'per100g' || !Number.isFinite(weight) || weight <= 0 || weight * servings > 10000)) { setMessage('Select a USDA food and confirm its grams per serving; total eaten weight must be at most 10,000 g.'); return; }
@@ -213,9 +216,9 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
     if (!selectedRecipe && (!draft.foodName?.trim() || !values)) { setMessage('Enter a food name and label calories, protein, and sodium per serving. Unknown potassium and phosphorus can stay blank.'); return; }
     saving.current = true; setPending(true);
     try {
-      const payload = { servings, meal: draft.meal, time:mealTime || undefined, conversation:turns, inputMethod:turns.some(t=>t.source==='voice')?'voice-conversation':'typed-conversation', ...(selectedRecipe ? { recipeId: selectedRecipe.id } : { customFood: { id: `custom-${Date.now()}`, name: draft.foodName.trim(), ...values, ...(useUsda ? { name:usdaFood.description, method:'usda-estimate', methodLabel:'USDA food match · estimate', fdcId:usdaFood.fdcId, sourceUrl:usdaFood.sourceUrl, dataType:usdaFood.dataType, sourceRelease:usdaFood.release, sourceDescription:usdaSource, grams:weight, servingDescription:`${formatAmount(weight,2)} g per serving` } : {method:'packaged',methodLabel:'User-entered nutrition label'}), baseEstimate: { ...values }, uncertaintyMargin: 0, estimateRangePercent: 0 } }) };
+      const payload = { date:mealDate, servings, meal: draft.meal, time:mealTime || undefined, conversation:turns, inputMethod:turns.some(t=>t.source==='voice')?'voice-conversation':'typed-conversation', ...(selectedRecipe ? { recipeId: selectedRecipe.id } : { customFood: { id: `custom-${Date.now()}`, name: draft.foodName.trim(), ...values, ...(useUsda ? { name:usdaFood.description, method:'usda-estimate', methodLabel:'USDA food match · estimate', fdcId:usdaFood.fdcId, sourceUrl:usdaFood.sourceUrl, dataType:usdaFood.dataType, sourceRelease:usdaFood.release, sourceDescription:usdaSource, grams:weight, servingDescription:`${formatAmount(weight,2)} g per serving` } : {method:'packaged',methodLabel:'User-entered nutrition label'}), baseEstimate: { ...values }, uncertaintyMargin: 0, estimateRangePercent: 0 } }) };
       if (await onAddFood(payload) === false) { setMessage('The food could not be saved. Review and retry.'); return; }
-      setDraft(null); setTranscript(''); setConversation([]); setMealTime(''); assistantReply(`Saved. What else did you have for ${draft.meal.toLowerCase()}? If that is everything, choose Meal finished.`); setMessage('Food saved after your confirmation.');
+      setDraft(null); setTranscript(''); setConversation([]); setMealTime(''); assistantReply(`Saved. What else did you have?`); setMessage('Food saved after your confirmation.');
     } catch { setMessage('Food could not be saved. Please retry.'); }
     finally { saving.current = false; setPending(false); }
   }
@@ -256,9 +259,10 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
           </>}
         </> : <><p>Per-serving values from your nutrition label. AI does not supply these values.</p><div className="voice-nutrients">{Object.keys(emptyNutrients).map(key => <label key={key}>{key} ({key === 'calories' ? 'kcal' : key === 'protein' ? 'g' : 'mg'})<input disabled={pending || recording || liveBusy} type="number" min="0" step="0.01" value={nutrients[key]} onChange={event => setNutrients({ ...nutrients,[key]:event.target.value })} /></label>)}</div></>}
       </>}
-      <label>Meal time (optional)<input type="time" disabled={pending || recording || liveBusy} value={mealTime} onChange={e=>setMealTime(e.target.value)} /></label>
-      <label>Servings<input disabled={pending || recording || liveBusy} type="number" min="0.25" max="20" step="0.25" value={draft.servings} onChange={event => setDraft({ ...draft,servings:event.target.value })} /></label>
-      <label>Meal<select disabled={pending || recording || liveBusy} value={draft.meal} onChange={event => setDraft({ ...draft,meal:event.target.value })}>{['Breakfast','Lunch','Dinner','Snack'].map(meal => <option key={meal}>{meal}</option>)}</select></label>
+      <label>Date eaten<input type="date" value={mealDate} disabled={pending || recording || liveBusy} onChange={e=>setMealDate(e.target.value)}/></label><label>Time eaten (optional)<input type="time" disabled={pending || recording || liveBusy} value={mealTime} onChange={e=>setMealTime(e.target.value)} /></label>
+      {draft.recipeId && <><p>{recipePortionLabel(recipes.find(r=>r.id===draft.recipeId),recipeDetails[draft.recipeId])}</p><div className="voice-actions" role="group" aria-label="Personal portion presets">{[0.5,1,2].map(value=><button type="button" disabled={pending||recording||liveBusy} key={value} onClick={()=>setDraft({...draft,servings:value,portionBasis:'servings'})}>{value} serving{value===1?'':'s'}</button>)}<button type="button" disabled={pending||recording||liveBusy||!recipeYield(recipes.find(r=>r.id===draft.recipeId),recipeDetails[draft.recipeId])} onClick={()=>setDraft({...draft,servings:recipeYield(recipes.find(r=>r.id===draft.recipeId),recipeDetails[draft.recipeId]),portionBasis:'whole'})}>Whole recipe</button></div></>}
+      <label>Personal servings<input disabled={pending || recording || liveBusy} type="number" min="0" max="1000" step="any" value={draft.servings ?? ''} onChange={event => setDraft({ ...draft,servings:event.target.value,portionBasis:'servings' })} /></label>
+      <label>Meal label (optional)<input maxLength={80} disabled={pending || recording || liveBusy} value={draft.meal} onChange={event=>setDraft({...draft,meal:event.target.value})} placeholder="Brunch, snack…"/></label>
       <button type="button" disabled={pending || recording || liveBusy || searching || !!transcript.trim()} onClick={()=>save()}>{pending ? 'Saving…' : 'Confirm & save food'}</button><p role="status">{message}</p><button type="button" disabled={pending} onClick={() => { setDraft(null); clearMatches(); }}>Discard draft</button>
     </div>}
     {recipe && <div className="voice-cooking"><h3>Cook {recipe.name}</h3>{steps.length ? <><p>Source step {step + 1} of {steps.length}: {steps[Math.min(step, steps.length - 1)]}</p><div className="voice-actions">{['previous', 'repeat', 'next'].map(command => <button key={command} type="button" onClick={() => navigate(command)}>{command}</button>)}</div></> : <p>Source cooking steps are unavailable.</p>}</div>}

@@ -1,3 +1,6 @@
+import { formatHouseholdIngredient } from './ingredients.js';
+import { resolveRecipeServings, recipeYield } from './recipePortions.js';
+import { assessRecipeAllergies } from './recipeAllergies.js';
 import {nutrientCoverage,detailedNutritionFor} from './nutrition.js';
 import {NUTRIENT_KEYS,normalizeNutrientPreferences} from './nutrientCatalog.js';
 const scaled=(food,factor)=>Object.fromEntries(NUTRIENT_KEYS.map(k=>[k,typeof food[k]==='number'&&Number.isFinite(food[k])?food[k]*factor:null]));
@@ -48,22 +51,26 @@ export function createFoodGuide({recipes=[],details={},getContext=()=>({}),fetch
   }
   if(name==='find_recipes'){
    const terms=String(args.query||'').toLowerCase().split(/[^a-z0-9]+/).filter(x=>x.length>2).slice(0,12);
-   const found=recipes.map(r=>({r,score:terms.reduce((n,t)=>n+(JSON.stringify([r.name,details[r.id]?.ingredients]).toLowerCase().includes(t)?1:0),0)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+   const allergyProfile=getContext().profile||{};
+   const allowedRecipes=recipes.filter(r=>assessRecipeAllergies(r,details[r.id],allergyProfile).eligible);
+   const found=allowedRecipes.map(r=>({r,score:terms.reduce((n,t)=>n+(JSON.stringify([r.name,details[r.id]?.ingredients]).toLowerCase().includes(t)?1:0),0)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
    const {entries=[],date,profile={}}=getContext();const today=entries.filter(e=>e.date===date);const coverage=nutrientCoverage(today,Object.fromEntries(recipes.map(r=>[r.id,r])));
    const targets={...normalizeNutrientPreferences(profile).nutrientTargets};if(!targets.sodium&&typeof profile.sodiumTargetMg==='number')targets.sodium={max:profile.sodiumTargetMg};
    const checks=r=>Object.entries(targets).filter(([,t])=>Number.isFinite(t.max)).map(([key,t])=>({nutrient:key,max:t.max,knownIntake:coverage[key]?.knownSubtotal??0,complete:today.length>0&&coverage[key]?.complete===true,recipePerServing:r[key]??null,exceedsKnownBudget:typeof r[key]==='number'&&r[key]+(coverage[key]?.knownSubtotal??0)>t.max}));
    found.sort((a,b)=>Number(checks(a.r).some(c=>c.exceedsKnownBudget))-Number(checks(b.r).some(c=>c.exceedsKnownBudget))||b.score-a.score);
-   return {recipes:found.slice(0,3).map(({r})=>({id:r.id,name:r.name,targetChecks:checks(r),servingSize:details[r.id]?.servingSize,ingredients:details[r.id]?.ingredients,calories:r.calories??null,sodium:r.sodium??null,protein:r.protein??null})),instruction:'Compare saved targets using targetChecks. Prioritize options not exceeding known remaining amounts, but incomplete intake or missing recipe nutrients cannot establish a safe remaining budget. These match ingredients, not clinical suitability. Ask about allergies and preparation time. Never say safe for a condition. Open the chosen recipe before cooking.'};
+   return {allergyFilterApplied:allowedRecipes.length!==recipes.length,allergyNotice:'Allergy matches and unknown ingredient matches are excluded when allergies are saved. Check labels and cross-contact; results are not a safety guarantee.',recipes:found.slice(0,3).map(({r})=>({id:r.id,name:r.name,targetChecks:checks(r),servingSize:details[r.id]?.servingSize,ingredients:details[r.id]?.ingredients,calories:r.calories??null,sodium:r.sodium??null,protein:r.protein??null})),instruction:'Compare saved targets using targetChecks. Prioritize options not exceeding known remaining amounts, but incomplete intake or missing recipe nutrients cannot establish a safe remaining budget. These match ingredients, not clinical suitability. Ask about allergies and preparation time. Never say safe for a condition. Open the chosen recipe before cooking.'};
   }
   if(name==='open_recipe'){
    const recipe=recipes.find(r=>r.id===args.recipe_id),detail=details[args.recipe_id];if(!recipe||!detail?.steps?.length)throw Error('No source cooking instructions available.');selected={recipe,detail};onRecipe({id:recipe.id,name:recipe.name,...detail});
-   return {id:recipe.id,name:recipe.name,...detail,instruction:'Read one source step at a time and wait for the user. Keep track of ingredient changes. Opening or finishing cooking NEVER means eaten. When ready ask whether they actually ate it and their own portion. Modified recipes must be recorded from actual ingredients or as unknown, not unchanged recipe nutrition.'};
+   return {id:recipe.id,name:recipe.name,...detail,personalServings:1,wholeRecipeServings:recipeYield(recipe,detail),ingredients:recipeYield(recipe,detail) ? (detail.ingredients||[]).map(item=>formatHouseholdIngredient(item,1/recipeYield(recipe,detail))) : detail.ingredients,ingredientBasis:recipeYield(recipe,detail) ? 'one personal serving' : 'source batch; yield unknown, do not rescale',instruction:'Use the returned ingredientBasis: ingredients are scaled to one personal serving only when yield is known. Apply those ingredient amounts with source steps; quantities embedded in source steps refer to the source batch. Unknown yield must be clarified before scaling. Clearly state source yield; never call a six-serving batch one serving. Read one source step at a time and wait for the user. Keep track of ingredient changes. Opening or finishing cooking NEVER means eaten. When ready ask whether they actually ate it and their own portion. Modified recipes must be recorded from actual ingredients or as unknown, not unchanged recipe nutrition.'};
   }
   if(name==='recipe_portion'){
    if(!selected||selected.recipe.id!==args.recipe_id)throw Error('Open the recipe first.');
    if(!args.eaten||args.modified)throw Error('Do not log planned food. For modifications use actual ingredients or an unknown-nutrition description.');
-   if(typeof args.servings!=='number'||args.servings<=0||args.servings>30)throw Error('Clarify the personal portion against the source serving size.');
-   return remember({name:selected.recipe.name,...scaled(selected.recipe,args.servings),method:'recipe-estimate',methodLabel:'Cookbook recipe · unchanged ingredients',sourceLabel:selected.recipe.name,sourceBasis:`${args.servings} source servings`,servingDescription:`${args.servings} × ${selected.detail.servingSize||'source serving'}`,recipeSnapshot:{id:selected.recipe.id,servings:args.servings,ingredients:selected.detail.ingredients}});
+   if(args.portion_basis!=='whole' && (typeof args.servings!=='number'||!Number.isFinite(args.servings)))throw Error('Clarify the personal serving amount.');
+   const personalServings=resolveRecipeServings(selected.recipe,selected.detail,args.servings,args.portion_basis||'servings');
+   if(personalServings>1000)throw Error('Clarify the personal portion against the source serving size.');
+   return remember({name:selected.recipe.name,...scaled(selected.recipe,personalServings),method:'recipe-estimate',methodLabel:'Cookbook recipe · unchanged ingredients',sourceLabel:selected.recipe.name,sourceBasis:`${personalServings} personal servings`,servingDescription:`${personalServings} personal serving${personalServings===1?'':'s'}`,recipeSnapshot:{id:selected.recipe.id,servings:personalServings,ingredients:selected.detail.ingredients}});
   }
   return null;
  }

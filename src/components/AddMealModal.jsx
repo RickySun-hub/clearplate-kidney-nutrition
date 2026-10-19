@@ -1,4 +1,4 @@
-import { Check, Minus, Plus, Search, X } from "lucide-react";
+import { Check, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { recipeImages } from "../data/seed";
 import recipeDetails from "../data/recipeDetails.json";
@@ -6,8 +6,10 @@ import recipeMetadata from "../data/recipeMetadata.json";
 import { enrichRecipe } from "../utils/recipeFilters";
 import useDialogFocus from "../hooks/useDialogFocus";
 import { mealSections } from "../utils/meals";
-import { formatAmount, nutritionFor } from "../utils/nutrition";
+import { formatAmount, nutritionFor, localDateKey } from "../utils/nutrition";
 import { hasValidProteinTargets } from "../utils/profile";
+
+import { recipePortionLabel, resolveRecipeServings } from "../utils/recipePortions.js";
 
 const meals = mealSections.map(({ name }) => name);
 const sumKnown = (a, b) => a == null || b == null ? null : a + b;
@@ -32,6 +34,8 @@ export default function AddMealModal({
   const [courseFilter, setCourseFilter] = useState("all");
   const [selectedIds, setSelectedIds] = useState([]);
   const [servings, setServings] = useState(1);
+  const [portionBasis, setPortionBasis] = useState("servings");
+  const [date, setDate] = useState(localDateKey);
   const [submissionError, setSubmissionError] = useState("");
   const [pending, setPending] = useState(false);
   const submittingRef = useRef(false);
@@ -47,8 +51,10 @@ export default function AddMealModal({
       setDietFilter("all");
       setCourseFilter("all");
       setServings(1);
+      setPortionBasis("servings");
+      setDate(localDateKey());
       setTime(new Date().toTimeString().slice(0, 5));
-      setMeal(initialMeal || "Lunch");
+      setMeal(initialMeal || "");
       setSubmissionError("");
     }
   }, [open, initialMeal, initialRecipeId]);
@@ -74,15 +80,16 @@ export default function AddMealModal({
     [recipes, selectedIds],
   );
 
+  const portionFor = (recipe) => { try { return resolveRecipeServings(recipe, recipeDetails[recipe.id], servings, portionBasis); } catch { return null; } };
   const selectedNutrition = useMemo(
     () => selectedRecipes.reduce((totals, recipe) => {
-      const nutrients = nutritionFor(recipe, servings);
+      const nutrients = nutritionFor(recipe, portionFor(recipe));
       return {
         sodium: sumKnown(totals.sodium, nutrients.sodium),
         protein: sumKnown(totals.protein, nutrients.protein),
       };
     }, { ...emptyTotals }),
-    [selectedRecipes, servings],
+    [selectedRecipes, servings, portionBasis],
   );
 
   const sodiumTarget = Number.isFinite(Number(profile?.sodiumTargetMg)) && Number(profile.sodiumTargetMg) > 0
@@ -110,11 +117,12 @@ export default function AddMealModal({
   const handleAdd = async () => {
     if (!selectedRecipes.length || submittingRef.current) return;
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) { setSubmissionError("Enter the time eaten."); return; }
+    if (!date || selectedRecipes.some(recipe=>portionFor(recipe)===null)) { setSubmissionError("Enter a date and positive personal servings. Whole recipe requires a known yield."); return; }
     submittingRef.current = true;
     setPending(true);
     setSubmissionError("");
     try {
-      const saved = await onAdd(selectedRecipes.map((recipe) => ({ recipeId: recipe.id, servings, meal, time })));
+      const saved = await onAdd(selectedRecipes.map((recipe) => ({ recipeId: recipe.id, servings: portionFor(recipe), meal, time, date, timeSource: "user-recorded" })));
       if (saved === false) return;
       submittingRef.current = false;
       onClose();
@@ -127,7 +135,7 @@ export default function AddMealModal({
   };
 
   const recipeFitLabel = (recipe, chosen) => {
-    const nutrients = nutritionFor(recipe, servings);
+    const nutrients = nutritionFor(recipe, portionFor(recipe));
     const projected = chosen ? combined : {
       sodium: sumKnown(combined.sodium, nutrients.sodium),
       protein: sumKnown(combined.protein, nutrients.protein),
@@ -145,9 +153,10 @@ export default function AddMealModal({
     <div className="modal-backdrop" role="presentation" onMouseDown={requestClose}>
       <section ref={dialogRef} className="meal-modal" role="dialog" aria-modal="true" aria-labelledby="add-meal-title" tabIndex="-1" aria-busy={pending} onMouseDown={(event) => event.stopPropagation()}>
         <header className="modal-header">
-          <h2 id="add-meal-title">Add a meal</h2>
+          <h2 id="add-meal-title">Record food</h2>
           <button className="icon-button" type="button" disabled={pending} onClick={requestClose} aria-label="Close add meal dialog"><X /></button>
         </header>
+        <label>Date eaten<input type="date" required disabled={pending} value={date} onChange={event=>setDate(event.target.value)} /></label>
         <label>Time eaten<input type="time" required disabled={pending} value={time} onChange={event=>setTime(event.target.value)} /></label>
         <label className="search-field">
           <Search size={21} strokeWidth={1.8} aria-hidden="true" />
@@ -156,7 +165,7 @@ export default function AddMealModal({
 
         <section className="selection-progress" aria-label="Selected recipes and today’s logged totals">
           <header>
-            <div><strong>Selected recipes</strong><small>{selectedRecipes.length ? `${selectedRecipes.length} selected · ${formatAmount(servings, 1)} serving${servings === 1 ? "" : "s"} each` : "Select recipes to preview the combined total"}</small></div>
+            <div><strong>Selected recipes</strong><small>{selectedRecipes.length ? `${selectedRecipes.length} selected · ${portionBasis === "whole" ? "whole recipe each" : `${formatAmount(servings, 1)} personal servings each`}` : "Select recipes to preview the combined total"}</small></div>
             {(sodiumOver || proteinOver) && <span className="selection-warning">Over target</span>}
             {!proteinTargetsValid && <span className="selection-warning">Targets need review</span>}
           </header>
@@ -185,10 +194,7 @@ export default function AddMealModal({
           </div>
         </section>
 
-        <fieldset className="meal-choice">
-          <legend>Meal</legend>
-          <div>{meals.map((option) => <button className={meal === option ? "selected" : ""} type="button" disabled={pending} key={option} onClick={() => setMeal(option)}>{option}</button>)}</div>
-        </fieldset>
+        <label>Meal label (optional)<input list="add-meal-labels" value={meal} disabled={pending} onChange={e=>setMeal(e.target.value)} placeholder="Optional" /></label><datalist id="add-meal-labels">{[...meals,"Brunch"].map(m=><option key={m} value={m}/>)}</datalist>
 
         <div className="filter-group">
           <span>Course</span>
@@ -216,7 +222,7 @@ export default function AddMealModal({
                 {image ? <img src={image} alt="" loading="lazy" decoding="async" /> : <span className="recipe-placeholder">{recipe.name.slice(0, 1)}</span>}
                 <span className="recipe-result-copy">
                   <strong>{recipe.name}</strong>
-                  <small>1 serving: {recipeDetails[recipe.id]?.servingSize || "source portion not available"}</small>
+                  <small>{recipePortionLabel(recipe, recipeDetails[recipe.id])}{recipeDetails[recipe.id]?.servingSize ? ` · ${recipeDetails[recipe.id].servingSize}` : ""}</small>
                   <small>{formatAmount(recipe.calories, 1)} kcal · {formatAmount(recipe.protein, 1)} g protein · {formatAmount(recipe.sodium, 1)} mg sodium</small>
                   {details && <small className="recipe-quick-info"><b>Needs:</b> {details.quickIngredients.join(" · ")}</small>}
                   {details && <small className="recipe-quick-info method"><b>Method:</b> {details.quickMethod}</small>}
@@ -232,14 +238,7 @@ export default function AddMealModal({
         <footer className="meal-modal-footer">
           {todayTotals.estimatedCount > 0 && <p className="field-note">User-defined ranges are used where recorded; USDA matches remain point estimates. Missing amounts or ranges prevent a complete limit check.</p>}
           {(submissionError || saveError) && <p className="storage-alert" role="alert">{submissionError || saveError}</p>}
-          <div className="serving-row">
-            <span>Servings for each selected recipe</span>
-            <div className="stepper">
-              <button type="button" disabled={pending} onClick={() => setServings((value) => Math.max(0.5, value - 0.5))} aria-label="Decrease servings"><Minus size={18} /></button>
-              <strong>{formatAmount(servings, 1)}</strong>
-              <button type="button" disabled={pending} onClick={() => setServings((value) => Math.min(10, value + 0.5))} aria-label="Increase servings"><Plus size={18} /></button>
-            </div>
-          </div>
+          <div className="serving-row"><label>Your servings per recipe<input aria-label="Personal servings" type="number" min="0" step="any" disabled={pending || portionBasis==='whole'} value={servings} onChange={e=>{setServings(e.target.value);setPortionBasis('servings');}} /></label><div role="group" aria-label="Portion presets">{[0.5,1,2].map(value=><button type="button" key={value} disabled={pending} aria-pressed={portionBasis==='servings'&&Number(servings)===value} onClick={()=>{setServings(value);setPortionBasis('servings');}}>{value} serving{value===1?'':'s'}</button>)}<button type="button" disabled={pending} aria-pressed={portionBasis==='whole'} onClick={()=>setPortionBasis('whole')}>Whole recipe</button></div></div>
           <div className={`contribution ${sodiumOver || proteinOver ? "danger" : ""}`}>
             {selectedRecipes.length ? <>{selectedRecipes.length} recipe{selectedRecipes.length === 1 ? "" : "s"} add <strong>{formatAmount(selectedNutrition.sodium, 1)} mg sodium</strong> and <strong>{formatAmount(selectedNutrition.protein, 1)} g protein</strong></> : "Choose one or more recipes"}
           </div>

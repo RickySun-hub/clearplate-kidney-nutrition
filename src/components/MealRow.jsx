@@ -7,6 +7,7 @@ export default function MealRow({
   meal,
   recipe,
   editMode = false,
+  showTime = true,
   isDragging = false,
   isDropTarget = false,
   onOpenDetails,
@@ -24,7 +25,7 @@ export default function MealRow({
     <>
       <div className="meal-recipe">
         {image ? <img src={image} alt="" loading="lazy" decoding="async" /> : <div className="recipe-placeholder" aria-hidden="true">{meal.source === "custom" ? <Package size={20} /> : item.name.slice(0, 1)}</div>}
-        <div><strong>{item.name}</strong><small>{formatAmount(meal.servings, 2)} serving{meal.servings === 1 ? "" : "s"}{meal.source === "custom" ? ` · ${item.method === "unpackaged" ? "Estimated intake" : item.methodLabel || 'Source unknown'}` : onOpenDetails ? " · View recipe" : ""}</small><small>{meal.time || 'Time unknown'}{meal.time && meal.timeSource !== 'user-recorded' ? ' (scheduled time)' : ''}{item.grams != null ? ` · ${formatAmount(item.grams * meal.servings, 2)} g recorded` : ''}</small>{meal.source !== "custom" && <small>1 serving: {recipeDetails[item.id]?.servingSize || "source portion not available"}</small>}</div>
+        <div><strong>{item.name}</strong><small>{formatAmount(meal.servings, 2)} serving{meal.servings === 1 ? "" : "s"}{meal.source === "custom" ? ` · ${item.method === "unpackaged" ? "Estimated intake" : item.methodLabel || 'Source unknown'}` : onOpenDetails ? " · View recipe" : ""}</small><small>{showTime && (meal.timeSource === 'user-recorded' && meal.time ? meal.time : 'Time eaten unknown')}{showTime && meal.time && meal.timeSource === 'recording-time' ? ` · recorded at ${meal.time}` : ''}{showTime && meal.time && meal.timeSource === 'scheduled' ? ` · scheduled for ${meal.time}` : ''}{item.grams != null ? ` · ${formatAmount(item.grams * meal.servings, 2)} g recorded` : ''}</small>{meal.source !== "custom" && <small>1 serving: {recipeDetails[item.id]?.servingSize || "source portion not available"}</small>}</div>
       </div>
       <div className="meal-nutrient"><strong>{formatAmount(nutrients.sodium, 1)} mg</strong><small>sodium</small></div>
       <div className="meal-nutrient"><strong>{formatAmount(nutrients.protein, 1)} g</strong><small>protein</small></div>

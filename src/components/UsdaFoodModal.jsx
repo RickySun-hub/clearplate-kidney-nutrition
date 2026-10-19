@@ -1,14 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import { createUsdaSelection, portionDescription } from '../utils/usdaSelection.js';
 import useDialogFocus from '../hooks/useDialogFocus';
-import { formatAmount } from '../utils/nutrition';
+import FoodTimeFields from './FoodTimeFields';
+import { formatAmount, localDateKey } from '../utils/nutrition';
 
 export default function UsdaFoodModal({ open, onClose, onAdd }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [food, setFood] = useState(null);
   const [grams, setGrams] = useState('100');
-  const [meal, setMeal] = useState('Snack');
+  const [meal, setMeal] = useState('');
+  const [date, setDate] = useState(() => localDateKey());
   const [time, setTime] = useState(() => new Date().toTimeString().slice(0,5));
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -24,6 +26,7 @@ export default function UsdaFoodModal({ open, onClose, onAdd }) {
     onEnd: () => { pending.current=false; setBusy(false); },
   });
   useEffect(() => { if (!open) { selection.current.cancel(); pending.current=false; setBusy(false); } return () => selection.current.cancel(); }, [open]);
+  useEffect(() => { if (open) { setDate(localDateKey()); setTime(new Date().toTimeString().slice(0, 5)); } }, [open]);
   const dialogRef = useDialogFocus(open, onClose);
   if (!open) return null;
   const validWeight = Number.isFinite(Number(grams)) && Number(grams) > 0 && Number(grams) <= 10000;
@@ -42,6 +45,7 @@ export default function UsdaFoodModal({ open, onClose, onAdd }) {
   }
   async function save(placeholder = false) {
     if (pending.current) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { setError("Choose the date eaten."); return; }
     const weight = Number(grams);
     if (!query.trim() || (!placeholder && (!food || food.basis !== 'per100g' || !validWeight))) {
       setError('Choose a food and enter the amount eaten in grams, or save an unmeasured food.'); return;
@@ -49,7 +53,7 @@ export default function UsdaFoodModal({ open, onClose, onAdd }) {
     pending.current = true; setBusy(true); setError('');
     try {
       const nutrients = placeholder ? { calories:null,protein:null,sodium:null,potassium:null,phosphorus:null } : Object.fromEntries(Object.entries(food.nutrients).map(([key,value]) => [key, typeof value === 'number' && Number.isFinite(value) ? value * weight / 100 : null]));
-      const saved = await onAdd({meal, time, servings:1, customFood:{id:`usda-${Date.now()}`,name:placeholder?query.trim():food.description,...nutrients,
+      const saved = await onAdd({meal: meal.trim(), date, time, timeSource: time ? 'user-recorded' : 'unknown', servings:1, customFood:{id:`usda-${Date.now()}`,name:placeholder?query.trim():food.description,...nutrients,
         method:placeholder?'unresolved':'usda-estimate', methodLabel:placeholder?'Nutrients not yet available':'USDA food match · estimate',
         servingDescription:placeholder?'Amount not yet measured':`${formatAmount(weight,2)} g`, grams:placeholder?null:weight,
         fdcId:placeholder?null:food.fdcId, sourceUrl:placeholder?null:food.sourceUrl, dataType:placeholder?null:food.dataType,
@@ -69,7 +73,7 @@ export default function UsdaFoodModal({ open, onClose, onAdd }) {
       {!!food.portions?.length && <label>Use a household measure<select defaultValue="" onChange={e=>{if(e.target.value!=='')setGrams(String(food.portions[Number(e.target.value)].gramWeight));}} key={food.fdcId}><option value="">Choose a measure</option>{food.portions.map((p,i)=><option value={i} key={i}>{p.amount} {portionDescription(p)} ({formatAmount(p.gramWeight,2)} g)</option>)}</select></label>}
       <label>Amount eaten (grams)<input type="number" min="0.01" max="10000" step="0.01" value={grams} onChange={e=>setGrams(e.target.value)} /></label>
       <p>{['calories','protein','sodium','potassium','phosphorus'].map(key=>`${key}: ${formatAmount(!validWeight || food.nutrients?.[key] == null ? null : food.nutrients[key]*Number(grams)/100,2)} ${key==='calories'?'kcal':key==='protein'?'g':'mg'}`).join(' · ')}</p><p>{validWeight ? 'Unknown means this source does not provide the value; it does not mean zero.' : 'Enter an amount greater than 0 and no more than 10,000 g to calculate nutrition. Until then, amounts are unknown.'}</p></section>}
-    <div className="form-grid"><label>Meal<select value={meal} onChange={e=>setMeal(e.target.value)}>{['Breakfast','Lunch','Dinner','Snack'].map(x=><option key={x}>{x}</option>)}</select></label><label>Time eaten<input type="time" value={time} onChange={e=>setTime(e.target.value)} /></label><label className="full-field">Notes or product URL (optional)<input maxLength={500} value={notes} onChange={e=>setNotes(e.target.value)} /></label></div>
+    <div className="form-grid"><FoodTimeFields date={date} time={time} meal={meal} onDateChange={setDate} onTimeChange={setTime} onMealChange={setMeal} disabled={busy} /><label className="full-field">Notes or product URL (optional)<input maxLength={500} value={notes} onChange={e=>setNotes(e.target.value)} /></label></div>
     {error && <p role="alert">{error}</p>}<footer className="drawer-actions"><button type="button" className="primary-button" disabled={busy||!food} onClick={()=>save(false)}>Confirm and save food</button><button type="button" className="secondary-button" disabled={busy||!query.trim()} onClick={()=>save(true)}>Can't measure it? Save with unknown nutrients</button></footer>
   </section></div>;
 }

@@ -33,3 +33,9 @@ test('Responses bridge waits for completed calls, deduplicates completion and re
  await bridge({event:{type:'response.completed',response:{id:'r',output:[]}}});assert.equal(called,1);
  assert.deepEqual(sent.map(e=>e.type),['response.item.create','response.create']);
 });
+test('optional meal and explicit local backdate persist without inventing an eaten time',()=>{
+ const batch={id:'dated',meal:'Brunch',date:'2026-10-18',time:null,foods:[{name:'Synthetic food',portion:'1 personal serving'}],conversation:[{role:'user',content:'Save my brunch yesterday',source:'voice',at:'2026-10-19T01:00:00Z'}]};
+ const entries=appendVoiceMeal([],batch,'2026-10-19','2026-10-19T01:00:00Z');assert.equal(entries[0].date,'2026-10-18');assert.equal(entries[0].time,'');assert.equal(entries[0].timeSource,'unknown');
+ assert.equal(appendVoiceMeal([],{...batch,meal:''},'2026-10-19')[0].meal,'');
+ assert.throws(()=>appendVoiceMeal([],{...batch,date:'2026-02-30'},'2026-10-19'));
+});

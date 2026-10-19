@@ -1,14 +1,17 @@
 import { Info, Package, Scale, X } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import useDialogFocus from "../hooks/useDialogFocus";
-import { formatAmount, parseNutrientValues } from "../utils/nutrition";
+import { formatAmount, localDateKey, parseNutrientValues } from "../utils/nutrition";
+
+import FoodTimeFields from "./FoodTimeFields";
 
 const emptyValues = { calories: "", protein: "", sodium: "", potassium: "", phosphorus: "" };
 
 export default function CustomFoodModal({ open, saveError, onClose, onAdd }) {
   const [mode, setMode] = useState("packaged");
   const [name, setName] = useState("");
-  const [meal, setMeal] = useState("Snack");
+  const [meal, setMeal] = useState("");
+  const [date, setDate] = useState(() => localDateKey());
   const [time, setTime] = useState(() => new Date().toTimeString().slice(0,5));
   const [servings, setServings] = useState(1);
   const [margin, setMargin] = useState(25);
@@ -21,6 +24,10 @@ export default function CustomFoodModal({ open, saveError, onClose, onAdd }) {
     if (!submittingRef.current) onClose();
   }, [onClose]);
   const dialogRef = useDialogFocus(open, requestClose);
+
+  useEffect(() => {
+    if (open) { setDate(localDateKey()); setTime(new Date().toTimeString().slice(0, 5)); }
+  }, [open]);
 
   if (!open) return null;
 
@@ -42,8 +49,10 @@ export default function CustomFoodModal({ open, saveError, onClose, onAdd }) {
     setSubmissionError("");
     try {
       const saved = await onAdd({
-        meal,
+        meal: meal.trim(),
+        date,
         time,
+        timeSource: time ? "user-recorded" : "unknown",
         servings: Number(servings),
         customFood: {
           id: `custom-${Date.now()}`,
@@ -59,7 +68,7 @@ export default function CustomFoodModal({ open, saveError, onClose, onAdd }) {
       if (saved === false) return;
       setMode("packaged");
       setName("");
-      setMeal("Snack");
+      setMeal("");
       setServings(1);
       setMargin(25);
       setValues(emptyValues);
@@ -80,9 +89,8 @@ export default function CustomFoodModal({ open, saveError, onClose, onAdd }) {
         <header className="modal-header"><div><h2 id="outside-food-title">Food & portion</h2><p>Check the food, servings eaten, and values per serving before saving.</p></div><button type="button" className="icon-button" disabled={pending} onClick={requestClose} aria-label="Close"><X /></button></header>
         <div className="mode-switch"><button type="button" disabled={pending} className={mode === "packaged" ? "selected" : ""} onClick={() => setMode("packaged")}><Package size={20} /><span><strong>Packaged food</strong><small>Copy the Nutrition Facts label</small></span></button><button type="button" disabled={pending} className={mode === "unpackaged" ? "selected" : ""} onClick={() => setMode("unpackaged")}><Scale size={20} /><span><strong>Unpackaged food</strong><small>Record your own estimate</small></span></button></div>
         <div className="form-grid">
-          <label><span>Time eaten</span><input type="time" value={time} onChange={event=>setTime(event.target.value)} /></label>
+          <FoodTimeFields date={date} time={time} meal={meal} onDateChange={setDate} onTimeChange={setTime} onMealChange={setMeal} disabled={pending} />
           <label className="full-field"><span>Food name</span><input data-dialog-initial-focus required disabled={pending} value={name} onChange={(event) => { setValidationError(""); setName(event.target.value); }} placeholder={mode === "packaged" ? "Example: Sea salt potato chips" : "Example: Restaurant noodle soup"} /></label>
-          <label><span>Meal</span><select disabled={pending} value={meal} onChange={(event) => setMeal(event.target.value)}>{["Breakfast", "Lunch", "Dinner", "Snack"].map((item) => <option key={item}>{item}</option>)}</select></label>
           <label><span>Servings eaten</span><input required disabled={pending} type="number" min="0.25" max="20" step="0.25" value={servings} onChange={(event) => setServings(event.target.value)} /></label>
         </div>
         <div className="custom-nutrients"><h3>{mode === "packaged" ? "Per labeled serving" : "Best estimate for one serving"}</h3><div className="nutrient-inputs">{[["calories", "Calories", "kcal", true], ["protein", "Protein", "g", true], ["sodium", "Sodium", "mg", true], ["potassium", "Potassium", "mg", false], ["phosphorus", "Phosphorus", "mg", false]].map(([key, label, unit, required]) => <label key={key}><span>{label}{required ? " *" : " (optional)"}</span><div className="inline-unit"><input required={required} disabled={pending} type="number" min="0" step="0.1" value={values[key]} onChange={(event) => updateValue(key, event.target.value)} /><span>{unit}</span></div></label>)}</div></div>

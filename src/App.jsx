@@ -1,3 +1,5 @@
+import { createDayPlan, markPlanItem, undoPlanItem } from './utils/dayPlan.js';
+import { assessRecipeAllergies } from './utils/recipeAllergies.js';
 import { patientPageFromHash, writePatientPage } from './utils/patientNavigation';
 import {
   BookOpen,
@@ -88,12 +90,13 @@ export default function App() {
   const [customRecipes, setCustomRecipes] = useState(initial.customRecipes || []);
   const [customRecipeDetails, setCustomRecipeDetails] = useState(initial.customRecipeDetails || {});
   const allRecipes = useMemo(()=>[...baseRecipes,...customRecipes],[customRecipes]);
-  const recipes = useMemo(()=>allRecipes.filter(recipe=>!recipe.retired),[allRecipes]);
+  const activeRecipes = useMemo(()=>allRecipes.filter(recipe=>!recipe.retired),[allRecipes]);
   const [recipeEditor,setRecipeEditor] = useState(null);
   const recipeDetails = useMemo(()=>({...baseRecipeDetails,...customRecipeDetails}),[customRecipeDetails]);
   const [importOpen,setImportOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(() => patientPageFromHash(window.location.hash) || "today");
   const [profile, setProfile] = useState(initial.profile);
+  const recipes = useMemo(()=>activeRecipes.filter(recipe=>assessRecipeAllergies(recipe,recipeDetails[recipe.id],profile).eligible),[activeRecipes,recipeDetails,profile]);
   const [entries, setEntries] = useState(initial.entries);
   const [dayRecords, setDayRecords] = useState(initial.dayRecords || {});
   const [mealDialog, setMealDialog] = useState({ open: false, recipeId: null, initialMeal: null });
@@ -181,21 +184,22 @@ export default function App() {
 
   const addRecipes = async (items) => {
     const nextByMeal = new Map();
-    const nextItems = items.map(({ recipeId, servings, meal, time, conversation, inputMethod }, index) => {
-      const sortOrder = nextByMeal.get(meal) ?? nextSortOrder(entries, today, meal);
+    const nextItems = items.map(({ recipeId, servings, meal, time, date = today, timeSource, conversation, inputMethod }, index) => {
+      const sortOrder = nextByMeal.get(meal) ?? nextSortOrder(entries, date, meal);
       nextByMeal.set(meal, sortOrder + 1);
       return {
         id: `recipe-${Date.now()}-${index}`,
         recordedAt: new Date().toISOString(),
-        date: today,
+        date,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         source: "recipe",
         ...(recipesById[recipeId]?.calculated ? {source:'custom',customFood:structuredClone(recipesById[recipeId])} : {}),
         ...(recipesById[recipeId]?.imported ? {source:'custom',customFood:{...recipesById[recipeId],method:'imported',methodLabel:'Imported recipe · nutrients unknown'}} : {}),
         recipeId,
         servings,
         meal,
-        time: time || new Date().toTimeString().slice(0,5),
-        timeSource: time ? 'user-recorded' : 'recording-time',
+        time: time || '',
+        timeSource: time ? 'user-recorded' : 'unknown',
         ...(conversation ? {conversation, inputMethod, confirmedAt:new Date().toISOString()} : {}),
         sortOrder,
       };
@@ -207,19 +211,20 @@ export default function App() {
     navigateTo("today");
   };
 
-  const addCustomFood = async ({ customFood, servings, meal, time, conversation, inputMethod }) => {
+  const addCustomFood = async ({ customFood, servings, meal, time, date = today, timeSource, conversation, inputMethod }) => {
     const next = [...entries, {
       id: `outside-${Date.now()}`,
       recordedAt: new Date().toISOString(),
-      date: today,
+      date,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       source: "custom",
       customFood,
       servings,
       meal,
-      time: time || new Date().toTimeString().slice(0,5),
-      timeSource: time ? 'user-recorded' : 'recording-time',
+      time: time || '',
+      timeSource: time ? 'user-recorded' : 'unknown',
         ...(conversation ? {conversation, inputMethod, confirmedAt:new Date().toISOString()} : {}),
-      sortOrder: nextSortOrder(entries, today, meal),
+      sortOrder: nextSortOrder(entries, date, meal),
     }];
     if (!await persist(profile, next)) return false;
     setEntries(next);
@@ -252,29 +257,18 @@ export default function App() {
     setProfileOpen(false);
   };
 
-  const addPlan = async (items) => {
-    const mealNames = ["Breakfast", "Lunch", "Dinner", "Snack"];
-    const nextByMeal = new Map();
-    const nextItems = items.map((item, index) => {
-      const meal = item.meal || mealNames[index % mealNames.length];
-      const sortOrder = nextByMeal.get(meal) ?? nextSortOrder(entries, today, meal);
-      nextByMeal.set(meal, sortOrder + 1);
-      return {
-        id: `plan-${Date.now()}-${index}`,
-        date: today,
-        source: "recipe",
-        recipeId: item.recipeId || item.id,
-        ...(recipesById[item.recipeId || item.id]?.calculated ? {source:'custom',customFood:structuredClone(recipesById[item.recipeId || item.id])} : {}),
-        servings: item.servings || 1,
-        meal,
-        time: mealTimes[meal],
-        sortOrder,
-      };
-    });
-    const next = [...entries, ...nextItems];
-    if (!await persist(profile, next)) return false;
-    setEntries(next);
-    navigateTo("today");
+  const changePlan = async (plan) => {
+    const next={...dayRecords,[today]:{...dayRecords[today],plan}};
+    if(!await persist(profile,entries,next))return false;
+    setDayRecords(next);return true;
+  };
+  const addPlan = items => changePlan(createDayPlan(items,recipesById,recipeDetails));
+  const togglePlan = async (item,undo,{date,time,meal}) => {
+    if(!undo&&!assessRecipeAllergies(item.recipe,item.details,profile).eligible){setStorageError('Review allergy settings before choosing this food.');return false;}
+    const next=undo?undoPlanItem(entries,item):markPlanItem(entries,item,date,time,meal);
+    if(next===entries)return true;
+    if(!await persist(profile,next))return false;
+    setEntries(next);return true;
   };
 
   const openRecipeDetails = (recipeOrEntry, returnTab = "today") => {
@@ -370,7 +364,8 @@ export default function App() {
         onRemove={removeEntry}
         onReorder={reorderMealEntry}
       />}
-      {activeTab === "planner" && <PlannerView recipes={recipes} recipeDetails={recipeDetails} profile={profile} todayEntries={todayEntries} todayTotals={totals} plannerSession={plannerSession} onPlannerSessionChange={setPlannerSession} onAddPlan={addPlan} onOpenRecipe={(recipe) => openRecipeDetails(recipe, "planner")} />}
+      {activeTab === "planner" && <PlannerView savedPlan={dayRecords[today]?.plan} entries={entries} onChangePlan={changePlan} onTogglePlan={togglePlan} recipes={activeRecipes} recipeDetails={recipeDetails} profile={profile} todayEntries={todayEntries} todayTotals={totals} plannerSession={plannerSession} onPlannerSessionChange={setPlannerSession} onAddPlan={addPlan} onOpenRecipe={(recipe) => openRecipeDetails(recipe, "planner")} />}
+      {activeTab === "recipes" && !recipeEditor && (profile.foodAllergies?.length||profile.otherFoodAllergies) && <p className="plan-warning">Allergy filter excludes matching foods and uncertain ingredient lists. Check product labels and cross-contact.</p>}
       {activeTab === "recipes" && !recipeEditor && <RecipeLibrary recipes={recipes} details={recipeDetails} onImport={()=>setImportOpen(true)} onDescribe={()=>{navigateTo("today");setVoiceOpen(true);}} onCreate={()=>setRecipeEditor({})} onChoose={(recipe) => recipe.calculated ? setRecipeEditor(recipe) : openMealDialog(recipe.id)} onOpenRecipe={(recipe) => openRecipeDetails(recipe, "recipes")} />}
       {activeTab === "recipes" && recipeEditor && <RecipeBuilder key={recipeEditor.id || 'new'} recipe={recipeEditor.calculated?recipeEditor:null} onClose={()=>setRecipeEditor(null)} onLog={addCustomFood} onSave={async(recipe,previousId)=>{
         const nextRecipes=[...customRecipes.map(r=>r.id===previousId?{...r,retired:true}:r),recipe];

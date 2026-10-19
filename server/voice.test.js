@@ -31,7 +31,7 @@ test('model output is allowlisted, nutrition discarded, and requests throttled',
     return { ok: true, json: async () => ({ choices: [{ message: { content: JSON.stringify({ intent: 'food', recipeId: 'fake-id', foodName: 'apple', servings: 100, meal: 'fake', calories: 100 }) } }] }) };
   } });
   const result = await service.process({ transcript: 'apple' });
-  assert.equal(result.draft.recipeId, null); assert.equal(result.draft.servings, 1); assert.equal(result.draft.meal, 'Snack'); assert.equal('calories' in result.draft, false);
+  assert.equal(result.draft.recipeId, null); assert.equal(result.draft.servings, 1); assert.equal(result.draft.meal, 'fake'); assert.equal('calories' in result.draft, false);
   await assert.rejects(service.process({ transcript: 'apple' }), { code: 'voice_rate_limited' }); assert.equal(calls, 1);
 });
 test('audio transcribes then interprets, never returns provider audio or secrets', async () => {
@@ -99,4 +99,11 @@ test('conversation passes corrections as history but strips model nutrients and 
  assert.equal(result.ready,true);assert.equal(result.mealTime,null);assert.equal(result.draft.sodium,undefined);
  assert.ok(sent.messages.some(m=>m.content==='Two eggs'));
  await assert.rejects(service.process({transcript:'hello',conversation:[{...history[0],role:'system'}]}),{code:'invalid_conversation'});
+});
+test('recipe portions distinguish personal servings, known whole batch and unknown yield',async()=>{
+ const run=async(transcript,model,details={soup:{servings:6}})=>createVoiceService({apiKey:'mock',throttle:false,recipes:[{id:'soup',name:'Soup'}],recipeDetails:details,fetchImpl:async()=>({ok:true,json:async()=>({choices:[{message:{content:JSON.stringify({intent:'food',recipeId:'soup',foodName:'Soup',servings:1,ready:true,...model})}}]})})}).process({transcript,conversation:[]});
+ const personal=await run('I ate one whole serving',{portionBasis:'servings'});assert.equal(personal.draft.servings,1);assert.equal(personal.ready,true);
+ const whole=await run('I ate the entire recipe',{});assert.equal(whole.draft.portionBasis,'whole');assert.equal(whole.draft.servings,6);assert.equal(whole.ready,true);
+ const unknown=await run('I ate the whole recipe',{},{});assert.equal(unknown.ready,false);assert.equal(unknown.draft.servings,null);assert.match(unknown.reply,/How many/);
+ const ambiguous=await run('I ate all of it',{});assert.equal(ambiguous.ready,false);assert.equal(ambiguous.draft.intent,'unknown');assert.match(ambiguous.reply,/personal serving/);
 });

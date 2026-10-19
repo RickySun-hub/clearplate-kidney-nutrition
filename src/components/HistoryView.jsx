@@ -14,10 +14,10 @@ import { useMemo, useState } from "react";
 import { buildCalendarMonth, historyDayStatus, historyNutritionState } from "../utils/history";
 import { formatAmount, localDateKey, mealTotals } from "../utils/nutrition";
 
+import { eatenTimeLabel, eatenTimeOrder } from "./TodayMeals";
 import { isDayComplete } from "../utils/recording";
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const mealOrder = ["Breakfast", "Lunch", "Dinner", "Snack"];
 const mealIcons = {
   Breakfast: Coffee,
   Lunch: SunMedium,
@@ -106,10 +106,9 @@ export default function HistoryView({ entries, recipesById, profile: currentProf
     totals: mealTotals([], recipesById),
     status: "empty",
   };
-  const selectedMeals = useMemo(() => mealOrder.map((meal) => {
-    const items = selectedReport.items.filter((entry) => entry.meal === meal);
-    return items.length ? { meal, items, totals: mealTotals(items, recipesById) } : null;
-  }).filter(Boolean), [recipesById, selectedReport.items]);
+  const selectedMeals = useMemo(() => [...selectedReport.items]
+    .sort((a, b) => eatenTimeOrder(a) - eatenTimeOrder(b))
+    .map(entry => ({ entry, totals: mealTotals([entry], recipesById) })), [recipesById, selectedReport.items]);
 
   const visibleReports = calendarCells
     .filter(Boolean)
@@ -237,12 +236,14 @@ export default function HistoryView({ entries, recipesById, profile: currentProf
           </header>
           {selectedMeals.length ? (
             <div className="history-meal-report-list">
-              {selectedMeals.map(({ meal, items, totals }) => {
+              {selectedMeals.map(({ entry, totals }) => {
+                const meal = entry.meal;
+                const food = entry.source === "custom" ? entry.customFood : recipesById[entry.recipeId];
                 const MealIcon = mealIcons[meal] || Package;
                 return (
-                  <article className="history-meal-report-row" key={meal}>
+                  <article className="history-meal-report-row" key={entry.id}>
                     <span className="history-meal-report-icon"><MealIcon aria-hidden="true" /></span>
-                    <div><strong>{meal}</strong><small>{items.length} item{items.length === 1 ? "" : "s"}</small></div>
+                    <div><strong>{eatenTimeLabel(entry)}</strong><small>{food?.name || "Unresolved food"}{meal ? ` · ${meal}` : ""}</small></div>
                     <span><strong>{formatAmount(totals.calories, 0)} kcal</strong><small>calories</small></span>
                     <span><strong>{formatAmount(totals.sodium, 0)} mg</strong><small>sodium</small></span>
                     <span><strong>{formatAmount(totals.protein, 1)} g</strong><small>protein</small></span>

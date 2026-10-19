@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { recipeImages } from "../data/seed";
 import { formatAmount, nutritionFor } from "../utils/nutrition";
 import { formatHouseholdIngredient, parseIngredient } from "../utils/ingredients";
+import { recipePortionLabel, recipeYield } from "../utils/recipePortions.js";
 import recipeMetadata from "../data/recipeMetadata.json";
 import recipeAudits from "../data/usdaRecipeAudit.json";
 import RecipeNutritionAudit, { formatAuditGrams } from "./RecipeNutritionAudit";
@@ -36,6 +37,7 @@ export default function RecipeDetailView({ recipe, details, servings = 1, backLa
   const batchNutrients = nutritionFor(recipe, cookServings);
   const eatenNutrients = nutritionFor(recipe, servings);
   const image = recipeImages[recipe.id];
+  const wholeYield = recipeYield(recipe, details);
   const scaleFactor = details?.servings > 0 ? cookServings / details.servings : 1;
   const toggleIngredient = (index) => {
     setCheckedIngredients((current) => current.includes(index)
@@ -56,7 +58,7 @@ export default function RecipeDetailView({ recipe, details, servings = 1, backLa
             <div>
               <span>{recipeMetadata[recipe.id]?.category || recipe.category} · {details ? "Cooking instructions" : "Nutrition data only"}</span>
               <h1 id="recipe-detail-title">{recipe.name}</h1>
-              <p>{details ? `${details.servingSize} per serving · source recipe makes ${details.servings} servings` : `${formatAmount(servings, 1)} serving${servings === 1 ? "" : "s"} · no preparation source linked`}</p>
+              <p>{recipePortionLabel(recipe, details)}{details?.servingSize ? ` · ${details.servingSize}` : ""}</p>
             </div>
           </div>
         </header>
@@ -84,6 +86,7 @@ export default function RecipeDetailView({ recipe, details, servings = 1, backLa
                   <button type="button" onClick={() => setCookServings((value) => Math.min(100, value + 0.5))} aria-label="Increase cooking servings"><Plus size={17} /></button>
                 </div>
               </header>
+              <div role="group" aria-label="Cooking portion presets">{[0.5,1,2].map(value=><button type="button" key={value} aria-pressed={cookServings===value} onClick={()=>setCookServings(value)}>{value} serving{value===1?"":"s"}</button>)}<button type="button" disabled={!wholeYield} onClick={()=>setCookServings(wholeYield)}>Whole recipe{wholeYield ? ` · ${wholeYield} servings` : " · yield unknown"}</button></div>
               <div className="ingredient-unit-switch" role="group" aria-label="Ingredient units">
                 <button type="button" aria-pressed={ingredientUnits === "household"} onClick={() => setIngredientUnits("household")}>Cups, spoons & pieces</button>
                 <button type="button" aria-pressed={ingredientUnits === "grams"} onClick={() => setIngredientUnits("grams")}>Grams</button>
@@ -94,6 +97,7 @@ export default function RecipeDetailView({ recipe, details, servings = 1, backLa
                 <p className="scaling-note">Batch scale × {formatAmount(scaleFactor, 2)} = {formatAmount(cookServings, 2)} cooking servings ÷ {details.servings} source servings. Alternate amounts scale together; package sizes stay fixed.</p>
                 <p className="scaling-note">Workbook estimate for this batch: {formatAmount(batchNutrients.calories, 2)} kcal · {formatAmount(batchNutrients.sodium, 2)} mg sodium · {formatAmount(batchNutrients.protein, 2)} g protein · {formatAmount(batchNutrients.potassium, 2)} mg potassium.</p>
               </details>
+              {!wholeYield && <p role="status">Whole recipe yield unknown. Confirm how many personal servings it makes before scaling ingredients.</p>}
               <div className="ingredient-checklist">
                 {scaledIngredients.map((ingredient, index) => ingredient.original.endsWith(":") ? (
                   <h3 key={`${ingredient.original}-${index}`}>{ingredient.original}</h3>

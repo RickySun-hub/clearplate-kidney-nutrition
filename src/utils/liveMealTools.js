@@ -2,14 +2,15 @@ import { MEALS, validConversation } from './mealConversation.js';
 const clean = value => String(value || '').trim().replace(/\s+/g,' ');
 const normalized = value => clean(value).toLowerCase().replace(/[.,!?，。！’']/g,'');
 export function mealDraft(value) {
-  if(!value || !MEALS.includes(value.meal) || !Array.isArray(value.foods) || value.foods.length<1 || value.foods.length>12) throw Error('Describe 1–12 foods and the meal first.');
+  if(!value || typeof value.meal!=='string' || value.meal.length>80 || !Array.isArray(value.foods) || value.foods.length<1 || value.foods.length>12) throw Error('Describe 1–12 foods and the meal first.');
+  if(value.date!=null&&(!/^\d{4}-\d{2}-\d{2}$/.test(value.date)||!Number.isFinite(Date.parse(value.date))||new Date(value.date).toISOString().slice(0,10)!==value.date))throw Error('Clarify the local date eaten.');
   if(value.time!==null && !/^([01]\d|2[0-3]):[0-5]\d$/.test(value.time)) throw Error('Use a stated meal time or leave it unknown.');
   const foods=value.foods.map(f=>{
     if(!f || typeof f.name!=='string' || !f.name.trim() || f.name.length>120 || typeof f.portion!=='string' || !f.portion.trim() || f.portion.length>300) throw Error('Each food needs its name and the amount this person ate, or explicitly unknown.');
     return {name:clean(f.name),portion:clean(f.portion)};
   });
   if(foods.reduce((n,f)=>n+f.name.length+f.portion.length,0)>1000)throw Error('Split a long meal description into smaller drafts.');
-  return {meal:value.meal,time:value.time,foods};
+  return {meal:value.meal,time:value.time,...(value.date?{date:value.date}:{}),foods};
 }
 export function confirmsDraft(quote,turns,preparedCount) {
   const latest=turns.findLastIndex(t=>t.role==='user');
@@ -29,7 +30,7 @@ export function createMealTools({getTurns,onSave,onDraft=()=>{},onSaved=()=>{},r
       const signature=JSON.stringify(draft);
       if(pending?.signature!==signature)pending={...draft,id:id(),signature,preparedCount:turns.length};
       onDraft(pending);
-      return {status:'awaiting_spoken_confirmation',draft_id:pending.id,meal:draft.meal,time:draft.time,foods:draft.foods,instruction:'Read back these foods and personal portions. Ask: Should I save that? Wait for a NEW affirmative reply before calling confirm_meal. Describe the source match as an estimate if present, otherwise nutrition unknown.'};
+      return {status:'awaiting_spoken_confirmation',draft_id:pending.id,meal:draft.meal,date:draft.date||null,time:draft.time,foods:draft.foods,instruction:'Read back these foods and personal portions. Ask: Should I save that? Wait for a NEW affirmative reply before calling confirm_meal. Describe the source match as an estimate if present, otherwise nutrition unknown.'};
     }
     if(name==='confirm_meal') {
       if(completed.has(args.draft_id))return completed.get(args.draft_id);
@@ -55,8 +56,8 @@ export function appendVoiceMeal(entries,batch,date,now=new Date().toISOString())
   const prefix=`voice-${batch.id}-`;
   if(entries.some(e=>e.id?.startsWith(prefix)))return entries;
   return [...entries,...draft.foods.map((food,index)=>({
-    id:prefix+index,recordedAt:now,confirmedAt:now,date,source:'custom',servings:1,meal:draft.meal,
-    time:draft.time||new Date(now).toTimeString().slice(0,5),timeSource:draft.time?'user-recorded':'recording-time',
+    id:prefix+index,recordedAt:now,confirmedAt:now,date:draft.date||date,timeZone:Intl.DateTimeFormat().resolvedOptions().timeZone,source:'custom',servings:1,meal:draft.meal,
+    time:draft.time||'',timeSource:draft.time?'user-recorded':'unknown',
     sortOrder:Math.max(-1,...entries.filter(e=>e.date===date&&e.meal===draft.meal).map(e=>Number.isFinite(e.sortOrder)?e.sortOrder:-1))+1+index,
     customFood:batch.foods[index].matchedFood ? {...batch.foods[index].matchedFood,servingDescription:food.portion} : {name:`${food.name} — ${food.portion}`,method:'unmeasured',methodLabel:'Voice-confirmed food · nutrition unknown',servingDescription:food.portion},
     inputMethod:'voice-conversation',conversation:batch.conversation,
