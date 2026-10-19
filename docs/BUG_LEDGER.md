@@ -39,3 +39,24 @@ AUTH-02 was released as `c355827a4b958a0d0affa6a8590ba3121a498692`, deployment `
 - `node --test src/utils/recipeSearch.test.js src/utils/recipeCalculation.test.js src/utils/usdaSelection.test.js src/utils/rdReview.test.js src/utils/phoneAuth.test.js`: 22 tests pass.
 - `npm run build` and `git diff --check` pass; existing bundle-size warning remains.
 - Release scope: these two proven UI/order defects only. Rollback commit is c355827, retained separately before release. No main merge; report exact deployment status and domain after release.
+
+## October 19 baseline and focused follow-up
+
+AUTH-03 / RECIPE-01 were released at `08bea9a7f53d6dbd4f2f057aad7377d555772247`, deployment `dpl_E5sGpcfp8zwxR8DHkAkRtQxiLYwQ`, verified READY on nepholio.com. This is the next rollback baseline. No hospital Wi-Fi configuration change is justified without an interception/error-page reproduction. Blocked `dff12e7` remains excluded.
+
+### FOOD-01 — invalid weight previews zero or negative nutrients
+
+- Reproduce: select a synthetic USDA food with known energy, then clear Amount eaten (grams). The old preview shows 0 kcal because Number('') is zero. Negative inputs also produce negative previews even though saving correctly rejects them. This is a preview defect, not evidence of invalid persisted records.
+- Fix: `e711d6084227a2e36ef6ec9965bf4bf06d4575c6`. Preview and save share the existing positive, finite, at-most-10,000-g validity check. Invalid amounts show Unknown with a concise correction hint; valid source zeroes and missing nutrients remain distinct. No conversion or persistence changes.
+
+### RD-01 — connected patient without a record gets incorrect next step
+
+- Reproduce: accepted active connection, no shared care record. The patient card correctly says waiting and is disabled, but the main panel tells the RD to select/open a patient and create an invitation. Baseline regression fails because no waiting-state heading is present.
+- Fix: same `e711d60` commit. Distinguish connected-without-record from no connected patients; explain waiting for the first saved record and name the existing Refresh patients action. Invitation guidance remains for the no-patient state. No permission or data-loading changes.
+
+### Verification
+
+- `node scripts/browser-food-empty-states.mjs`: both regressions failed before the fix and pass afterward. Blank/zero/negative/oversized weights show unknown and cannot save; correcting to 50 g yields 50 kcal, explicit sodium zero, potassium null. Connected-without-record and no-patient RD states are distinct. Actual Chromium, synthetic USDA/provider responses and in-memory saves only.
+- `node scripts/browser-recipe-recovery.mjs` passes existing search/source retry, invalid-portion no-write and save-failure recovery checks.
+- `node --test src/utils/nutrition.test.js src/utils/usdaSelection.test.js`: 18 pass. Build and diff checks pass; existing bundle-size warning remains.
+- No real users/data, emails, schemas, permissions, credentials, auth configuration, network configuration or plugin submissions changed. No main merge. Release only after preserving 08bea9a rollback; report exact resulting deployment/domain externally.
