@@ -1,0 +1,66 @@
+/* Slate/sage preview: color only. Keep layout, logo and voice sphere unchanged. */
+:root {
+  --canvas:#F5F8F7; --surface:#FFFFFF;
+  --primary:#426B7A; --primary-hover:#345663; --selected:#E8EFF2;
+  --sage:#446B5B; --sage-pale:#EDF3EF;
+  --text:#263D43; --muted:#5F7176; --border:#DCE5E3; --border-strong:#879B9B;
+  --warning:#946516; --warning-pale:#FFF5DF;
+  --exceeded:#A4473F; --exceeded-pale:#FBEDEA;
+  /* Existing components consume these legacy aliases. */
+  --green-900:var(--text); --green-800:var(--primary); --green-700:var(--primary);
+  --green-100:var(--selected); --green-50:var(--sage-pale); --blue-50:var(--canvas);
+  --amber-700:var(--warning);
+}
+html,body,.app-shell { background:var(--canvas); color:var(--text); }
+.app-shell .topbar { background:var(--surface); border-color:var(--border); }
+.app-shell .topbar nav button { color:var(--primary); }
+.app-shell .topbar nav button.active,.app-shell .topbar nav button[aria-current='page'] { background:var(--primary); color:var(--surface); }
+.app-shell .topbar nav button:not(.active):hover { background:var(--selected); color:var(--primary-hover); }
+.app-shell :is(button,a,input,select,summary):focus-visible { outline:3px solid var(--primary); outline-offset:3px; }
+.app-shell .primary-button,.app-shell .care-connection .account-submit { background:var(--primary); border-color:var(--primary); color:var(--surface); }
+.app-shell .primary-button:hover { background:var(--primary-hover); }
+.app-shell .secondary-button { color:var(--primary); border-color:var(--border-strong); }
+.app-shell .sidebar-profile .avatar-button { background:var(--selected); color:var(--primary); }
+.app-shell .voice-feature { background:var(--sage-pale); border-color:var(--border); }
+.app-shell .voice-feature-icon { background:var(--surface); color:var(--sage); }
+.app-shell .feature-eyebrow { color:var(--sage); }
+.app-shell .voice-feature h2,.app-shell .dashboard-heading h1,.app-shell .page-heading h1 { color:var(--text); }
+.app-shell .voice-feature p { color:var(--muted); }
+.app-shell .assist-launch .voice-feature-button { background:var(--sage); border-color:var(--sage); box-shadow:none; }
+.app-shell .assist-launch .voice-feature-button:hover { background:var(--primary-hover); border-color:var(--primary-hover); }
+.app-shell .daily-record-summary { background:var(--sage-pale); }
+.app-shell .daily-record-summary>div:first-child strong { color:var(--sage); }
+.app-shell .nutrient-band.neutral,.app-shell .nutrient-band.good { background:var(--surface); }
+.app-shell .nutrient-band.warning { background:var(--warning-pale); color:var(--warning); }
+.app-shell .today-meals>header { border-color:var(--border); }
+.app-shell .rd-dashboard { color:var(--text); }
+.app-shell .rd-review-nav { border-color:var(--border); }
+.app-shell .rd-chart-coverage { background:var(--sage-pale); }
+.app-shell .rd-dashboard :is(.rd-review-nav button,.rd-secondary>summary,.rd-compact-summary>summary,.rd-daily>summary,.rd-chart-data summary,.rd-status-help summary) { color:var(--primary); }
+.app-shell .rd-dashboard .rd-review-first>button { color:var(--primary); }
+.app-shell .rd-dashboard :is(.rd-status-attention,.rd-comparison-attention) { color:var(--warning); }
+.app-shell .rd-bar-amount { background:var(--primary); }
+.app-shell .rd-bar-amount.is-partial { background:repeating-linear-gradient(90deg,var(--muted) 0 4px,transparent 4px 6px); }
+.app-shell .rd-limit-tick { border-color:var(--warning); }
+.app-shell :is(.rd-coverage-track,.rd-limit-bar) { background:var(--selected); }
+.app-shell .rd-coverage-track>span { background:var(--sage); }
+.app-shell .rd-trend-svg [stroke='#174b89'] { stroke:var(--primary); }
+.app-shell .rd-trend-svg [fill='#174b89'] { fill:var(--primary); }
+.app-shell .rd-trend-svg [stroke='#794600'] { stroke:var(--warning); }
+.app-shell .rd-trend-svg text { fill:var(--muted); }
+.app-shell .rd-trend-svg [fill='#794600'] { fill:var(--warning); }
+.app-shell .meal-selector button.selected { background:var(--primary); border-color:var(--primary); }
+.app-shell .care-connection .account-mode-switch button[aria-pressed=true],
+.app-shell .rd-nutrient-picker label:has(input:checked),
+.app-shell .nutrient-setting-card.is-selected { background:var(--selected); color:var(--primary); border-color:var(--primary); }
+.app-shell :is(.rd-nutrient-picker,.nutrient-setting-card) input { accent-color:var(--primary); }
+.app-shell .care-invitations .invite-primary { background:var(--primary); border-color:var(--primary); color:var(--surface); }
+.app-shell :is(.invitation-eyebrow,.invitation-stats svg,.rd-patient-avatar,.recording-steps span,.plan-detail>b,.source-button,.plan-summary header button) { color:var(--primary); }
+.app-shell .rd-directory { background:var(--canvas); border-color:var(--border); }
+.app-shell .rd-workspace .rd-patient-card[aria-pressed=true] { background:var(--selected); border-color:var(--primary); box-shadow:inset 3px 0 var(--primary); }
+.app-shell .rd-patient-avatar { background:var(--selected); }
+.app-shell .assist-secondary button { color:var(--primary); border-color:var(--border-strong); }
+.app-shell .progress-track>span { background:var(--primary); }
+.app-shell .warning .progress-track>span { background:var(--warning); }
+.app-shell .danger .progress-track>span { background:var(--exceeded); }
+.app-shell .nutrient-band.danger { background:var(--exceeded-pale); color:var(--exceeded); }
