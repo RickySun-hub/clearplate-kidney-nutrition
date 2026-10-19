@@ -1,0 +1,7 @@
+ea087c341bfb5b23195c7302027268ede86da802554c18a5c4896a6017b439f9  .agents/skills/ui-ux-pro-max/SKILL.md
+738f69dfa83db5c347c678fb9d90e560877059f0de93a327c39001bff92dc014  .agents/skills/ui-ux-pro-max/LICENSE.txt
+4115cf1120680f2cedef0676cb648f30c7ef4699e2a947535d4113e71ed3b12a  .agents/skills/ui-ux-pro-max/data/charts.csv
+a93a4d9d7025856575d7b7583bda020be9043013432c5af7c58af9dbdfb206b7  .agents/skills/ui-ux-pro-max/data/styles.csv
+ff81ec613f70ba9fc3fcce52dbe4ae35d44b2079dbe6dc066d2d6e38c28facd5  .agents/skills/ui-ux-pro-max/data/ux-guidelines.csv
+d28442d61c310b49c054a4ea736f89fb3008beebdbbc38c4b3a540b8f7fadf23  .agents/skills/ui-ux-pro-max/references/pro-rules.md
+0609bc7c89dacb40472465d8fc14257b56b2c43439660fc8d6fa3b8c022e1876  .agents/skills/ui-ux-pro-max/references/quick-reference.md

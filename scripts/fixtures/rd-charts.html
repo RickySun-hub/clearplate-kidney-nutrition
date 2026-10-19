@@ -1,0 +1,12 @@
+<meta name="viewport" content="width=device-width, initial-scale=1"><div id="root"></div><script type="module">
+import '../../src/styles.css';import '../../src/preview-design.css';import '../../src/accessibility.css';import '../../src/components/care-connection.css';
+import React from 'react';import {createRoot} from 'react-dom/client';import RD from '../../src/components/RDDashboard.jsx';
+const entries=[
+ ['2026-10-13',1500,55,1400,2200],['2026-10-14',1700,63,1800,2400],
+ ['2026-10-16',1350,51,1200,null],['2026-10-17',1850,72,2350,2800],
+ ['2026-10-18',1600,60,1650,2300],['2026-10-19',1720,66,1900,2600]
+].map(([date,calories,protein,sodium,potassium],i)=>({id:'synthetic-'+i,date,meal:'',source:'custom',servings:1,customFood:{name:'Synthetic daily food fixture',calories,protein,sodium,potassium}}));
+entries.push({id:'partial',date:'2026-10-16',source:'custom',servings:1,customFood:{name:'Synthetic unknown food',calories:null,protein:null,sodium:null,potassium:null}});
+
+createRoot(document.getElementById('root')).render(React.createElement('main',{className:'care-connection rd-workspace'},React.createElement('div',{className:'rd-directory-layout'},React.createElement('aside',{className:'rd-directory'},'Synthetic records / Chart preview / Not published'),React.createElement('div',{className:'rd-file'},React.createElement(RD,{entries,profile:{name:'Synthetic QA',condition:'CKD',stage:'G3a',treatment:'not-dialysis',weightKg:70,heightCm:170,proteinMaxG:70,proteinMinG:55,sodiumTargetMg:2000,trackedNutrients:['calories','protein','sodium','potassium']},sharedIdentity:'synthetic@example.test'})))));
+</script>

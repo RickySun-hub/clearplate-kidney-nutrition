@@ -22,6 +22,7 @@ try {
  await from.fill(original);
  assert.equal(await page.getByRole('button',{name:'Export CSV for Excel'}).isEnabled(),true);
  const review=page.getByRole('region',{name:'Record summary',exact:true});
+ await review.locator('summary').first().click();
  assert.equal(await review.locator('li').count(),3);
  assert.match(await review.innerText(),/Protein[\s\S]*Above saved limit/);
  assert.match(await review.innerText(),/Potassium[\s\S]*Nutrition data missing/);
@@ -37,7 +38,7 @@ try {
  const potassium=range.locator('article').filter({has:page.getByText('Potassium',{exact:true})});
  assert.match(await potassium.innerText(),/Unknown mg/);assert.match(await potassium.innerText(),/0\/3 items known/);
  assert.match(await range.innerText(),/400 kcal/);
- const daily=page.locator('.rd-daily');assert.match(await daily.innerText(),/280 kcal/);
+ const daily=page.locator('.rd-daily');await daily.locator('summary').filter({hasText:'2026-10-16'}).click();assert.match(await daily.innerText(),/280 kcal/);
  assert.match(await daily.innerText(),/Above saved limit/);
  assert.equal(await page.getByText('Record access & export notes',{exact:true}).count(),1);
  await daily.locator('summary').filter({hasText:'2026-10-15'}).click();
