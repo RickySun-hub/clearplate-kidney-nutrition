@@ -28,7 +28,7 @@ try {
  assert.equal(await page.getByText('Incomplete',{exact:true}).count(),0);
  assert.match(await review.innerText(),/Cannot assess full total/);
  assert.equal(await review.getByText('Energy',{exact:true}).count(),0);
- await review.getByRole('button',{name:'Review daily values →',exact:true}).click();
+ await review.getByRole('button',{name:'View daily values',exact:true}).click();
  assert.equal(await page.evaluate(()=>document.activeElement.id),'rd-daily-review');
  assert.equal(await page.getByText(/JSON/).count(),0);
  const range=page.getByRole('region',{name:'Range totals · known amounts'});
