@@ -7,11 +7,14 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.CH
 try {
  const page=await browser.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:5173/scripts/fixtures/rd-usability.html');
- await page.getByRole('heading',{name:'Profile',exact:true}).waitFor();
+ await page.getByRole('heading',{name:'Synthetic QA',exact:true}).waitFor();
+ assert.equal(await page.locator('#rd-profile').evaluate(el=>el.open),false);
+ assert.equal(await page.locator('#rd-food-log').evaluate(el=>el.open),false);
  for(const [label,id] of [['Profile','rd-profile'],['Daily review','rd-daily-review'],['Food log','rd-food-log']]){
   await page.getByRole('button',{name:label,exact:true}).click();
   assert.equal(await page.evaluate(()=>document.activeElement.id),id);
  }
+ await page.getByText('Record access & export notes',{exact:true}).click();
  const from=page.getByLabel('From',{exact:true});const original=await from.inputValue();
  await from.fill('2099-01-01');
  await page.getByRole('alert').filter({hasText:'Choose an end date'}).waitFor();
@@ -48,7 +51,12 @@ try {
   await table.focus();assert.equal(await table.evaluate(el=>el===document.activeElement),true);
   if(width===390){assert.ok(await table.evaluate(el=>el.scrollWidth>el.clientWidth));await table.press('ArrowRight');}
   await table.evaluate(el=>{el.scrollLeft=0;});
-  await page.screenshot({path:`output/rd-usability-${width}.png`,fullPage:true});
+  await page.locator('#rd-profile').evaluate(el=>{el.open=false;});
+  await page.locator('#rd-food-log').evaluate(el=>{el.open=false;});
+  await page.getByText('Record access & export notes',{exact:true}).evaluate(el=>{el.parentElement.open=false;});
+  await page.evaluate(()=>window.scrollTo(0,0));
+  await page.screenshot({path:`output/rd-hierarchy-preview-${width}.png`,fullPage:true});
+  await page.locator('#rd-food-log').evaluate(el=>{el.open=true;});
  }
  assert.deepEqual(errors,[]);console.log('PASS: synthetic profile, per-nutrient unknowns and zero, CSV, keyboard focus, mobile and desktop overflow; no browser errors.');
 } finally {await browser.close();}
