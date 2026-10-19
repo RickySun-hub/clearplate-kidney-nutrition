@@ -1,0 +1,95 @@
+// Run against the local Vite server. All auth/data endpoints below are mocked.
+import { createRequire } from 'node:module';
+import { mkdtemp, mkdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import assert from 'node:assert/strict';
+const { chromium }=createRequire(import.meta.url)('playwright');
+const owner='11111111-1111-4111-8111-111111111111',rd='22222222-2222-4222-8222-222222222222';
+const zone=process.env.QA_TIMEZONE||'America/Los_Angeles';
+const expected=zone==='America/Los_Angeles'?{date:'2026-10-19',time:'23:12'}:{date:'2026-10-20',time:'15:12'};
+const date=expected.date,origin='https://synthetic.supabase.co';
+const ingredientFood={fdcId:1,description:'Synthetic grain, raw',dataType:'SR Legacy',release:'Synthetic QA only',basis:'per100g',nutrients:{calories:100,protein:2,sodium:125,potassium:10,phosphorus:20},portions:[{amount:1,description:'cup',gramWeight:200}]};
+const unknownFood={...ingredientFood,fdcId:2,description:'Synthetic vegetables, cooked',nutrients:{calories:50,protein:1,sodium:0,potassium:null,phosphorus:null},portions:[]};
+let refreshes=0,logins=0,revoked=false;
+const tokens=new Map(),refreshTokens=new Map();
+function issue(id){const token=`synthetic-access-${tokens.size}`,refresh=`synthetic-refresh-${tokens.size}`;tokens.set(token,id);refreshTokens.set(refresh,id);return {access_token:token,refresh_token:refresh,expires_in:3600};}
+const profile={name:'Synthetic Alex',condition:'Adult ADPKD',stage:'G2',weightKg:70,heightCm:175,treatment:'not-dialysis',sodiumTargetMg:2000,proteinMinG:56,proteinMaxG:70,useGuidelineProteinRange:false,trackedNutrients:['calories','protein','sodium','potassium']};
+let record={profile,entries:[{id:'synthetic-oats',date,source:'custom',meal:'Breakfast',time:'08:30',timeSource:'user-recorded',servings:1,customFood:{name:'Synthetic oatmeal',calories:150,protein:5,sodium:0,potassium:null,method:'packaged',methodLabel:'Synthetic label'}}],dayRecords:{}};
+let updated='2026-10-16T08:30:00.000Z';
+const errors=[];
+async function routes(context){
+ context.on('page',page=>page.on('pageerror',e=>errors.push(e.message)));
+ await context.route('**/api/**',async route=>{
+  const path=new URL(route.request().url()).pathname;
+  if(path==='/api/fdc-search'||path==='/api/fdc-food')return route.continue();
+  if(path==='/api/fdc-food')return route.fulfill({json:{food:new URL(route.request().url()).searchParams.get('fdcId')==='1'?ingredientFood:unknownFood}});
+  if(path==='/api/care-config')return route.fulfill({json:{url:origin,publishableKey:'sb_publishable_synthetic'}});
+  if(path==='/api/voice-status')return route.fulfill({json:{available:false,message:'Synthetic demonstration; manual entry is available.'}});
+  return route.fulfill({status:503,json:{error:{message:'Not used in this synthetic test'}}});
+ });
+ await context.route(origin+'/**',async route=>{
+  const req=route.request(),url=new URL(req.url()),body=req.postDataJSON(),id=tokens.get((req.headers().authorization||'').replace('Bearer ',''));
+  if(url.pathname.endsWith('/settings'))return route.fulfill({json:{external:{google:false,phone:false}}});
+  if(url.pathname.endsWith('/token')){
+   if(url.searchParams.get('grant_type')==='refresh_token'){
+    refreshes++;const who=refreshTokens.get(body.refresh_token);
+    if(revoked||!who)return route.fulfill({status:400,json:{code:'refresh_token_not_found'}});
+    refreshTokens.delete(body.refresh_token);return route.fulfill({json:issue(who)});
+   }
+   logins++;return route.fulfill({json:issue(body.email==='rd@example.test'?rd:owner)});
+  }
+  if(!id)return route.fulfill({status:401,json:{}});
+  if(url.pathname.endsWith('/user'))return route.fulfill({json:{id,email:id===owner?'patient@example.test':'rd@example.test'}});
+  if(url.pathname.endsWith('/logout')){for(const [key,who]of refreshTokens)if(who===id)refreshTokens.delete(key);return route.fulfill({json:{}});}
+  if(url.pathname.includes('care_invitation_action')||url.pathname.includes('care_grants'))return route.fulfill({json:[]});
+  if(url.pathname.includes('care_records')){
+   if(req.method()==='PATCH'||req.method()==='POST'){assert.equal(id,owner);record=body.record;updated=body.updated_at;return route.fulfill({json:[{owner_id:owner,record,updated_at:updated}]});}
+   if(url.searchParams.get('owner_id')?.startsWith('neq.'))return route.fulfill({json:id===rd?[{owner_id:owner,profile,updated_at:updated}]:[]});
+   const target=url.searchParams.get('owner_id');
+   if(target===`eq.${owner}`)return route.fulfill({json:[{owner_id:owner,record,updated_at:updated}]});
+   return route.fulfill({json:[]});
+  }
+  return route.fulfill({status:404,json:{}});
+ });
+}
+const dir=await mkdtemp(join(tmpdir(),'nepholio-browser-'));
+await mkdir('output',{recursive:true});let context;
+async function launch(){context=await chromium.launchPersistentContext(dir,{headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,timezoneId:zone,viewport:{width:1440,height:1000}});await routes(context);const page=await context.newPage();await page.clock.setFixedTime(new Date('2026-10-20T06:12:00Z'));return page;}
+async function signIn(page,email){await page.getByLabel('Email',{exact:true}).fill(email);await page.getByRole('button',{name:'Continue with email',exact:true}).click();await page.getByLabel('Password',{exact:true}).fill('synthetic-password');await page.locator('.care-connection').getByRole('button',{name:'Sign in',exact:true}).click();}
+async function patientReady(page){await page.getByRole('heading',{name:/Synthetic Alex/}).waitFor();}
+async function shot(page,name,width){await page.setViewportSize({width,height:1000});await page.evaluate(()=>window.scrollTo(0,0));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,`overflow ${name}`);await page.screenshot({path:`output/${name}-${width}.png`,fullPage:!name.includes('portion')});}
+try{
+ const page=await launch();await page.goto('http://127.0.0.1:5173/#signin');await signIn(page,'patient@example.test');await patientReady(page);
+ await page.goto('http://127.0.0.1:5173/#patient/planner');
+ await page.getByRole('button',{name:'Use this plan',exact:true}).waitFor({timeout:10000}).catch(async e=>{console.log(await page.locator('body').innerText());console.log(errors);throw e;});
+ const count=record.entries.length;await page.getByRole('button',{name:'Use this plan',exact:true}).click();
+ await page.getByRole('button',{name:'Mark eaten',exact:true}).first().waitFor();
+ assert.equal(record.entries.length,count,'planned food is not intake');assert.ok(record.dayRecords[date].plan.items.length);
+ const item=record.dayRecords[date].plan.items[0];
+ assert.equal(await page.getByLabel('Date eaten',{exact:true}).inputValue(),expected.date);
+ assert.equal(await page.getByLabel('Time eaten',{exact:false}).inputValue(),expected.time);
+ assert.equal(await page.evaluate(()=>Intl.DateTimeFormat().resolvedOptions().timeZone),zone);
+ const originalScreenshotTime=await page.evaluate(()=>new Date('2026-10-19T18:12:00Z').toTimeString().slice(0,5));
+ assert.equal(originalScreenshotTime,zone==='America/Los_Angeles'?'11:12':'03:12');
+ await page.getByLabel('Date eaten',{exact:true}).fill('2026-10-18');
+ await page.getByLabel('Time eaten',{exact:false}).fill('23:55');
+ await page.getByRole('button',{name:'Mark eaten',exact:true}).first().dblclick();
+ await page.getByRole('button',{name:'Undo eaten',exact:true}).waitFor();assert.equal(record.entries.length,count+1);
+ assert.equal(record.entries.at(-1).planItemId,item.id);assert.equal(record.entries.at(-1).time,'23:55');assert.equal(record.entries.at(-1).date,'2026-10-18');assert.equal(record.entries.at(-1).timeZone,zone);assert.equal(record.entries.at(-1).timeSource,'user-recorded');
+ await page.reload();await page.getByRole('button',{name:'Undo eaten',exact:true}).waitFor();assert.equal(record.entries.length,count+1);
+ assert.match(await page.locator('.plan-done').innerText(),/2026-10-18.*23:55/);
+ await page.getByRole('button',{name:'Undo eaten',exact:true}).click();await page.getByRole('button',{name:'Mark eaten',exact:true}).first().waitFor();assert.equal(record.entries.length,count);
+ await page.reload();await page.getByRole('button',{name:'Mark eaten',exact:true}).first().waitFor();assert.equal(await page.getByRole('button',{name:'Undo eaten',exact:true}).count(),0);
+ await page.getByRole('button',{name:'Profile',exact:true}).click();
+ await page.getByLabel('Milk',{exact:true}).check();
+ await page.getByLabel('Other food allergies (comma separated)').fill('Synthetic unknown allergen');
+ await page.getByRole('button',{name:'Save plan',exact:true}).click();
+ await page.getByRole('dialog').waitFor({state:'hidden'});
+ assert.deepEqual(record.profile.foodAllergies,['milk']);assert.equal(record.profile.otherFoodAllergies,'Synthetic unknown allergen');
+ assert.equal(await page.getByRole('button',{name:'Mark eaten',exact:true}).first().isDisabled(),true);
+ await page.getByText('Add a food or change plan',{exact:true}).click();await page.getByRole('button',{name:'Choose a new plan',exact:true}).click();
+ await page.getByText('No matching plan. Review allergy settings, available ingredients and saved targets.',{exact:true}).waitFor();
+ assert.equal(record.entries.length,count);
+ assert.deepEqual(errors,[]);console.log(zone,expected,'PASS: timezone default, cross-day backdate, stored wall date/time/zone, reload display; actual app plan persistence without intake, double-click idempotence, mark/reload/undo/reload, stable plan linkage, actual time and mobile/desktop rendering. Synthetic auth and cloud records.');
+}finally{await context?.close();await rm(dir,{recursive:true,force:true});}
