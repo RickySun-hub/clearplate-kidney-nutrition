@@ -18,6 +18,13 @@ try {
  assert.equal(await page.getByRole('button',{name:'Export CSV for Excel'}).isDisabled(),true);
  await from.fill(original);
  assert.equal(await page.getByRole('button',{name:'Export CSV for Excel'}).isEnabled(),true);
+ const review=page.getByRole('region',{name:'Review first',exact:true});
+ assert.equal(await review.locator('li').count(),3);
+ assert.match(await review.innerText(),/Protein[\s\S]*Above saved limit/);
+ assert.match(await review.innerText(),/Potassium[\s\S]*Incomplete/);
+ assert.equal(await review.getByText('Energy',{exact:true}).count(),0);
+ await review.getByRole('button',{name:'Review daily values →',exact:true}).click();
+ assert.equal(await page.evaluate(()=>document.activeElement.id),'rd-daily-review');
  assert.equal(await page.getByText(/JSON/).count(),0);
  const range=page.getByRole('region',{name:'Range totals · known amounts'});
  const sodium=range.locator('article').filter({has:page.getByText('Sodium',{exact:true})});

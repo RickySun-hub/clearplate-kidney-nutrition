@@ -51,3 +51,37 @@
 .rd-secondary>summary { color:#174b89;font-weight:600; }
 .rd-notice { border:0;margin-bottom:0; }
 .rd-dashboard .rd-daily>details>summary { color:#174b89; }
+
+/* Nutrient colors identify metrics; only the existing text labels express status. */
+.rd-dashboard { gap:24px; color:#20354a; }
+.rd-dashboard h2 { font-size:1.8rem; letter-spacing:-.025em; }
+.rd-dashboard h3 { font-size:1.15rem; color:#17324d; }
+.rd-review-first { border-left:4px solid #245b93; background:#f2f7fc; padding:18px 20px; display:grid; gap:12px; }
+.rd-review-first .rd-file-eyebrow { margin:0 0 5px; color:#42566c; }
+.rd-review-first h3 { margin:0; font-size:1.4rem; }
+.rd-review-first ul { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:12px 28px; }
+.rd-review-first li { display:grid; gap:4px; }
+.rd-review-first li span { color:#794600; font-weight:600; font-size:.9rem; }
+.rd-review-first>button { justify-self:start; color:#174b89; background:transparent; border:0; border-bottom:1px solid #174b89; border-radius:0; padding:5px 0; font-weight:700; }
+.rd-review-first>small { color:#42566c; line-height:1.5; }
+.rd-dashboard .rd-patient { grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px 24px; }
+.rd-patient>div { gap:4px; padding:6px 0; }
+.rd-summary { gap:20px; }
+.rd-summary article { --metric-color:#41556b; border-top:3px solid var(--metric-color); gap:7px; }
+.rd-summary article[data-nutrient="calories"] { --metric-color:#245b93; }
+.rd-summary article[data-nutrient="protein"] { --metric-color:#704799; }
+.rd-summary article[data-nutrient="sodium"] { --metric-color:#216c69; }
+.rd-summary article[data-nutrient="potassium"] { --metric-color:#875020; }
+.rd-summary article[data-nutrient="phosphorus"] { --metric-color:#854d68; }
+.rd-summary article>strong { color:var(--metric-color); font-size:.95rem; }
+.rd-summary article>span { color:#172e45; font-size:1.7rem; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.025em; }
+.rd-daily>details { padding:12px 0 18px; }
+.rd-daily>details[open]>summary { font-size:1.1rem; }
+@media(max-width:600px) {
+ .rd-dashboard { gap:22px; }
+ .rd-review-first { padding:16px; }
+ .rd-review-first ul { display:grid; gap:12px; }
+ .rd-dashboard .rd-patient { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+ .rd-summary { gap:16px; }
+ .rd-summary article>span { font-size:1.45rem; }
+}
