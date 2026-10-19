@@ -105,5 +105,6 @@ test('recipe portions distinguish personal servings, known whole batch and unkno
  const personal=await run('I ate one whole serving',{portionBasis:'servings'});assert.equal(personal.draft.servings,1);assert.equal(personal.ready,true);
  const whole=await run('I ate the entire recipe',{});assert.equal(whole.draft.portionBasis,'whole');assert.equal(whole.draft.servings,6);assert.equal(whole.ready,true);
  const unknown=await run('I ate the whole recipe',{},{});assert.equal(unknown.ready,false);assert.equal(unknown.draft.servings,null);assert.match(unknown.reply,/How many/);
- const ambiguous=await run('I ate all of it',{});assert.equal(ambiguous.ready,false);assert.equal(ambiguous.draft.intent,'unknown');assert.match(ambiguous.reply,/personal serving/);
+ for(const phrase of ['I ate all of it','I ate the whole plate','I ate the whole dish','我吃了整份']){const result=await run(phrase,{portionBasis:'whole'});assert.equal(result.ready,false,phrase);assert.equal(result.draft.portionBasis,'unknown');assert.equal(result.draft.servings,null);}
+ const ambiguous=await run('I ate all of it',{});assert.equal(ambiguous.ready,false);assert.equal(ambiguous.draft.intent,'unknown');assert.match(ambiguous.reply,/recipe serving/);
 });

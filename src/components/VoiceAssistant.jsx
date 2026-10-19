@@ -1,4 +1,4 @@
-import { recipeYield, recipePortionLabel, resolveRecipeServings } from '../utils/recipePortions.js';
+import { recipeYield, recipeServingLabel, recipeWholeLabel, recipePortionLabel, resolveRecipeServings } from '../utils/recipePortions.js';
 import { useEffect, useRef, useState } from 'react';
 import { parseNutrientValues, formatAmount, localDateKey } from '../utils/nutrition';
 import './VoiceAssistant.css';
@@ -44,6 +44,7 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
   const [message, setMessage] = useState('Checking voice availability…');
   const [transcript, setTranscript] = useState('');
   const [draft, setDraft] = useState(null);
+  const [portionQuestion,setPortionQuestion] = useState(null);
   const [nutrients, setNutrients] = useState(emptyNutrients);
   const [pending, setPending] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -119,7 +120,7 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
     if (turnBusy.current) return;
     if ((liveConversation || conversation).length >= 38) {setMessage('Please save or finish this food before starting a new conversation.');return;}
     turnBusy.current=true; window.speechSynthesis?.cancel();
-    setPending(true); setMessage('Listening to your answer…');
+    setPortionQuestion(null); setPending(true); setMessage('Listening to your answer…');
     try {
       const token = getAccessToken ? await getAccessToken() : accessToken;
       if (!alive.current || generation.current !== sessionGeneration) return;
@@ -127,6 +128,7 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
       const data = await response.json(); if (!response.ok) throw new Error(data.error?.message || 'Voice request failed.');
       if (!alive.current || generation.current !== sessionGeneration) return;
       setTranscript(existing => transcriptAfterInterpretation({ recipe:!!recipe, intent:data.draft.intent, recognized:data.transcript, audio:!!payload.audio, existing })); setNutrients(emptyNutrients);
+      if (data.draft.portionBasis === 'unknown' && recipes.some(r=>r.id===data.draft.recipeId)) setPortionQuestion(data.draft);
       if (recipe && data.draft.intent === 'unknown') setTyping(true);
       if (!recipe) {
         const answer={role:'user',content:data.transcript,source:payload.audio?'voice':'typed',at:new Date().toISOString()};
@@ -208,7 +210,7 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
     const selectedRecipe = recipes.find(item => item.id === draft.recipeId);
     let servings;
     try { servings=selectedRecipe ? resolveRecipeServings(selectedRecipe,recipeDetails[selectedRecipe.id],draft.servings,draft.portionBasis||'servings') : Number(draft.servings); } catch(error) {setMessage(error.message);return;}
-    if (!Number.isFinite(servings) || servings <= 0 || servings > 1000) { setMessage('Enter a positive personal serving amount (up to 1,000).'); return; }
+    if (!Number.isFinite(servings) || servings <= 0 || servings > 1000) { setMessage('Enter a positive recipe serving amount (up to 1,000).'); return; }
     const weight = Number(grams);
     const useUsda = !selectedRecipe && outsideMode === 'usda';
     if (useUsda && (!usdaFood || usdaFood.basis !== 'per100g' || !Number.isFinite(weight) || weight <= 0 || weight * servings > 10000)) { setMessage('Select a USDA food and confirm its grams per serving; total eaten weight must be at most 10,000 g.'); return; }
@@ -242,6 +244,7 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
     {!recipe && (conversation.some(t=>t.role==='user') || transcript.trim()) && <button type="button" className="voice-text-button" disabled={pending || recording || liveBusy} onClick={saveUnknown}>Confirm & save description · nutrition unknown</button>}
     {(typing || transcript) && <div className="voice-text-entry"><label>Message<textarea maxLength={2000} value={transcript} disabled={pending || recording || liveBusy} onChange={event => setTranscript(event.target.value)} placeholder="Tell me what you ate…" /></label>
     <div className="voice-actions"><button type="button" disabled={!available || pending || recording || liveBusy || !transcript.trim()} onClick={() => interpret({ transcript })}>Send message</button><button type="button" disabled={pending || recording || liveBusy || !transcript.trim()} onClick={() => { setConversation(current=>[...current,{role:'user',content:transcript,source:'typed',at:new Date().toISOString()}].slice(0,40)); setDraft({ foodName: transcript.slice(0, 120), recipeId: null, servings: 1, meal }); setNutrients(emptyNutrients); clearMatches(); setOutsideMode('usda'); searchUsda(transcript.slice(0,120));setTranscript(''); }}>Create manual draft</button></div></div>}
+    {portionQuestion && <div role="group" aria-label="Clarify recipe amount"><p>One recipe serving or the whole recipe?</p>{['servings','whole'].map(basis=>{const food=recipes.find(r=>r.id===portionQuestion.recipeId), detail=recipeDetails[food?.id], count=recipeYield(food,detail);return <button type="button" key={basis} disabled={pending||recording||liveBusy||(basis==='whole'&&!count)} onClick={()=>{const label=basis==='whole'?recipeWholeLabel(food,detail):recipeServingLabel(food,detail);setDraft({...portionQuestion,intent:'food',portionBasis:basis,servings:basis==='whole'?count:1});setConversation(current=>[...current,{role:'user',content:label,source:'typed',at:new Date().toISOString()}]);setPortionQuestion(null);setTranscript('');setMessage('Review this source serving amount before saving.');}}>{basis==='whole'?recipeWholeLabel(food,detail):recipeServingLabel(food,detail)}</button>;})}</div>}
     {draft && <div className="voice-draft"><h3>Confirm food draft</h3><p>Check the food and portion below. Say “confirm” or use the save button. For an outside food, first choose its source and portion, or save the description with nutrition unknown.</p>
       <label>Cookbook recipe<select disabled={pending || recording || liveBusy} value={draft.recipeId || ''} onChange={event => { setDraft({ ...draft, recipeId:event.target.value || null }); clearMatches(); }}><option value="">Outside food — USDA match or label</option>{recipes.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
       {!draft.recipeId && <>
@@ -260,8 +263,8 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
         </> : <><p>Per-serving values from your nutrition label. AI does not supply these values.</p><div className="voice-nutrients">{Object.keys(emptyNutrients).map(key => <label key={key}>{key} ({key === 'calories' ? 'kcal' : key === 'protein' ? 'g' : 'mg'})<input disabled={pending || recording || liveBusy} type="number" min="0" step="0.01" value={nutrients[key]} onChange={event => setNutrients({ ...nutrients,[key]:event.target.value })} /></label>)}</div></>}
       </>}
       <label>Date eaten<input type="date" value={mealDate} disabled={pending || recording || liveBusy} onChange={e=>setMealDate(e.target.value)}/></label><label>Time eaten (optional)<input type="time" disabled={pending || recording || liveBusy} value={mealTime} onChange={e=>setMealTime(e.target.value)} /></label>
-      {draft.recipeId && <><p>{recipePortionLabel(recipes.find(r=>r.id===draft.recipeId),recipeDetails[draft.recipeId])}</p><div className="voice-actions" role="group" aria-label="Personal portion presets">{[0.5,1,2].map(value=><button type="button" disabled={pending||recording||liveBusy} key={value} onClick={()=>setDraft({...draft,servings:value,portionBasis:'servings'})}>{value} serving{value===1?'':'s'}</button>)}<button type="button" disabled={pending||recording||liveBusy||!recipeYield(recipes.find(r=>r.id===draft.recipeId),recipeDetails[draft.recipeId])} onClick={()=>setDraft({...draft,servings:recipeYield(recipes.find(r=>r.id===draft.recipeId),recipeDetails[draft.recipeId]),portionBasis:'whole'})}>Whole recipe</button></div></>}
-      <label>Personal servings<input disabled={pending || recording || liveBusy} type="number" min="0" max="1000" step="any" value={draft.servings ?? ''} onChange={event => setDraft({ ...draft,servings:event.target.value,portionBasis:'servings' })} /></label>
+      {draft.recipeId && <><p>{recipePortionLabel(recipes.find(r=>r.id===draft.recipeId),recipeDetails[draft.recipeId])}</p><div className="voice-actions" role="group" aria-label="Recipe serving presets">{[0.5,1,2].map(value=><button type="button" disabled={pending||recording||liveBusy} key={value} onClick={()=>setDraft({...draft,servings:value,portionBasis:'servings'})}>{value} serving{value===1?'':'s'}</button>)}<button type="button" disabled={pending||recording||liveBusy||!recipeYield(recipes.find(r=>r.id===draft.recipeId),recipeDetails[draft.recipeId])} onClick={()=>setDraft({...draft,servings:recipeYield(recipes.find(r=>r.id===draft.recipeId),recipeDetails[draft.recipeId]),portionBasis:'whole'})}>Whole recipe</button></div></>}
+      <label>Recipe servings<input disabled={pending || recording || liveBusy} type="number" min="0" max="1000" step="any" value={draft.servings ?? ''} onChange={event => setDraft({ ...draft,servings:event.target.value,portionBasis:'servings' })} /></label>
       <label>Meal label (optional)<input maxLength={80} disabled={pending || recording || liveBusy} value={draft.meal} onChange={event=>setDraft({...draft,meal:event.target.value})} placeholder="Brunch, snack…"/></label>
       <button type="button" disabled={pending || recording || liveBusy || searching || !!transcript.trim()} onClick={()=>save()}>{pending ? 'Saving…' : 'Confirm & save food'}</button><p role="status">{message}</p><button type="button" disabled={pending} onClick={() => { setDraft(null); clearMatches(); }}>Discard draft</button>
     </div>}

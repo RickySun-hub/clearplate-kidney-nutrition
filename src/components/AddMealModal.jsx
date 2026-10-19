@@ -117,7 +117,7 @@ export default function AddMealModal({
   const handleAdd = async () => {
     if (!selectedRecipes.length || submittingRef.current) return;
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) { setSubmissionError("Enter the time eaten."); return; }
-    if (!date || selectedRecipes.some(recipe=>portionFor(recipe)===null)) { setSubmissionError("Enter a date and positive personal servings. Whole recipe requires a known yield."); return; }
+    if (!date || selectedRecipes.some(recipe=>portionFor(recipe)===null)) { setSubmissionError("Enter a date and positive recipe servings. Whole recipe requires a known yield."); return; }
     submittingRef.current = true;
     setPending(true);
     setSubmissionError("");
@@ -165,7 +165,7 @@ export default function AddMealModal({
 
         <section className="selection-progress" aria-label="Selected recipes and today’s logged totals">
           <header>
-            <div><strong>Selected recipes</strong><small>{selectedRecipes.length ? `${selectedRecipes.length} selected · ${portionBasis === "whole" ? "whole recipe each" : `${formatAmount(servings, 1)} personal servings each`}` : "Select recipes to preview the combined total"}</small></div>
+            <div><strong>Selected recipes</strong><small>{selectedRecipes.length ? `${selectedRecipes.length} selected · ${portionBasis === "whole" ? "whole recipe each" : `${formatAmount(servings, 1)} recipe servings each`}` : "Select recipes to preview the combined total"}</small></div>
             {(sodiumOver || proteinOver) && <span className="selection-warning">Over target</span>}
             {!proteinTargetsValid && <span className="selection-warning">Targets need review</span>}
           </header>
@@ -222,7 +222,7 @@ export default function AddMealModal({
                 {image ? <img src={image} alt="" loading="lazy" decoding="async" /> : <span className="recipe-placeholder">{recipe.name.slice(0, 1)}</span>}
                 <span className="recipe-result-copy">
                   <strong>{recipe.name}</strong>
-                  <small>{recipePortionLabel(recipe, recipeDetails[recipe.id])}{recipeDetails[recipe.id]?.servingSize ? ` · ${recipeDetails[recipe.id].servingSize}` : ""}</small>
+                  <small>{recipePortionLabel(recipe, recipeDetails[recipe.id])}</small>
                   <small>{formatAmount(recipe.calories, 1)} kcal · {formatAmount(recipe.protein, 1)} g protein · {formatAmount(recipe.sodium, 1)} mg sodium</small>
                   {details && <small className="recipe-quick-info"><b>Needs:</b> {details.quickIngredients.join(" · ")}</small>}
                   {details && <small className="recipe-quick-info method"><b>Method:</b> {details.quickMethod}</small>}
@@ -238,7 +238,7 @@ export default function AddMealModal({
         <footer className="meal-modal-footer">
           {todayTotals.estimatedCount > 0 && <p className="field-note">User-defined ranges are used where recorded; USDA matches remain point estimates. Missing amounts or ranges prevent a complete limit check.</p>}
           {(submissionError || saveError) && <p className="storage-alert" role="alert">{submissionError || saveError}</p>}
-          <div className="serving-row"><label>Your servings per recipe<input aria-label="Personal servings" type="number" min="0" step="any" disabled={pending || portionBasis==='whole'} value={servings} onChange={e=>{setServings(e.target.value);setPortionBasis('servings');}} /></label><div role="group" aria-label="Portion presets">{[0.5,1,2].map(value=><button type="button" key={value} disabled={pending} aria-pressed={portionBasis==='servings'&&Number(servings)===value} onClick={()=>{setServings(value);setPortionBasis('servings');}}>{value} serving{value===1?'':'s'}</button>)}<button type="button" disabled={pending} aria-pressed={portionBasis==='whole'} onClick={()=>setPortionBasis('whole')}>Whole recipe</button></div></div>
+          <div className="serving-row"><label>Your servings per recipe<input aria-label="Recipe servings" type="number" min="0" step="any" disabled={pending || portionBasis==='whole'} value={servings} onChange={e=>{setServings(e.target.value);setPortionBasis('servings');}} /></label><div role="group" aria-label="Portion presets">{[0.5,1,2].map(value=><button type="button" key={value} disabled={pending} aria-pressed={portionBasis==='servings'&&Number(servings)===value} onClick={()=>{setServings(value);setPortionBasis('servings');}}>{value} serving{value===1?'':'s'}</button>)}<button type="button" disabled={pending} aria-pressed={portionBasis==='whole'} onClick={()=>setPortionBasis('whole')}>Whole recipe</button></div></div>
           <div className={`contribution ${sodiumOver || proteinOver ? "danger" : ""}`}>
             {selectedRecipes.length ? <>{selectedRecipes.length} recipe{selectedRecipes.length === 1 ? "" : "s"} add <strong>{formatAmount(selectedNutrition.sodium, 1)} mg sodium</strong> and <strong>{formatAmount(selectedNutrition.protein, 1)} g protein</strong></> : "Choose one or more recipes"}
           </div>

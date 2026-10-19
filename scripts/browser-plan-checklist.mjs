@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import assert from 'node:assert/strict';
 const { chromium }=createRequire(import.meta.url)('playwright');
 const owner='11111111-1111-4111-8111-111111111111',rd='22222222-2222-4222-8222-222222222222';
-const date=new Date().toISOString().slice(0,10),origin='https://synthetic.supabase.co';
+const date='2026-10-19',origin='https://synthetic.supabase.co';
 const ingredientFood={fdcId:1,description:'Synthetic grain, raw',dataType:'SR Legacy',release:'Synthetic QA only',basis:'per100g',nutrients:{calories:100,protein:2,sodium:125,potassium:10,phosphorus:20},portions:[{amount:1,description:'cup',gramWeight:200}]};
 const unknownFood={...ingredientFood,fdcId:2,description:'Synthetic vegetables, cooked',nutrients:{calories:50,protein:1,sodium:0,potassium:null,phosphorus:null},portions:[]};
 let refreshes=0,logins=0,revoked=false;
@@ -53,7 +53,7 @@ async function routes(context){
 }
 const dir=await mkdtemp(join(tmpdir(),'nepholio-browser-'));
 await mkdir('output',{recursive:true});let context;
-async function launch(){context=await chromium.launchPersistentContext(dir,{headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,viewport:{width:1440,height:1000}});await routes(context);return await context.newPage();}
+async function launch(){context=await chromium.launchPersistentContext(dir,{headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,timezoneId:'America/Los_Angeles',viewport:{width:1440,height:1000}});await routes(context);const page=await context.newPage();await page.clock.setFixedTime(new Date('2026-10-19T18:12:00Z'));return page;}
 async function signIn(page,email){await page.getByLabel('Email',{exact:true}).fill(email);await page.getByRole('button',{name:'Continue with email',exact:true}).click();await page.getByLabel('Password',{exact:true}).fill('synthetic-password');await page.locator('.care-connection').getByRole('button',{name:'Sign in',exact:true}).click();}
 async function patientReady(page){await page.getByRole('heading',{name:/Synthetic Alex/}).waitFor();}
 async function shot(page,name,width){await page.setViewportSize({width,height:1000});await page.evaluate(()=>window.scrollTo(0,0));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,`overflow ${name}`);await page.screenshot({path:`output/${name}-${width}.png`,fullPage:!name.includes('portion')});}
@@ -65,14 +65,18 @@ try{
  await page.getByRole('button',{name:'Mark eaten',exact:true}).first().waitFor();
  assert.equal(record.entries.length,count,'planned food is not intake');assert.ok(record.dayRecords[date].plan.items.length);
  const item=record.dayRecords[date].plan.items[0];
- await page.getByLabel('Time eaten',{exact:false}).fill('11:35');
+ assert.equal(await page.getByLabel('Time eaten',{exact:false}).inputValue(),'11:12');
+ assert.match(await page.locator('.simple-plan-list').innerText(),/1 serving = 1 wonton/);
+ assert.match(await page.locator('.simple-plan-list').innerText(),/Whole recipe = 24 wontons/);
+ assert.equal(await page.getByText(/personal portion/i).count(),0);
+ await page.getByLabel('Time eaten',{exact:false}).fill('11:05');
  await page.getByRole('button',{name:'Mark eaten',exact:true}).first().dblclick();
  await page.getByRole('button',{name:'Undo eaten',exact:true}).waitFor();assert.equal(record.entries.length,count+1);
- assert.equal(record.entries.at(-1).planItemId,item.id);assert.equal(record.entries.at(-1).time,'11:35');
+ assert.equal(record.entries.at(-1).planItemId,item.id);assert.equal(record.entries.at(-1).time,'11:05');
  await page.reload();await page.getByRole('button',{name:'Undo eaten',exact:true}).waitFor();assert.equal(record.entries.length,count+1);
  for(const width of [1440,390]){
   await page.setViewportSize({width,height:1000});
-  await page.evaluate(()=>{document.querySelector('[data-qa-banner]')?.remove();const b=document.createElement('div');b.dataset.qaBanner='true';b.textContent='演示数据 · Plan 新版预览（未发布）';b.style='position:relative;z-index:100;padding:12px 20px;background:#102c48;color:white;font:600 15px sans-serif';document.body.prepend(b);});
+  await page.evaluate(()=>{document.querySelector('[data-qa-banner]')?.remove();const b=document.createElement('div');b.dataset.qaBanner='true';b.textContent='Synthetic preview · America/Los_Angeles · Oct 19, 11:12 AM · Unpublished';b.style='position:relative;z-index:100;padding:12px 20px;background:#102c48;color:white;font:600 15px sans-serif';document.body.prepend(b);});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false);
   await page.screenshot({path:`output/plan-hierarchy-preview-${width}.png`,fullPage:true});
  }

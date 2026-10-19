@@ -10,7 +10,7 @@ test('six-serving batch uses personal servings and scales exactly once',()=>{
  assert.equal(nutritionFor(recipe,resolveRecipeServings(recipe,detail,1,'whole')).calories,600);
  assert.equal(nutritionFor(recipe,resolveRecipeServings(recipe,detail,.5)).calories,50);
  assert.equal(nutritionFor(recipe,2).potassium,null);assert.equal(nutritionFor(recipe,2).sodium,0);
- assert.match(recipePortionLabel(recipe,detail),/whole recipe makes 6/);
+ assert.match(recipePortionLabel(recipe,detail),/Whole recipe = 6 recipe servings/);
 });
 test('unknown yield cannot become one whole batch; legacy personal servings remain valid',()=>{
  for(const value of [undefined,'',0,-1,NaN]){assert.equal(recipeYield({}, {servings:value}),null);assert.throws(()=>resolveRecipeServings({}, {servings:value},1,'whole'),/yield/);}
@@ -33,4 +33,20 @@ test('voice whole recipe resolves known yield and rejects unknown without creati
  assert.equal((await guide.run('recipe_portion',{recipe_id:'soup',eaten:true,modified:false})).status,'needs_clarification');
  const unknown=createFoodGuide({recipes:[recipe],details:{soup:{ingredients:[],steps:['Simmer.']}}});await unknown.run('open_recipe',{recipe_id:'soup'});
  assert.equal((await unknown.run('recipe_portion',{recipe_id:'soup',servings:1,portion_basis:'whole',eaten:true,modified:false})).status,'needs_clarification');
+});
+
+test('24 source wontons and six-serving dish retain source units without diner inference', async()=>{
+ const {readFileSync}=await import('node:fs');
+ const recipes=JSON.parse(readFileSync(new URL('../data/recipes.json',import.meta.url)));
+ const details=JSON.parse(readFileSync(new URL('../data/recipeDetails.json',import.meta.url)));
+ const wontons=recipes.find(r=>r.id==='mango-salsa-wontons');
+ assert.equal(recipePortionLabel(wontons,details[wontons.id]),'1 serving = 1 wonton · Whole recipe = 24 wontons');
+ assert.equal(nutritionFor(wontons,1.5).calories,60);
+ assert.equal(nutritionFor(wontons,resolveRecipeServings(wontons,details[wontons.id],1,'whole')).calories,960);
+ const six={calories:100,potassium:null};
+ assert.equal(recipePortionLabel(six,{servings:6}),'1 recipe serving · Whole recipe = 6 recipe servings');
+ assert.equal(nutritionFor(six,1.5).calories,150);
+ assert.equal(nutritionFor(six,resolveRecipeServings(six,{servings:6},1,'whole')).calories,600);
+ assert.equal(nutritionFor(six,6).potassium,null);
+ assert.equal(recipePortionLabel(six,{}),'1 recipe serving · Whole recipe yield unknown');
 });

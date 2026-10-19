@@ -97,7 +97,7 @@ export default function RecipeDetailView({ recipe, details, servings = 1, backLa
                 <p className="scaling-note">Batch scale × {formatAmount(scaleFactor, 2)} = {formatAmount(cookServings, 2)} cooking servings ÷ {details.servings} source servings. Alternate amounts scale together; package sizes stay fixed.</p>
                 <p className="scaling-note">Workbook estimate for this batch: {formatAmount(batchNutrients.calories, 2)} kcal · {formatAmount(batchNutrients.sodium, 2)} mg sodium · {formatAmount(batchNutrients.protein, 2)} g protein · {formatAmount(batchNutrients.potassium, 2)} mg potassium.</p>
               </details>
-              {!wholeYield && <p role="status">Whole recipe yield unknown. Confirm how many personal servings it makes before scaling ingredients.</p>}
+              {!wholeYield && <p role="status">Whole recipe yield unknown. Confirm how many recipe servings it makes before scaling ingredients.</p>}
               <div className="ingredient-checklist">
                 {scaledIngredients.map((ingredient, index) => ingredient.original.endsWith(":") ? (
                   <h3 key={`${ingredient.original}-${index}`}>{ingredient.original}</h3>

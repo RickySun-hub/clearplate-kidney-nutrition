@@ -2,7 +2,7 @@ import {createRequire} from 'node:module';import assert from 'node:assert/strict
 const browser=await chromium.launch({headless:true,executablePath:'/usr/bin/chromium'});
 try{const page=await browser.newPage({viewport:{width:390,height:844}});const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.route('**/api/**',r=>r.abort());
 await page.goto('http://127.0.0.1:5173/scripts/fixtures/recipe-portions.html');
-await page.getByText('Whole recipe makes 6 personal servings.',{exact:false}).waitFor();
+await page.getByText('Whole recipe makes 6 recipe servings.',{exact:false}).waitFor();
 assert.equal(await page.getByLabel('Portion amount',{exact:true}).inputValue(),'1');
 await page.getByLabel('Date eaten').fill('2026-10-17');await page.getByLabel('Time eaten').fill('10:35');await page.getByLabel('Meal label (optional)').fill('Brunch');
 await page.getByRole('button',{name:'Save meal',exact:true}).click();

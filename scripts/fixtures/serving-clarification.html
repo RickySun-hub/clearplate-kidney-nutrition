@@ -1,0 +1,5 @@
+<meta name="viewport" content="width=device-width, initial-scale=1"><div id="root"></div><script type="module">
+import React from 'react';import {createRoot} from 'react-dom/client';import Voice from '../../src/components/VoiceAssistant.jsx';
+window.logs=[];const six=location.search.includes('six');const recipe={id:'test',name:six?'Six-serving dish':'Wontons',calories:six?100:40};const detail={servings:six?6:24,...(six?{}:{servingSize:'1 wonton'})};
+createRoot(document.getElementById('root')).render(React.createElement(Voice,{accessToken:'synthetic',date:'2026-10-19',recipes:[recipe],recipeDetails:{test:detail},onAddFood:entry=>{window.logs.push(entry);return true;}}));
+</script>
