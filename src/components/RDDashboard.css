@@ -127,3 +127,14 @@
 .rd-workspace .rd-dashboard .rd-review-first li { display:grid; border:0; padding:0; gap:4px; }
 .rd-workspace .rd-dashboard .rd-summary { grid-template-columns:repeat(4,minmax(0,1fr)); }
 @media(max-width:600px) { .rd-workspace .rd-dashboard .rd-summary { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+/* Data coverage is neutral; amber is reserved for an actual saved-bound comparison. */
+.rd-workspace .rd-dashboard .rd-review-first { background:#f2f6fa; color:#20354a; border-left:3px solid #9bacbc; }
+.rd-workspace .rd-dashboard .rd-review-first h3 { color:#17324d; }
+.rd-workspace .rd-dashboard .rd-review-first .rd-file-eyebrow,
+.rd-workspace .rd-dashboard .rd-review-first>small,
+.rd-workspace .rd-dashboard .rd-review-first li span { color:#475b6e; }
+.rd-workspace .rd-dashboard .rd-review-first li .rd-comparison-attention { color:#794600; }
+.rd-workspace .rd-dashboard .rd-review-first>button { color:#174b89; border-color:#9bacbc; }
+.rd-dashboard .rd-data-status { color:#475b6e; font-weight:600; }
+.rd-dashboard .rd-status-help p { color:#475b6e; line-height:1.5; }

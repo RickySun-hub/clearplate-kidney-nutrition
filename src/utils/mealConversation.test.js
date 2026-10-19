@@ -24,10 +24,10 @@ test('bounded original turns survive cloud round trip and report export import',
 test('daily targets never compare multi-day totals; missing nutrients stay unknown',()=>{
  const entries=[{date:'2026-10-07',source:'custom',servings:1,customFood:{name:'A',sodium:1200}},{date:'2026-10-08',source:'custom',servings:1,customFood:{name:'B',sodium:1200}}];
  const days=reviewDays(entries,{}, {sodiumTargetMg:2000},{},'2026-10-07','2026-10-08');
- assert.equal(days[0].nutrients.sodium.status,'Within saved range (recorded foods)');
+ assert.equal(days[0].nutrients.sodium.status,'Within saved limit');
  assert.equal(days[0].nutrients.protein.total,null);
  const unknown=reviewDays([...entries,{date:'2026-10-07',source:'custom',servings:1,customFood:{name:'Unknown'}}],{},{sodiumTargetMg:1000},{},'2026-10-07','2026-10-07')[0];
- assert.equal(unknown.nutrients.sodium.status,'Above saved limit');assert.equal(unknown.nutrients.sodium.complete,false);
+ assert.equal(unknown.nutrients.sodium.status,'Known amount above saved limit');assert.equal(unknown.nutrients.sodium.complete,false);
  const reviewOnly=reviewDays([],{}, {},{'2026-10-07':{mealReviews:{Breakfast:{status:'not-eaten'}}}},'2026-10-07','2026-10-07')[0];
  assert.equal(reviewOnly.nutrients.calories.total,null);
 });
