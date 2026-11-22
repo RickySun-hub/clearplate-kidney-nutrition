@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {consumeEmailLinkResult} from './emailConfirmation.js';
+function browser(hash){return {location:{href:'https://nepholio.com/'+hash},history:{replaceState(a,b,url){this.url=url;}}};}
+test('used confirmation links route to sign in and never display untrusted error text',()=>{const b=browser('#error=access_denied&error_code=otp_expired&error_description=untrusted');assert.match(consumeEmailLinkResult(b),/already used/);assert.equal(b.history.url,'/#signin');});
+test('email callback tokens are removed without accepting them as an authenticated session',()=>{const b=browser('#access_token=synthetic&refresh_token=synthetic&type=signup');assert.match(consumeEmailLinkResult(b),/Sign in/);assert.equal(b.history.url,'/#signin');});
+test('normal patient and Google PKCE routes are unchanged',()=>{for(const hash of ['#patient/today','?code=synthetic#signin','#care-invite/example']){const b=browser(hash);assert.equal(consumeEmailLinkResult(b),'');assert.equal(b.history.url,undefined);}});

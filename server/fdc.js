@@ -59,17 +59,20 @@ export function normalizeFdcFood(food) {
     }
   }
   const portions = (Array.isArray(food?.foodPortions) ? food.foodPortions : [])
+    .map(p => dataType === 'Survey (FNDDS)' && p.amount == null ? {...p, amount:1} : p)
     .filter(portion => finitePositive(portion?.amount) && finitePositive(portion?.gramWeight))
     .slice(0, 100).map(portion => ({ amount: portion.amount, gramWeight: portion.gramWeight,
-      unit: cleanText(portion.measureUnit?.name, 80), modifier: cleanText(portion.modifier, 200) }));
+      unit: cleanText(portion.measureUnit?.name, 80), modifier: cleanText(portion.modifier, 200),
+      description: cleanText(portion.portionDescription, 300), sourcePortionId: safeId(portion.id) ? String(portion.id) : null }));
   const fdcId = safeId(food?.fdcId) ? food.fdcId : null;
   return { fdcId, description: cleanText(food?.description), dataType, basis, nutrients, nutrientIds, units, portions,
+    matchType: dataType === 'Survey (FNDDS)' && /\bNFS\b|not (?:further )?specified/i.test(food?.description || '') ? 'unspecified' : 'candidate',
     sourceUrl: fdcId ? `https://fdc.nal.usda.gov/food-details/${fdcId}/nutrients` : null };
 }
 
 function validateSearch(args = {}) {
   if (!args || typeof args !== 'object' || Array.isArray(args)) throw invalid();
-  let { q, pageSize = 20, dataTypes = ['Foundation', 'SR Legacy'] } = args;
+  let { q, pageSize = 20, dataTypes = ['Foundation', 'SR Legacy', 'Survey (FNDDS)'] } = args;
   if (typeof q !== 'string' || !q.trim() || q.length > 120 || /[\u0000-\u001f\u007f]/u.test(q)) throw invalid();
   if (typeof pageSize === 'string' && /^\d{1,2}$/.test(pageSize)) pageSize = Number(pageSize);
   if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 50) throw invalid();

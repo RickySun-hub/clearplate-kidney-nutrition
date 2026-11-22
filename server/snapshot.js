@@ -28,7 +28,7 @@ export function createSnapshotService({ catalog } = {}) {
   return {
     async search(args = {}) {
       if (!args || typeof args !== 'object' || Array.isArray(args)) throw invalid();
-      let { q, pageSize = 20, dataTypes = ['Foundation', 'SR Legacy'] } = args;
+      let { q, pageSize = 20, dataTypes = ['Foundation', 'SR Legacy', 'Survey (FNDDS)'] } = args;
       if (typeof q !== 'string' || !q.trim() || q.length > 120 || /[\u0000-\u001f\u007f]/u.test(q)) throw invalid();
       if (typeof pageSize === 'string' && /^\d{1,2}$/.test(pageSize)) pageSize = Number(pageSize);
       if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 50) throw invalid();

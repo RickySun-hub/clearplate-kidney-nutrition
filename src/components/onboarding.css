@@ -1,0 +1,98 @@
+.onboarding-page { min-height: 100vh; background: #f3f7f5; color: #243d37; }
+.onboarding-brand { max-width: 1240px; padding: 28px 40px; margin: auto; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.onboarding-brand > span { color: #61756e; font-size: 14px; }
+.onboarding-shell { display: grid; grid-template-columns: minmax(230px, .8fr) minmax(0, 1.2fr); align-items: start; gap: 64px; width: min(1160px, calc(100% - 80px)); margin: 30px auto 0; padding-bottom: 50px; }
+.onboarding-aside { padding-top: 72px; position: sticky; top: 40px; }
+.onboarding-kicker { color: #55786d; font-size: 12px; font-weight: 700; letter-spacing: .13em; }
+.onboarding-aside h1 { font-size: clamp(38px, 4vw, 57px); line-height: 1.13; letter-spacing: -2px; font-weight: 620; margin: 20px 0; color: #2d5146; }
+.onboarding-aside > p { max-width: 300px; color: #63746e; line-height: 1.75; font-size: 17px; }
+.onboarding-promise { display: flex; align-items: center; gap: 14px; margin-top: 48px; color: #557368; font-size: 14px; line-height: 1.65; }
+.onboarding-card { padding: 36px 40px 24px; background: #fff; border: 1px solid #dee8e2; border-radius: 22px; box-shadow: 0 12px 45px #284c3d06; min-width: 0; }
+.onboarding-progress { display: flex; justify-content: space-between; gap: 16px; color: #64786e; font-size: 12px; }
+.onboarding-progress > span:first-child { font-weight: 700; color: #416457; }
+.onboarding-progress-track { height: 4px; border-radius: 8px; background: #eaf0ec; margin: 14px 0 32px; overflow: hidden; }
+.onboarding-progress-track > span { display: block; height: 100%; background: #668f7d; transition: width 180ms ease; }
+.onboarding-card h2 { font-size: 28px; line-height: 1.25; letter-spacing: -.8px; margin-bottom: 10px; color: #29493e; }
+.onboarding-card h2:focus { outline: none; }
+.onboarding-intro { color: #66766e; line-height: 1.65; font-size: 15px; margin-bottom: 26px; }
+.onboarding-step-fields { padding: 0; border: 0; margin: 0; min-width: 0; }
+.onboarding-roles { display: grid; gap: 14px; }
+.onboarding-role { position: relative; display: flex; align-items: center; gap: 16px; padding: 22px 18px; border-radius: 12px; border: 1px solid #d9e1dc; cursor: pointer; }
+.onboarding-role.is-selected { border-color: #5d8676; background: #f1f7f3; box-shadow: 0 0 0 1px #5d8676; }
+.onboarding-role > input { position: absolute; opacity: 0; }
+.onboarding-role:has(input:focus-visible) { outline: 3px solid #9bc8b6; outline-offset: 3px; }
+.onboarding-role > svg { flex-shrink: 0; color: #4e7565; }
+.onboarding-role > span { flex: 1; }
+.onboarding-role strong, .onboarding-role small { display: block; }
+.onboarding-role strong { font-size: 17px; margin-bottom: 7px; }
+.onboarding-role small { color: #62746b; font-size: 14px; line-height: 1.5; }
+.onboarding-role .onboarding-role-check { opacity: 0; }
+.onboarding-role.is-selected .onboarding-role-check { opacity: 1; }
+.onboarding-note { margin: 15px 0; color: #68776f; font-size: 13px; line-height: 1.65; }
+.onboarding-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.onboarding-fields label, .onboarding-field-label { display: grid; gap: 9px; color: #3b5147; font-size: 14px; font-weight: 600; }
+.onboarding-fields input, .onboarding-fields select, .restriction-other input { width: 100%; min-width: 0; min-height: 48px; border: 1px solid #ccd9d1; border-radius: 8px; padding: 11px 12px; color: #263e33; background: #fff; font-size: 15px; font-weight: 400; }
+.onboarding-input-unit { display: flex !important; align-items: center; gap: 0 !important; position: relative; }
+.onboarding-input-unit input { padding-right: 50px; }
+.onboarding-input-unit > span { position: absolute; right: 12px; color: #77857e; font-size: 13px; pointer-events: none; }
+.onboarding-unit-switch { display: flex; gap: 5px; padding: 4px; margin: 25px 0 18px; width: max-content; border-radius: 9px; background: #f0f4f1; }
+.onboarding-unit-switch button { border: 0; background: transparent; padding: 9px 15px; border-radius: 6px; color: #5f7267; cursor: pointer; font-size: 13px; }
+.onboarding-unit-switch button[aria-pressed=true] { background: #fff; color: #315b47; box-shadow: 0 1px 4px #193d2412; font-weight: 650; }
+.onboarding-height-imperial { display: flex; gap: 8px; margin-top: 9px; }
+.onboarding-height-imperial > label { min-width: 0; flex: 1; }
+.onboarding-bmi { background: #f1f7f3; padding: 25px 20px; border-radius: 14px; display: grid; justify-items: center; gap: 8px; color: #466456; }
+.onboarding-bmi > strong { font-size: 58px; font-weight: 600; letter-spacing: -2px; color: #355b49; line-height: 1.15; }
+.onboarding-bmi small { font-size: 12px; color: #6d7e73; margin-top: 5px; }
+.onboarding-bmi button { border: none; background: none; color: #446f59; padding: 5px; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.onboarding-encouragement { display: flex; gap: 14px; margin: 25px 0 0; }
+.onboarding-encouragement > svg { flex-shrink: 0; margin-top: 1px; color: #658874; }
+.onboarding-encouragement h3 { font-size: 16px; margin-bottom: 8px; }
+.onboarding-encouragement p { font-size: 14px; line-height: 1.7; color: #64766a; margin: 0; }
+.onboarding-source { color: #526f60; font-size: 12px; text-underline-offset: 3px; }
+.onboarding-question { display: flex; gap: 13px; align-items: start; margin: 27px 0 18px; }
+.onboarding-question:first-child { margin-top: 0; }
+.onboarding-question-number { flex: 0 0 30px; height: 30px; border-radius: 50%; background: #ecf3ef; color: #668474; font-size: 12px; display: grid; place-items: center; font-weight: 700; }
+.onboarding-question h3 { font-size: 17px; margin: 1px 0 6px; }
+.onboarding-question p { font-size: 13px; line-height: 1.5; color: #6a7971; margin: 0; }
+.food-restrictions-fields { display: grid; gap: 18px; }
+.food-restrictions-fields fieldset { min-width: 0; border: 1px solid #dce5de; border-radius: 9px; padding: 12px 15px 16px; }
+.food-restrictions-fields legend { padding: 0 6px; font-size: 14px; font-weight: 650; color: #395448; }
+.restriction-status { display: flex; flex-wrap: wrap; gap: 12px 20px; }
+.restriction-status label, .restriction-options label { display: flex; gap: 7px; align-items: center; font-size: 14px; cursor: pointer; color: #4a6154; }
+.restriction-status input, .restriction-options input, .onboarding-activity input { accent-color: #597f6b; width: 17px; height: 17px; margin: 0; flex-shrink: 0; }
+.restriction-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; padding-top: 20px; }
+.restriction-other { display: grid; gap: 8px; margin-top: 17px; color: #5e7466; font-size: 12px; }
+.onboarding-activity { display: grid; gap: 8px; }
+.onboarding-activity > label { border: 1px solid #dce5df; border-radius: 9px; display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; }
+.onboarding-activity > label:has(input:checked) { background: #f2f7f3; border-color: #749780; }
+.onboarding-activity strong, .onboarding-activity small { display: block; }
+.onboarding-activity strong { font-size: 14px; font-weight: 600; }
+.onboarding-activity small { font-size: 12px; color: #697e6e; margin-top: 4px; line-height: 1.45; }
+.onboarding-actions { display: flex; gap: 14px; justify-content: space-between; margin-top: 28px; }
+.onboarding-actions .primary-button { background: #436b58; border-color: #436b58; box-shadow: none; }
+.onboarding-actions .secondary-button { border-color: #d4dfd7; color: #506d5a; }
+.onboarding-actions button { font-size: 14px; }
+.onboarding-save-note { font-size: 11px; color: #7f8b83; text-align: center; margin: 20px 0 0; line-height: 1.5; }
+.onboarding-error { margin: 20px 0 0; color: #984838; background: #fff4ef; border: 1px solid #eacbc0; border-radius: 8px; padding: 12px; font-size: 14px; line-height: 1.5; }
+.onboarding-card button:disabled { opacity: .6; cursor: wait; }
+.profile-restriction-summary { margin: 16px 0 0; padding: 17px 18px; border-radius: 12px; background: #f2f7f4; }
+.profile-restriction-summary > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.profile-restriction-summary h3 { font-size: 15px; margin: 0; }
+.profile-restriction-summary button { border: 0; background: transparent; color: #496c59; font-weight: 650; font-size: 13px; cursor: pointer; padding: 5px; }
+.profile-restriction-summary dl { display: grid; gap: 9px; margin: 0; font-size: 13px; line-height: 1.5; }
+.profile-restriction-summary dl > div { display: grid; grid-template-columns: 95px minmax(0, 1fr); gap: 12px; }
+.profile-restriction-summary dt { color: #6c7e71; }
+.profile-restriction-summary dd { margin: 0; color: #36513f; overflow-wrap: anywhere; }
+.profile-restriction-summary .food-restrictions-fields { margin-top: 20px; }
+.profile-drawer.profile-compact .form-grid label { font-size: 14px; }
+.profile-drawer.profile-compact .form-grid input, .profile-drawer.profile-compact .form-grid select { font-size: 15px; min-height: 46px; }
+.profile-compact .profile-expand-section > summary { cursor: pointer; color: #365341; font-size: 16px; font-weight: 650; padding-bottom: 12px; }
+.profile-compact .profile-expand-section > summary small { display: block; font-size: 12px; font-weight: 400; color: #718176; margin: 7px 0 0 15px; }
+.profile-account-link { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 18px; margin-top: 24px; border: 1px solid #d4dfd7; border-radius: 10px; background: #fff; text-align: left; cursor: pointer; color: #3f634d; }
+.profile-account-link span { display: grid; gap: 5px; font-size: 15px; font-weight: 600; }
+.profile-account-link small { font-size: 12px; font-weight: 400; color: #738176; }
+.profile-compact .profile-clinical-note { font-size: 12px; line-height: 1.6; color: #6a7b70; margin-top: 22px; }
+.profile-compact .drawer-actions { margin-top: 25px; }
+@media (max-width: 900px) { .onboarding-shell { gap: 28px; grid-template-columns: minmax(190px, .65fr) minmax(0, 1.35fr); } .onboarding-card { padding: 28px; } .onboarding-aside h1 { font-size: 38px; } }
+@media (max-width: 680px) { .onboarding-brand { padding: 22px; } .onboarding-brand > span { display: none; } .onboarding-shell { display: block; width: calc(100% - 32px); margin-top: 6px; padding-bottom: 20px; } .onboarding-aside { display: none; } .onboarding-card { padding: 26px 22px 22px; border-radius: 17px; } .onboarding-card h2 { font-size: 26px; } .onboarding-progress { font-size: 11px; } .onboarding-fields { gap: 12px; } .onboarding-fields select { font-size: 14px; } .onboarding-actions .primary-button, .onboarding-actions .secondary-button { padding-inline: 15px; } .onboarding-role { padding: 20px 15px; gap: 12px; } }
+@media (max-width: 380px) { .onboarding-fields { grid-template-columns: 1fr; } .onboarding-progress { gap: 8px; font-size: 10px; } .onboarding-card { padding-inline: 18px; } .restriction-status { gap: 12px; } }

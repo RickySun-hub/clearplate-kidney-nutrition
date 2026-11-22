@@ -1,0 +1,45 @@
+/* Saved summaries remain readable while the editable fields are collapsed. */
+.profile-compact .profile-expand-section > summary .profile-saved-summary {
+  color: #435f50;
+  line-height: 1.65;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.patient-today .tracked-nutrition-overview {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+}
+.patient-today .tracked-nutrition-overview > :first-child { grid-column: auto; }
+.patient-today .tracked-nutrition-overview .additional-nutrient {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+.patient-today .tracked-nutrition-overview .additional-nutrient > span,
+.patient-today .tracked-nutrition-overview .nutrient-current {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+.patient-today .tracked-nutrition-overview .additional-nutrient > small {
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.readable-nutrition-history .history-nutrition-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+}
+.readable-nutrition-history .history-nutrition-card > strong {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+.readable-nutrition-history .history-nutrition-card > small {
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.readable-nutrition-history .history-meal-report-row > *,
+.readable-nutrition-history .history-nutrition-card > span { min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .readable-nutrition-history .history-nutrition-grid { grid-template-columns: minmax(0, 1fr); }
+}

@@ -1,0 +1,18 @@
+.fluid-tracker { min-width: 0; }
+.fluid-amounts { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.fluid-amounts button { min-width: 78px; min-height: 44px; }
+.fluid-tracker .fluid-volume-fields { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.fluid-tracker .fluid-volume-fields label { min-width: 0; }
+.fluid-tracker input, .fluid-tracker select { max-width: 100%; min-width: 0; }
+.fluid-drink-details { margin: 14px 0; border-block: 1px solid #dce5df; padding: 12px 0; }
+.fluid-drink-details summary { cursor: pointer; overflow-wrap: anywhere; line-height: 1.5; }
+.fluid-drink-details summary span { color: #536c60; display: block; font-size: 12px; margin-top: 3px; }
+.fluid-drink-details[open] .form-grid { margin-top: 12px; }
+.fluid-food-link { display: grid; gap: 6px; }
+.fluid-link-notice { background: #edf4ee; border-radius: 8px; padding: 10px; line-height: 1.5; font-size: 13px; }
+.fluid-tracker li { overflow-wrap: anywhere; }
+@media (max-width: 420px) {
+  .fluid-tracker > header { flex-wrap: wrap; }
+  .fluid-tracker li { flex-wrap: wrap; }
+  .fluid-tracker li > span:last-child { display: flex; flex-wrap: wrap; gap: 8px; }
+}

@@ -142,7 +142,7 @@ function selectBeam(states, context, width = 600) {
   return [...selected.values()];
 }
 
-function searchStates(candidates, context, minimumItems, maximumItems, allowOverLimit) {
+function searchStates(candidates, context, minimumItems, maximumItems) {
   let frontier = [{ items: [], totals: emptyNutrition(), lastIndex: -1 }];
   const finalStates = [];
   let evaluatedStates = 0;
@@ -156,7 +156,7 @@ function searchStates(candidates, context, minimumItems, maximumItems, allowOver
           const nutrition = scaleNutrition(recipe, servings);
           const totals = addNutrition(state.totals, nutrition);
           evaluatedStates += 1;
-          if (!allowOverLimit && upperLimitViolations(totals, context.remaining).length) continue;
+          if (upperLimitViolations(totals, context.remaining).length) continue;
           expanded.push({
             items: [...state.items, { recipeId: recipe.id, servings, stepCount: recipe.stepCount, nutrition }],
             totals,
@@ -258,18 +258,13 @@ export function optimizeRemainingDay({
   const candidates = buildCandidateRecipes(recipes, remaining, context.calorieReference, detailsById, 40);
   const minimumItems = Math.min(meals.length, maxRecipes);
   const maximumItems = Math.max(minimumItems, Math.min(maxRecipes, 4));
-  let search = searchStates(candidates, context, minimumItems, maximumItems, false);
-  let status = "compatible";
-
-  if (!search.states.length) {
-    search = searchStates(candidates, context, minimumItems, maximumItems, true);
-    status = search.states.length ? "over-limit" : "empty";
-  }
+  // Saved ceilings are hard constraints; never relax them to fill the plan.
+  const search = searchStates(candidates, context, minimumItems, maximumItems);
 
   if (!search.states.length) {
     return {
-      status,
-      message: "No usable recipe combination is available for the selected meals.",
+      status: "empty",
+      message: "No suitable meal plan was found within your remaining daily limits for the selected meals. Try different meals or browse recipes.",
       remainingBefore: remaining,
       plans: [],
       diagnostics: { recipeCount: recipes.length, candidateCount: candidates.length, evaluatedStates: search.evaluatedStates },
@@ -290,10 +285,10 @@ export function optimizeRemainingDay({
   });
 
   return {
-    status,
+    status: "compatible",
     remainingBefore: remaining,
     plans,
-    bindingConstraints: status === "over-limit" ? plans[0].violations.map((item) => item.nutrient) : [],
+    bindingConstraints: [],
     diagnostics: { recipeCount: recipes.length, candidateCount: candidates.length, evaluatedStates: search.evaluatedStates },
   };
 }

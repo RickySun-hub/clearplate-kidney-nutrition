@@ -1,0 +1,20 @@
+.activity-history { margin: 1rem 0; }
+.activity-history fieldset { margin: 1.1rem 0; padding: 0; border: 0; min-width: 0; }
+.activity-history legend { margin-bottom: .65rem; font-weight: 650; color: #284b3d; }
+.activity-history-options { display: grid; gap: .45rem; }
+.activity-history-options label { display: flex; align-items: flex-start; gap: .7rem; padding: .75rem; border: 1px solid #d8e3da; border-radius: 10px; background: #fff; font-size: .88rem; line-height: 1.45; }
+.activity-history-options label.is-selected { background: #eef5ee; border-color: #87a68f; }
+.activity-history-options input[type="radio"] { flex: 0 0 auto; width: 16px; height: 16px; margin: .15rem 0 0; }
+.activity-clear { margin-top: .45rem; border: 0; background: transparent; color: #385d49; text-decoration: underline; cursor: pointer; }
+.activity-history a { color: #285b49; text-decoration: underline; }
+.profile-unsaved { margin: .9rem 0; border: 1px solid #d9b86b; background: #fff9e9; padding: 1rem; border-radius: 12px; }
+.profile-unsaved h3 { margin: 0 0 .5rem; }
+.profile-unsaved p { font-size: .9rem; line-height: 1.5; }
+.profile-unsaved > div { display: flex; flex-wrap: wrap; gap: .5rem; }
+.profile-more-nutrients { margin-top: 1.2rem; }
+.profile-more-nutrients summary { cursor: pointer; font-weight: 650; padding: .6rem 0; }
+.profile-more-nutrients summary small { display: block; font-weight: 400; margin: .25rem 0; color: #687768; }
+.profile-drawer .drawer-actions .profile-logout { display: flex; justify-content: center; align-items: center; gap: .5rem; flex-basis: 100%; width: 100%; margin-top: .4rem; padding: .8rem; border: 1px solid #d3ded4; border-radius: 10px; background: #fff; color: #793c33; cursor: pointer; }
+.profile-drawer .drawer-actions .profile-logout:disabled { opacity: .55; cursor: wait; }
+
+.profile-drawer .drawer-actions .profile-logout { grid-column: 1 / -1; }

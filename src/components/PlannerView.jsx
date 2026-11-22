@@ -1,5 +1,7 @@
+import DiscoveryVoice from './DiscoveryVoice';
+import useDialogFocus from '../hooks/useDialogFocus';
 import { AlertTriangle, CheckCircle2, ChevronRight, Sparkles } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { recipeImages } from "../data/seed.js";
 import { mealOptions, optimizeRemainingDay } from "../optimization/optimizeRemainingDay.js";
 import { formatAmount } from "../utils/nutrition.js";
@@ -14,7 +16,8 @@ const formatRemaining = (value, unit) => value >= 0
   ? `${formatAmount(value, 1)} ${unit} remaining`
   : `${formatAmount(Math.abs(value), 1)} ${unit} over`;
 
-export default function PlannerView({ recipes, recipeDetails, profile, todayEntries, todayTotals, plannerSession, onPlannerSessionChange, onAddPlan, onOpenRecipe }) {
+export default function PlannerView({ accessToken, recipes, recipeDetails, profile, todayEntries, todayTotals, plannerSession, onPlannerSessionChange, onAddPlan, onOpenRecipe, onBrowseRecipes, onEditTargets }) {
+  const [logPlan, setLogPlan] = useState(null);
   const initialMeals = useMemo(() => {
     const loggedMeals = new Set(todayEntries.map((entry) => entry.meal));
     const remainingMeals = mealOptions.filter((meal) => !loggedMeals.has(meal));
@@ -40,7 +43,12 @@ export default function PlannerView({ recipes, recipeDetails, profile, todayEntr
     maxRecipes: 4,
   }), [caloriesPerMeal, profile, recipeDetails, recipes, selectedMeals, todayTotals]);
 
-  const activePlan = result.plans?.find((plan) => plan.objective === activeObjective) || result.plans?.[0];
+  const compatiblePlans = result.status === "compatible"
+    ? (result.plans || []).filter((plan) => plan.withinUpperLimits)
+    : [];
+  const activePlan = compatiblePlans.find((plan) => plan.objective === activeObjective) || compatiblePlans[0];
+  // An open review must also remain compatible after targets or intake change.
+  const reviewedPlan = logPlan && compatiblePlans.find((plan) => plan.signature === logPlan.signature);
 
   const toggleMeal = (meal) => {
     const nextMeals = selectedMeals.includes(meal)
@@ -51,7 +59,8 @@ export default function PlannerView({ recipes, recipeDetails, profile, todayEntr
 
   return (
     <main className="planner-page">
-      <header className="page-heading"><div><h1>Build the rest of your day</h1><p>Explore meal ideas based on what you have already logged and the targets saved in your profile.</p></div></header>
+      <header className="page-heading"><div><h1>Plan upcoming meals</h1><p>Choose meals to prepare, then compare recipe combinations. Planning does not add food to your record.</p></div><DiscoveryVoice accessToken={accessToken} kind="plan" onApply={conditions => onPlannerSessionChange(current => ({...current,...conditions}))} /></header>
+      <div className="plan-draft-label">Meal ideas · not logged <button onClick={onBrowseRecipes}>Browse recipes instead <ChevronRight size={16} /></button></div>
       {todayTotals.estimatedCount > 0 && <p className="estimate-note">Your log includes estimates. Planning uses their upper bounds for nutrient ceilings and their lower protein bound for the remaining protein gap. Results depend on your user-set ranges.</p>}
 
       <section className="planner-controls">
@@ -59,7 +68,7 @@ export default function PlannerView({ recipes, recipeDetails, profile, todayEntr
           <span className="control-label">Meals to plan</span>
           <div className="meal-selector" role="group" aria-label="Meals to plan">
             {mealOptions.map((meal) => <button className={selectedMeals.includes(meal) ? "selected" : ""} type="button" aria-pressed={selectedMeals.includes(meal)} key={meal} onClick={() => toggleMeal(meal)}><span aria-hidden="true" className="meal-selection-mark">{selectedMeals.includes(meal) ? "✓" : "+"}</span>{meal}</button>)}
-            <button type="button" className="smoothie-pending" disabled><span>Smoothies</span><small>Recipes coming soon</small></button>
+
           </div>
         </div>
         <label><span>Approx. calories per meal</span><div className="inline-unit"><input type="number" min="100" max="1500" step="50" value={caloriesPerMeal} onChange={(event) => onPlannerSessionChange((current) => ({ ...current, caloriesPerMeal: event.target.value }))} /><span>kcal</span></div></label>
@@ -72,13 +81,12 @@ export default function PlannerView({ recipes, recipeDetails, profile, todayEntr
         </div>
       </section>
 
-      {result.status === "over-limit" && <section className="plan-status closest"><AlertTriangle size={22} /><div><strong>No option stays within every current upper limit</strong><p>The closest options are shown with their exact overages. They are not labeled target-compatible, and you can still compare or adjust your choice.</p></div></section>}
-      {result.status === "invalid" && <section className="plan-status closest"><AlertTriangle size={22} /><div><strong>{result.message}</strong></div></section>}
-      {result.status === "empty" && <section className="plan-status closest"><AlertTriangle size={22} /><div><strong>No meal idea is available</strong><p>{result.message}</p></div></section>}
+      {result.status === "invalid" && <section className="plan-status closest"><AlertTriangle size={22} /><div><strong>{result.message}</strong><p>Use the targets saved with your care team, or browse recipes without a target comparison.</p><button className="secondary-button" onClick={onEditTargets}>Review saved targets</button></div></section>}
+      {result.status === "empty" && <section className="plan-status closest"><AlertTriangle size={22} /><div><strong>No suitable meal plan found</strong><p>{result.message}</p></div></section>}
 
       {activePlan && <>
         <div className="plan-variants" role="tablist" aria-label="Meal idea type">
-          {result.plans.map((plan) => <button className={plan.objective === activePlan.objective ? "active" : ""} type="button" role="tab" aria-selected={plan.objective === activePlan.objective} key={plan.objective} onClick={() => onPlannerSessionChange((current) => ({ ...current, activeObjective: plan.objective }))}><strong>{objectiveLabels[plan.objective][0]}</strong><span>{objectiveLabels[plan.objective][1]}</span></button>)}
+          {compatiblePlans.map((plan) => <button className={plan.objective === activePlan.objective ? "active" : ""} type="button" role="tab" aria-selected={plan.objective === activePlan.objective} key={plan.objective} onClick={() => onPlannerSessionChange((current) => ({ ...current, activeObjective: plan.objective }))}><strong>{objectiveLabels[plan.objective][0]}</strong><span>{objectiveLabels[plan.objective][1]}</span></button>)}
         </div>
 
         <section className={`plan-status ${activePlan.withinUpperLimits ? "" : "closest"}`}>
@@ -86,7 +94,8 @@ export default function PlannerView({ recipes, recipeDetails, profile, todayEntr
           <div><strong>{activePlan.withinUpperLimits ? "Within current upper limits" : "Closest available option"}</strong><p>{activePlan.reason}</p></div>
         </section>
 
-        <div className="plan-list">
+        <div className="plan-board-heading"><h2>Your meal ideas</h2><span>Open a recipe for ingredients & steps</span></div>
+        <div className="plan-list plan-meal-board">
           {activePlan.items.map((item) => <button className="plan-row plan-row-button" type="button" key={`${item.recipeId}-${item.meal}`} onClick={() => onOpenRecipe(item)} aria-label={`View ${item.recipe.name} recipe`}>
             {recipeImages[item.recipeId] ? <img src={recipeImages[item.recipeId]} alt="" loading="lazy" decoding="async" /> : <span className="plan-index">{item.meal.slice(0, 1)}</span>}
             <div><small>{item.meal}</small><strong>{item.recipe.name}</strong><span>{formatAmount(item.servings, 1)} serving{item.servings === 1 ? "" : "s"} · {formatAmount(item.nutrition.calories, 1)} kcal · {formatAmount(item.nutrition.protein, 1)} g protein · {formatAmount(item.nutrition.sodium, 1)} mg sodium</span><span className="plan-row-link">View recipe</span></div>
@@ -109,11 +118,19 @@ export default function PlannerView({ recipes, recipeDetails, profile, todayEntr
                 ? `${formatAmount(activePlan.proteinGap, 1)} g protein remains to reach the daily range`
                 : `${formatAmount(activePlan.remainingAfter.proteinMax, 1)} g remains before the protein maximum`}</small>
           </div>
-          <button className="primary-button" type="button" onClick={() => onAddPlan(activePlan.items)}>Add this idea to Today</button>
+          <button className="primary-button" type="button" onClick={() => setLogPlan(activePlan)}>I ate these — review & log</button>
         </section>
       </>}
 
-      <section className="optimization-note"><Sparkles size={20} /><div><strong>How these ideas are generated</strong><p>A deterministic browser-based search uses only stored nutrition values, today’s logged intake, 0.5–2 serving options, and the upper limits in your profile. Sodium is treated as a ceiling, not a target to fill. “Simplest preparation” uses known cooking-step counts because reliable preparation times are not yet stored.</p></div></section>
+      {reviewedPlan && <PlanLogConfirmation plan={reviewedPlan} onClose={() => setLogPlan(null)} onAdd={onAddPlan} />}
+      <details className="plan-explanation"><summary>How meal ideas are compared</summary><section className="optimization-note"><Sparkles size={20} /><div><strong>How these ideas are generated</strong><p>A deterministic browser-based search uses only stored nutrition values, today’s logged intake, 0.5–2 serving options, and the upper limits in your profile. Sodium is treated as a ceiling, not a target to fill. “Simplest preparation” uses known cooking-step counts because reliable preparation times are not yet stored.</p></div></section>
+      </details>
     </main>
   );
+}
+
+function PlanLogConfirmation({ plan, onClose, onAdd }) {
+  const [confirmed, setConfirmed] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
+  const ref = useDialogFocus(true, () => { if (!busy) onClose(); });
+  return <div className="modal-backdrop"><section ref={ref} role="dialog" aria-modal="true" aria-labelledby="plan-log-title" className="plan-log-confirm" tabIndex={-1}><h2 id="plan-log-title">Log meals you have eaten</h2><p>A meal idea is not a food record. Check these foods and portions before adding them to Today.</p><ul>{plan.items.map(item => <li key={item.meal + item.recipeId}><strong>{item.meal} · {item.recipe.name}</strong><span>{formatAmount(item.servings, 1)} source servings</span></li>)}</ul><label><input type="checkbox" checked={confirmed} disabled={busy} onChange={e => setConfirmed(e.target.checked)} />I have eaten these foods in these portions today.</label>{error && <p role="alert">{error}</p>}<footer><button className="secondary-button" disabled={busy} onClick={onClose}>Keep planning</button><button className="primary-button" disabled={!confirmed || busy} onClick={async () => {setBusy(true);setError('');try {if (await onAdd(plan.items) === false) setError('Not saved. Check your connection and try again.');} catch {setError('Not saved. Please try again.');} finally {setBusy(false);} }}> {busy ? 'Saving…' : 'Confirm & log to Today'}</button></footer></section></div>;
 }

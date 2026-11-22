@@ -1,18 +1,11 @@
 import { localDateKey } from "../utils/nutrition";
 import recipes from "./recipes.json";
 
+// New accounts start with unknown personal data and no assumed clinical targets.
 export const defaultProfile = {
-  name: "Alex",
-  condition: "Adult ADPKD",
-  stage: "G2",
-  weightKg: 70,
-  heightCm: 175,
-  treatment: "not-dialysis",
-  sodiumTargetMg: 2000,
-  proteinMinG: 56,
-  proteinMaxG: 70,
-  useGuidelineProteinRange: true,
-  reviewedAt: "2026-07-29",
+  name: '', condition: '', stage: '', weightKg: null, heightCm: null,
+  treatment: '', sodiumTargetMg: null, proteinMinG: null, proteinMaxG: null,
+  useGuidelineProteinRange: false, reviewedAt: '',
 };
 
 export const defaultMeals = [

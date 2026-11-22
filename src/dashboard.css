@@ -1,0 +1,228 @@
+/* Task-focused refinements to the existing Swiss design system. */
+.patient-today { grid-template-columns: minmax(0, 1fr) 270px; }
+.patient-today .dashboard-main { padding: 32px; }
+.patient-today .dashboard-heading { gap: 10px; }
+.patient-today .dashboard-heading h1 { font-size: clamp(28px, 3vw, 38px); }
+.patient-today .daily-record-summary { margin-top: 20px; padding: 18px; }
+.patient-today .daily-record-summary > div:first-child strong { font-size: 38px; }
+.patient-today .daily-record-summary button { min-height: 44px; font-size: 13px; }
+.patient-today .nutrient-band { padding: 16px; gap: 8px; }
+.patient-today .nutrient-heading { gap: 8px; margin-bottom: 8px; }
+.patient-today .nutrient-current { font-size: 28px; }
+.patient-today .nutrient-status { font-size: 13px; }
+.patient-today .dashboard-rail { padding-top: 32px; }
+.patient-today .plan-summary { box-shadow: none; }
+.meal-row { position: relative; }
+.meal-row .meal-row-open, .meal-row .meal-row-static { min-width: 0; flex: 1; }
+.meal-edit { flex: 0 0 44px; min-height: 44px; }
+.action-notice { margin: 16px 32px; padding: 12px 16px; background: #edf1fc; border-left: 3px solid #002fa7; display: flex; gap: 16px; justify-content: space-between; align-items: center; }
+.action-notice button { min-height: 44px; color: #002fa7; }
+.recipe-page-tools { padding: 20px 32px 0; display: flex; justify-content: flex-end; }
+.app-shell > div > .care-connection { max-width: 900px; margin: 32px auto; }
+.edit-food-dialog { width: min(640px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; padding: 24px; background: white; border-radius: 8px; }
+.edit-food-dialog > header { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.edit-food-dialog h2 { font-size: 24px; }
+.edit-food-dialog p { font-size: 14px; line-height: 1.55; margin: 10px 0; }
+.edit-food-dialog label { display: grid; gap: 6px; font-size: 14px; }
+.edit-food-dialog input, .edit-food-dialog select { min-width: 0; width: 100%; min-height: 44px; padding: 10px; border: 1px solid #c8cad2; border-radius: 4px; font-size: 16px; background: white; }
+.edit-food-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.edit-food-dialog footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+.edit-food-preview { padding: 12px; background: #f7f7f8; }
+.history-food-items { margin-top: 24px; }
+.history-food-items article { display: flex; justify-content: space-between; gap: 12px; align-items: center; border-bottom: 1px solid #e0e1e6; padding: 14px 0; }
+.history-food-items strong, .history-food-items small { display: block; }
+.history-food-items small { margin-top: 5px; color: #555963; line-height: 1.5; }
+.history-food-items button { flex-shrink: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid #002fa7; outline-offset: 3px; }
+@media (max-width: 1100px) { .patient-today { grid-template-columns: 1fr; } .patient-today .dashboard-rail { padding: 0 32px 24px; border: 0; } }
+@media (max-width: 600px) {
+  .patient-today .dashboard-main { padding: 20px 16px; }
+  .patient-today .dashboard-rail { padding: 0 16px 24px; }
+  .patient-today .dashboard-heading h1 { font-size: 28px; letter-spacing: -.7px; }
+  .patient-today .dashboard-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .patient-today .dashboard-actions button { padding: 10px; font-size: 14px; }
+  .patient-today .daily-record-summary { grid-template-columns: 1fr; gap: 14px; }
+  .patient-today .daily-record-summary > div:last-child { border-left: 0; border-top: 1px solid #e0e1e6; padding: 14px 0 0; }
+  .patient-today .nutrient-stack { grid-template-columns: 1fr; }
+  .patient-today .meal-recipe strong { font-size: 14px; }
+  .patient-today .meal-recipe small { font-size: 12px; }
+  .patient-today .meal-recipe img, .patient-today .recipe-placeholder { display: none; }
+  .patient-today .meal-row { gap: 2px; }
+  .patient-today .meal-row .icon-button { width: 44px; min-width: 44px; }
+  .action-notice { margin: 12px 16px; font-size: 14px; }
+  .app-shell > div > .care-connection { margin: 16px; width: auto; }
+  .edit-food-dialog { padding: 18px; }
+  .topbar nav button { font-size: 13px; min-height: 44px; }
+  .history-food-items article { align-items: flex-start; }
+}
+
+.nutrition-section-title { font-size: 20px; margin: 28px 0 16px; }
+.saved-targets-details > summary { min-height: 44px; padding: 12px 0; color: #002fa7; cursor: pointer; font-weight: 600; }
+.patient-today .today-meals { margin-top: 24px; }
+.patient-today .meal-group-empty { min-height: 48px; padding: 10px 16px; }
+.patient-today .meal-group-title small { display: none; }
+.patient-today .meal-row { display: flex; align-items: center; padding-right: 8px; }
+.patient-today .meal-menu { position: static; flex: 0 0 44px; min-height: 44px; }
+.patient-today .meal-mobile-nutrients { font-size: 12px; }
+@media (max-width: 900px) {
+ .topbar nav { overflow-x: auto; }
+ .topbar nav button { flex: 0 0 auto; min-width: 68px; white-space: nowrap; }
+ .topbar nav button:last-child { display: none; }
+ .patient-today .dashboard-rail { display: block; margin: 0; }
+}
+@media (max-width: 600px) {
+ .patient-today .meal-row .meal-row-static { display: block; }
+ .patient-today .meal-group-title h3 { font-size: 15px; }
+ .patient-today .daily-record-summary p, .patient-today .daily-record-summary small, .patient-today .field-note { font-size: 14px; line-height: 1.5; }
+ .patient-today .nutrient-stack { gap: 10px; }
+ .patient-today .estimate-note { font-size: 13px; }
+}
+
+.history-recent-trend { margin-top: 20px; border-top: 1px solid #e0e1e6; padding-top: 12px; }
+.history-recent-trend summary { min-height: 44px; cursor: pointer; color: #002fa7; }
+.history-recent-trend p { font-size: 14px; line-height: 1.5; }
+.history-recent-trend table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+.history-recent-trend td, .history-recent-trend th { padding: 10px 4px; text-align: left; border-bottom: 1px solid #e0e1e6; }
+
+.patient-today { grid-template-columns: minmax(0, 1fr); max-width: 1180px; }
+.patient-today .dashboard-rail { display: block; padding: 0 32px 24px; margin: 0; border: 0; }
+.meal-empty-note { margin: 0; padding: 0 16px 12px; font-size: 13px; color: #555963; }
+.patient-today .meal-group-header { display: flex; flex-wrap: wrap; gap: 12px; }
+.patient-today .meal-group-add { margin-left: auto; }
+.patient-today .meal-group-title { flex: 1; }
+@media (max-width: 600px) {
+ .patient-today .dashboard-rail { padding: 0 16px 24px; }
+ .topbar { padding-left: 12px; padding-right: 12px; }
+ .topbar nav { gap: 0; justify-content: space-between; }
+ .topbar nav button { min-width: 0; padding: 4px 6px; font-size: 12px; }
+ .patient-today .meal-group-summary { order: 3; width: 100%; }
+ .patient-today .meal-group-header { gap: 6px; }
+}
+
+.patient-today .meal-group-list:has(.meal-empty-note) { min-height: 0; }
+/* Page roles: diary, meal planning, and recipe discovery. */
+.record-entry { padding: 20px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 1fr auto; gap: 14px 24px; align-items: center; }
+.record-entry h2 { font-size: 20px; margin: 0 0 6px; }
+.record-entry p { font-size: 14px; color: #555963; margin: 0; }
+.record-entry-buttons { display: flex; gap: 10px; }
+.record-entry-links { display: flex; gap: 20px; grid-column: 1 / -1; }
+.record-entry-links button { color: #002fa7; text-decoration: underline; text-underline-offset: 3px; min-height: 32px; font-size: 14px; }
+.voice-log-backdrop { position: fixed; inset: 0; background: #10245566; z-index: 1200; display: flex; justify-content: flex-end; }
+.voice-log-drawer { width: min(580px, 100%); height: 100dvh; overflow: auto; background: #fff; padding: 28px; box-shadow: -8px 0 40px #10245526; }
+.voice-log-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.voice-log-header span { display: flex; gap: 8px; align-items: center; font-size: 14px; color: #002fa7; }
+.voice-log-header h2 { font-size: 27px; line-height: 1.2; margin: 12px 0; letter-spacing: -.6px; }
+.voice-log-explanation, .voice-log-boundary { font-size: 14px; line-height: 1.6; color: #555963; }
+.voice-log-steps { display: flex; justify-content: space-between; gap: 12px; padding: 16px 0; margin: 18px 0; list-style-position: inside; border-block: 1px solid #e0e1e6; font-size: 13px; }
+.voice-log-drawer .voice-assistant { padding: 0; margin: 0; border: 0; border-radius: 0; }
+.voice-log-drawer .voice-heading { padding: 0; }
+.voice-log-drawer .voice-heading h2 { font-size: 22px; }
+.voice-log-drawer .voice-heading p { font-size: 14px; }
+.voice-log-drawer .voice-status { min-height: 0; margin: 16px 0; font-size: 14px; }
+.voice-log-drawer .voice-composer { padding: 20px 12px; gap: 12px; flex-wrap: wrap; }
+.voice-log-drawer .voice-mic { min-width: 64px; width: 64px; height: 64px; }
+.voice-log-drawer .voice-underbar { display: block; }
+.voice-log-drawer .voice-underbar p { font-size: 12px; }
+.voice-log-drawer .voice-assistant button { min-height: 44px; }
+.voice-unavailable { display: grid; gap: 12px; padding: 24px; background: #f7f7f8; text-align: center; justify-items: center; border: 1px solid #e0e1e6; border-radius: 8px; }
+.voice-unavailable span { font-size: 14px; line-height: 1.5; max-width: 360px; }
+.plan-draft-label { display: flex; justify-content: space-between; gap: 16px; align-items: center; border-block: 1px solid #c8cad2; padding: 14px 0; margin-bottom: 24px; color: #555963; font-size: 14px; }
+.plan-draft-label button { color: #002fa7; display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.planner-page .planner-controls { background: #fff; border: 1px solid #e0e1e6; padding: 24px; border-radius: 8px; }
+.plan-board-heading { margin: 28px 0 16px; display: flex; justify-content: space-between; align-items: baseline; gap: 16px; }
+.plan-board-heading h2 { font-size: 22px; }
+.plan-board-heading span { font-size: 13px; color: #555963; }
+.planner-page .plan-meal-board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; border: 0; background: transparent; }
+.planner-page .plan-meal-board .plan-row { display: flex; flex-direction: column; align-items: stretch; text-align: left; padding: 0; border: 1px solid #e0e1e6; border-radius: 8px; overflow: hidden; background: white; }
+.planner-page .plan-meal-board .plan-row img { width: 100%; height: 140px; object-fit: cover; border-radius: 0; }
+.planner-page .plan-meal-board .plan-row > div { padding: 16px; min-width: 0; }
+.planner-page .plan-meal-board .plan-row strong { display: block; font-size: 18px; line-height: 1.4; }
+.planner-page .plan-meal-board .plan-row small { display: block; color: #002fa7; font-size: 14px; margin-bottom: 8px; }
+.planner-page .plan-meal-board .plan-row span { white-space: normal; font-size: 13px; line-height: 1.5; }
+.planner-page .plan-meal-board .plan-row-arrow { display: none; }
+.plan-explanation { margin-top: 24px; border-top: 1px solid #e0e1e6; }
+.plan-explanation > summary { cursor: pointer; padding: 16px 0; font-size: 14px; }
+.plan-log-confirm { background: white; padding: 28px; max-width: 560px; width: calc(100% - 24px); max-height: calc(100dvh - 24px); overflow: auto; border-radius: 8px; }
+.plan-log-confirm h2 { font-size: 24px; margin-bottom: 12px; }
+.plan-log-confirm p { font-size: 15px; line-height: 1.6; }
+.plan-log-confirm ul { list-style: none; padding: 0; margin: 20px 0; }
+.plan-log-confirm li { padding: 12px 0; border-bottom: 1px solid #e0e1e6; }
+.plan-log-confirm li span { display: block; font-size: 14px; color: #555963; margin-top: 4px; }
+.plan-log-confirm label { display: flex; gap: 12px; line-height: 1.5; align-items: center; }
+.plan-log-confirm input { width: 20px; height: 20px; flex: 0 0 20px; }
+.plan-log-confirm footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+.recipe-category-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 24px; }
+.recipe-category-tabs button { min-height: 44px; padding: 10px 16px; border: 1px solid #c8cad2; border-radius: 6px; color: #343640; background: white; font-size: 14px; }
+.recipe-category-tabs button[aria-pressed="true"] { border-color: #002fa7; background: #edf1fc; color: #002fa7; }
+.recipe-category-tabs span { margin-left: 8px; }
+.library-page .page-heading { align-items: center; }
+@media(max-width: 1100px) { .record-entry { grid-template-columns: 1fr; } .record-entry-buttons { justify-content: flex-start; } .planner-page .plan-meal-board { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media(max-width: 600px) {
+ .record-entry-buttons { display: grid; grid-template-columns: 1fr 1fr; }
+ .record-entry-buttons button { padding: 10px; font-size: 14px; }
+ .record-entry-links { gap: 16px; flex-wrap: wrap; }
+ .voice-log-backdrop { align-items: flex-end; }
+ .voice-log-drawer { height: 92dvh; width: 100%; padding: 20px; border-radius: 18px 18px 0 0; }
+ .voice-log-header h2 { font-size: 23px; }
+ .voice-log-steps { gap: 6px; font-size: 12px; }
+ .planner-page .plan-meal-board { grid-template-columns: 1fr; }
+ .plan-board-heading { display: block; }
+ .plan-draft-label { align-items: flex-start; flex-direction: column; gap: 6px; }
+ .planner-page .planner-controls { padding: 16px; }
+ .plan-log-confirm { padding: 20px; }
+ .library-page .page-heading { align-items: flex-start; gap: 16px; }
+}
+
+/* Use spacing for section separation; retain field borders and data indicators. */
+.record-entry, .plan-draft-label, .voice-log-steps, .recipe-card-nutrients { border-block: 0; }
+.sidebar-profile, .daily-record-summary, .patient-today .daily-record-summary > div:last-child,
+.plan-explanation, .history-recent-trend, .medical-footer,
+.patient-today .meal-group + .meal-group { border-top: 0; }
+.advanced-filters, .history-food-items article, .plan-log-confirm li,
+.topbar, .constraint-summary { border-bottom: 0; }
+
+/* Quiet selection states: fill for selection, outline only for keyboard focus. */
+.plan-variants button, .plan-variants button.active { border: 0; box-shadow: none; }
+.plan-variants button { background: transparent; }
+.plan-variants button.active { background: #e9effb; }
+.plan-variants button.active strong { font-weight: 750; }
+.meal-selector button, .meal-selector button.selected { border: 0; box-shadow: none; }
+.meal-selector button:not(.selected) { background: #f0f1f4; }
+.recipe-category-tabs button, .recipe-category-tabs button[aria-pressed="true"] { border: 0; box-shadow: none; }
+.recipe-category-tabs button { background: transparent; }
+.recipe-category-tabs button[aria-pressed="true"] { background: #e9effb; font-weight: 700; }
+.view-switch { border: 0; }
+.planner-page .planner-controls, .plan-status, .plan-totals, .remaining-card { border: 0; box-shadow: none; }
+.plan-totals { background: transparent; }
+.planner-page .plan-meal-board { gap: 24px; }
+.planner-page .plan-meal-board .plan-row { border: 0; background: transparent; box-shadow: none; }
+.planner-page .plan-meal-board .plan-row img { border-radius: 10px; }
+.planner-page .plan-meal-board .plan-row > div { padding: 16px 2px; }
+.library-page .recipe-card, .library-page .recipe-card:hover { border: 0; box-shadow: none; background: transparent; transform: none; }
+.library-page .recipe-card-image { border-radius: 10px; }
+.library-page .recipe-card-title { padding-inline: 2px; }
+.library-page .recipe-card-nutrients { margin-inline: 2px; }
+.library-page .recipe-card-footer { padding-inline: 2px; }
+.patient-today .meal-groups, .patient-today .meal-group, .patient-today .meal-group-header,
+.patient-today .nutrient-band { border: 0; box-shadow: none; }
+.patient-today .meal-groups { background: transparent; }
+.patient-today .meal-group { margin-bottom: 14px; border-radius: 10px; overflow: hidden; }
+.patient-today .meal-group-header { background: #f0f2f6; }
+.planner-page .constraint-summary { border: 0; }
+.planner-page .constraint-summary > span { border: 0; background: transparent; padding-left: 0; padding-right: 20px; }
+.plan-draft-label button { border: 0; background: transparent; }
+.discovery-heading-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+.discovery-voice-trigger { display:flex; align-items:center; justify-content:center; gap:9px; min-height:44px; padding:12px 16px; border:0; border-radius:8px; background:#e9effb; color:#002fa7; font-size:14px; font-weight:600; }
+.discovery-dialog > p { line-height:1.65; color:#555963; }
+.discovery-mic-preview { display:grid; justify-items:center; gap:12px; background:#f0f3f9; padding:24px; border-radius:12px; margin:24px 0; text-align:center; }
+.discovery-mic-preview p { margin:0; font-size:14px; line-height:1.6; }
+.discovery-dialog h3 { margin:28px 0 16px; }
+.discovery-dialog > label { display:grid; gap:10px; }
+.discovery-dialog input:not([type=checkbox]), .discovery-dialog select { width:100%; min-height:44px; padding:10px; border:1px solid #b9bfcc; border-radius:6px; font-size:16px; }
+.discovery-dialog small,.discovery-dialog .field-note { font-size:13px; line-height:1.6; color:#555963; }
+.discovery-dialog fieldset { border:0; padding:0; margin:0 0 24px; display:flex; flex-wrap:wrap; gap:16px; }
+.discovery-dialog legend { margin-bottom:14px; }
+.discovery-dialog fieldset label { display:flex; align-items:center; gap:8px; min-height:44px; }
+.discovery-dialog footer { display:flex; flex-wrap:wrap; gap:12px; margin-top:28px; }
+@media(max-width:700px) { .planner-page .page-heading,.library-page .page-heading { flex-direction:column; align-items:flex-start; gap:18px; } }

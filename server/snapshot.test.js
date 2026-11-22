@@ -61,3 +61,17 @@ test('snapshot rejects incorrect declared units and chemical definition IDs', as
   assert.equal(food.nutrients.folate, null);
   assert.equal(food.nutrients.iron, 0);
 });
+
+test('real FNDDS catalog preserves household measures and NFS identities', async()=>{
+ const service=getSnapshotService();
+ for(const q of ['milk','apple','egg','cereal','muffin']){
+  const r=await service.search({q,dataTypes:['Survey (FNDDS)'],pageSize:50});
+  assert.ok(r.foods.length,q);assert.ok(r.foods.some(f=>f.portions.some(p=>p.gramWeight>0)),q);
+ }
+ const milk=await service.getFood(2705384);
+ assert.equal(milk.food.description,'Milk, NFS');
+ const cup=milk.food.portions.find(p=>p.description==='1 cup');
+ assert.ok(cup);assert.equal(cup.amount,1);assert.equal(cup.gramWeight,244);
+ assert.equal(milk.food.release,'2021-2023');
+ assert.ok(milk.food.portions.every(p=>p.gramWeight>0));
+});

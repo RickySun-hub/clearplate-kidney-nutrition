@@ -1,11 +1,54 @@
-import HowItWorks from './HowItWorks';
+import { ArrowRight, BookOpen, Mic, Users } from 'lucide-react';
 import GoogleMark from './GoogleMark';
+import HowItWorks from './HowItWorks';
+import RecipeShowcase from './RecipeShowcase';
+import Logo from './LandingLogo';
 import './auth-landing.css';
-export default function AuthLanding({page,onNavigate,googleAvailable}) {
-  const home=()=>{onNavigate('home');window.scrollTo(0,0);};
+
+export default function AuthLanding({ page, onNavigate, googleAvailable }) {
+  const publicPage = page === 'home' || page === 'how-it-works';
+  function pageLink(event, destination) {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    onNavigate(destination);
+  }
+  function link(destination, label, className) {
+    const current = page === destination;
+    return <a href={destination === 'home' ? window.location.pathname : '#' + destination}
+      aria-current={current ? 'page' : undefined} className={className || (current ? 'current' : undefined)}
+      onClick={event => pageLink(event, destination)}>{label}</a>;
+  }
   return <>
-    <header className="public-header"><div className="public-nav"><button className="public-brand" onClick={home}>Nepholio</button><nav aria-label="Public navigation"><button className={page==='home'?'current':''} onClick={home}>Home</button><a href="#how-it-works" className={page==='how-it-works'?'current':''} aria-current={page==='how-it-works'?'page':undefined} onClick={(event)=>{event.preventDefault();onNavigate('how-it-works');}}>How it works</a></nav><div className="public-account"><button onClick={()=>onNavigate('signin')}>Sign in</button><button className="public-primary" onClick={()=>onNavigate('signup')}>Get started</button></div></div></header>
-    {page==='how-it-works' ? <HowItWorks onNavigate={onNavigate} /> : page==='home' ? <main className="public-main"><section className="public-hero"><p className="public-eyebrow">Food tracking that fits your everyday life</p><h1>A clearer picture<br />of your plate.</h1><p className="public-hero-copy">Nepholio helps you record what you eat, understand your nutrients, and share your food history with your dietitian. Start with your voice. Review before you save.</p><div className="public-hero-actions"><button className="public-primary" onClick={()=>onNavigate('signup')}>Sign up</button><button className="public-secondary google-signin" disabled={!googleAvailable} onClick={()=>onNavigate('google')}><GoogleMark />Sign up with Google</button></div><p className="public-disclosure">{!googleAvailable && <>Google sign-in is being set up. Email sign-up is available.<br /></>}Your microphone stays off until you start it. You choose when to share your record.</p></section><section className="public-features" id="daily-routine"><h2>A simpler way to keep track.</h2><div><article><span>01</span><h3>Say what you ate.</h3><p>Use voice assistance or enter a meal yourself. Review the food and portion before saving.</p></article><article><span>02</span><h3>See the details.</h3><p>Explore recipes and follow the nutrients you choose. Missing information stays clearly marked.</p></article><article><span>03</span><h3>Bring your care team in.</h3><p>Save a snapshot of your record and grant your dietitian read access when you are ready.</p></article></div></section></main> : <div className="public-auth-heading"><h1>{page==='care-invite'?'Review your care invitation':page==='rd-signin'?'Dietitian sign in':'Continue to Nepholio'}</h1><p>{page==='care-invite'?'Sign in with the exact email that received the invitation. Nothing is shared until you accept.':page==='rd-signin'?'Review the food records your patients share with you.':'Keep your food log, recipes, and nutrition history together.'}</p></div>}
-    {['home','how-it-works'].includes(page)&&<footer className="public-footer"><span>Nepholio</span><a href="#rd-signin" onClick={e=>{e.preventDefault();onNavigate('rd-signin');}}>For dietitians <span aria-hidden="true">→</span></a></footer>}
+    <header className="public-header"><div className="public-nav">
+      {link('home', <Logo />, 'public-brand')}
+      <nav aria-label="Public navigation">{link('home', 'Home')}{link('how-it-works', 'How it works')}</nav>
+      <div className="public-account">{link('signin', 'Sign in')}{link('signup', 'Get started', 'public-primary')}</div>
+    </div></header>
+    {page === 'how-it-works' ? <HowItWorks onNavigate={onNavigate} /> : page === 'home' ? (
+      <main className="public-main">
+        <section className="public-hero">
+          <div className="hero-intro">
+            <h1>Recipes for you.<br />A food log for your dietitian.</h1>
+            <p className="public-hero-copy">Get recipe recommendations that fit your saved preferences. Log what you eat and share it with your registered dietitian, who can review your meals in their dashboard.</p>
+            <div className="public-hero-actions">
+              {link('signup', 'Create an account', 'public-primary')}
+              {googleAvailable && <button className="public-secondary google-signin" onClick={() => onNavigate('google')}><GoogleMark />Sign up with Google</button>}
+              {link('how-it-works', 'How it works', 'hero-text-link')}
+            </div>
+          </div>
+          <RecipeShowcase />
+        </section>
+        <section className="care-flow" aria-labelledby="care-flow-title">
+          <h2 id="care-flow-title">From recipe to review</h2>
+          <ol className="care-flow-steps">
+            <li><Mic aria-hidden="true" /><h3>You</h3><p>Tell Nepholio what you ate, or type it in. Check the portion before you save.</p><ArrowRight className="flow-arrow" aria-hidden="true" /></li>
+            <li className="flow-platform"><BookOpen aria-hidden="true" /><h3>Nepholio</h3><p>Keep your meal record and find recipes that match your saved preferences and nutrient limits.</p><ArrowRight className="flow-arrow" aria-hidden="true" /></li>
+            <li><Users aria-hidden="true" /><h3>Your dietitian</h3><p>When you share your log, your dietitian can review your meals and portions in their dashboard.</p></li>
+          </ol>
+          <div className="flow-return"><p><strong>Back to you</strong> Discuss your dietitian’s suggestions and use them to plan your next meal.</p></div>
+        </section>
+      </main>
+    ) : <div className="public-auth-heading"><h1>{page === 'care-invite' ? 'Review your care invitation' : page === 'rd-signin' ? 'Dietitian sign in' : page === 'signup' ? 'Create your account' : 'Sign in to Nepholio'}</h1><p>{page === 'care-invite' ? 'Sign in with the exact email that received the invitation. Nothing is shared until you accept.' : page === 'rd-signin' ? 'Review the food records your patients share with you.' : 'Keep your food log, recipes, and nutrition history together.'}</p></div>}
+    {publicPage && <footer className="public-footer"><span>Nepholio</span>{link('rd-signin', 'For dietitians →')}</footer>}
   </>;
 }

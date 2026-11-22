@@ -125,7 +125,7 @@ test('malformed cloud list rejects before reaching UI rendering', async () => {
 test('signout clears bearer token immediately even when cloud logout is pending', async () => {
  let finish;
  const client = createCareCloud(config, async (url) => {
-  if (url.endsWith('/logout')) return new Promise((resolve) => { finish = resolve; });
+  if (url.endsWith('/logout?scope=local')) return new Promise((resolve) => { finish = resolve; });
   return new Response(JSON.stringify(url.includes('/token?') ? { access_token: 'test', user: { id: owner } } : {id:owner}));
  });
  await client.signIn('person@example.test','example-password');
@@ -137,7 +137,7 @@ test('signout clears bearer token immediately even when cloud logout is pending'
 });
 
 test('auth errors distinguish unconfirmed email, bad credentials and delivery setup without leaking provider text', async () => {
-  for (const [code, expected] of [['email_not_confirmed',/Confirm your email/],['invalid_credentials',/Create account first/],['email_address_not_authorized',/email service needs configuration/]]) {
+  for (const [code, expected] of [['email_not_confirmed',/Confirm your email/],['invalid_credentials',/Create account first/],['email_address_not_authorized',/email service cannot send/]]) {
     const client=createCareCloud(config, async()=>new Response(JSON.stringify({code,message:'private-provider-detail'}),{status:400}));
     await assert.rejects(()=>client.signIn('person@example.test','test-password'), expected);
     assert.equal(client.accessToken(),null);
@@ -180,4 +180,51 @@ test('late 401 body from an old account cannot erase a newer verified session', 
  client.clearSession();await client.signIn('new@example.test','test-password');
  finishBody({});await rejected;
  assert.equal(client.accessToken(),'test-2');assert.equal(client.account().id,owner);
+});
+
+test('signup without a session does not claim email delivery or create a local account', async()=>{
+ const calls=[];
+ const client=createCareCloud(config,async(url,options)=>{calls.push({url,options});return Response.json({id:owner,identities:[]});});
+ assert.equal(await client.signUp('person@example.test','example-password'),null);
+ assert.equal(client.account(),null);assert.equal(calls.length,1);
+});
+test('email delivery restrictions and rate limits have distinct safe messages',async()=>{
+ for(const [code,expected] of [['email_address_not_authorized',/cannot send to this address/],['over_email_send_rate_limit',/sending limit/]]){
+  const client=createCareCloud(config,async()=>Response.json({code,msg:'private provider detail'},{status:429}));
+  await assert.rejects(()=>client.signUp('person@example.test','example-password'),e=>expected.test(e.message)&&!e.message.includes('private provider detail'));
+ }
+});
+
+test('registration returns the verified existing account without a signup or email request', async()=>{
+ const {client,calls}=fakeCloud();
+ assert.equal((await client.signInOrSignUp('person@example.test','example-password')).id,owner);
+ assert.equal(calls.length,2);
+ assert.ok(calls[0].url.includes('grant_type=password'));
+ assert.ok(calls[1].url.endsWith('/user'));
+ assert.ok(!calls.some(c=>c.url.includes('/signup')));
+});
+
+test('new or wrong-password registration makes at most one signup and never accepts a fabricated user', async()=>{
+ const calls=[];
+ const client=createCareCloud(config,async url=>{
+  calls.push(url);
+  return url.includes('/token?')?Response.json({code:'invalid_credentials'},{status:400}):Response.json({id:owner,identities:[]});
+ });
+ assert.equal(await client.signInOrSignUp('person@example.test','example-password'),null);
+ assert.equal(client.account(),null);
+ assert.equal(calls.length,2);
+ assert.equal(calls.filter(u=>u.includes('/signup')).length,1);
+});
+
+test('unconfirmed accounts, throttling, outages and failed user verification never fall through to signup', async()=>{
+ for(const code of ['email_not_confirmed','over_request_rate_limit','unexpected_failure']){
+  const calls=[];
+  const client=createCareCloud(config,async url=>{calls.push(url);return Response.json({code},{status:code==='over_request_rate_limit'?429:400});});
+  await assert.rejects(()=>client.signInOrSignUp('person@example.test','example-password'));
+  assert.equal(calls.length,1);
+ }
+ const calls=[];
+ const client=createCareCloud(config,async url=>{calls.push(url);return Response.json(url.includes('/token?')?{access_token:'synthetic'}:{id:'invalid'});});
+ await assert.rejects(()=>client.signInOrSignUp('person@example.test','example-password'),/verified/);
+ assert.equal(calls.length,2);assert.equal(client.account(),null);
 });

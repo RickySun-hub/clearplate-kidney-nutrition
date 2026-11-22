@@ -49,7 +49,15 @@ test('validates portions and preserves quantity semantics', () => {
     { amount: 0, gramWeight: 40 }, { amount: 1, gramWeight: -2 }, { gramWeight: 10 },
   ] });
   assert.equal(result.portions.length, 1);
-  assert.deepEqual(result.portions[0], { amount: 2, gramWeight: 160, unit: 'cup', modifier: 'cups' });
+  assert.deepEqual(result.portions[0], { amount: 2, gramWeight: 160, unit: 'cup', modifier: 'cups', description:'',sourcePortionId:null });
+});
+
+test('FNDDS portions retain source identity and household text and participate in default search',async()=>{
+ const normalized=normalizeFdcFood({...food(),dataType:'Survey (FNDDS)',description:'Rice, NFS',foodPortions:[{id:456,amount:1,gramWeight:158,portionDescription:'1 cup, cooked',measureUnit:{name:'undetermined'}}]});
+ assert.equal(normalized.portions[0].description,'1 cup, cooked');assert.equal(normalized.portions[0].sourcePortionId,'456');
+ assert.equal(normalized.matchType,'unspecified');
+ const service=createFdcService({apiKey:'test-only',fetchImpl:async url=>{assert.match(url.searchParams.get('dataType'),/Survey \(FNDDS\)/);return response({foods:[],totalHits:0});}});
+ await service.search({q:'rice'});
 });
 
 test('invalid input and missing configuration never fetch', async () => {

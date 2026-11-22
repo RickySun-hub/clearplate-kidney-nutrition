@@ -1,10 +1,18 @@
+import { isDiscoveryMode, runDiscoveryTool } from '../utils/discoveryVoice.js';
 import { useEffect, useRef, useState } from 'react';
 import { Mic, Square, ArrowUp, MessageSquare, Check } from 'lucide-react';
 import { liveTurns, liveGreeting } from '../utils/liveVoice.js';
 import { createFoodGuide } from '../utils/foodGuide.js';
 import { createMealTools } from '../utils/liveMealTools.js';
 import { responseToolBridge } from '../utils/liveToolBridge.js';
-export default function LiveVoice({accessToken,meal,mode='log',recipes=[],recipeDetails={},entries=[],date,profile={},conversation=[],autoStart=false,disabled=false,onReview,onBusy,onSaveMeal}) {
+const foodReadback = food => {
+  const matched = food.matchedFood;
+  if (!matched) return `${food.name}: ${food.portion} (nutrients unknown)`;
+  const estimate = matched.matchType === 'unspecified' ? 'USDA unspecified-food estimate' : matched.method === 'recipe-estimate' ? 'unchanged recipe estimate' : 'source-based estimate';
+  return `${matched.name}: ${matched.servingDescription || food.portion} (${estimate})`;
+};
+export default function LiveVoice({accessToken,meal,mode='log',recipes=[],recipeDetails={},entries=[],date,profile={},conversation=[],autoStart=false,immersive=false,disabled=false,onReview,onBusy,onSaveMeal,onPreferences}) {
+  const discovery=isDiscoveryMode(mode);
   const context=useRef({entries,date,profile});context.current={entries,date,profile};
   const [cooking,setCooking]=useState(null);
   const [manualSaving,setManualSaving]=useState(false);
@@ -13,8 +21,8 @@ export default function LiveVoice({accessToken,meal,mode='log',recipes=[],recipe
   const [status,setStatus]=useState('Start a natural voice conversation.');
   const [greetingBlocked,setGreetingBlocked]=useState(false);
   const [phase,setPhase]=useState('idle'), [pending,setPending]=useState(null), [saved,setSaved]=useState([]),[turns,setTurns]=useState([]),[levels,setLevels]=useState(Array(36).fill(4));
-  const resource=useRef(null), mounted=useRef(true),started=useRef(false),audio=useRef(null),turnRef=useRef([]), callbacks=useRef({onReview,onBusy,onSaveMeal});
-  callbacks.current={onReview,onBusy,onSaveMeal};
+  const resource=useRef(null), mounted=useRef(true),started=useRef(false),audio=useRef(null),turnRef=useRef([]), callbacks=useRef({onReview,onBusy,onSaveMeal,onPreferences});
+  callbacks.current={onReview,onBusy,onSaveMeal,onPreferences};
   function release(r) {
     if(!r || r.released)return;r.released=true;clearInterval(r.followup);clearTimeout(r.greetingTimer);clearTimeout(r.limit);clearTimeout(r.timeout);clearTimeout(r.closeTimer);cancelAnimationFrame(r.frame);
     r.greeting?.pause();r.abort.abort();r.stream?.getTracks().forEach(t=>t.stop());r.dc?.close();r.pc?.close();r.context?.close().catch(()=>{});
@@ -31,13 +39,13 @@ export default function LiveVoice({accessToken,meal,mode='log',recipes=[],recipe
   }
   async function start() {
     if(resource.current||disabled)return;
-    const prior=turnRef.current.length?turnRef.current:conversation;turnRef.current=[];setTurns([]);setGreetingBlocked(false);setPhase('connecting');setStatus('Connecting to OpenAI voice…');callbacks.current.onBusy?.(true);
+    const prior=turnRef.current.length?turnRef.current:conversation;turnRef.current=[];setTurns([]);setGreetingBlocked(false);setPhase('connecting');setStatus('Allow microphone access to begin…');callbacks.current.onBusy?.(true);
     const r={abort:new AbortController(),fragments:[],seen:new Set(),startedAt:Date.now(),prior};resource.current=r;
     r.timeout=setTimeout(()=>{if(resource.current===r){setStatus('Connection timed out. Please try again.');release(r);}},35000);
     try {
       r.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
       if(r.released){r.stream.getTracks().forEach(t=>t.stop());return;}
-      r.pc=new RTCPeerConnection();r.pc.ontrack=e=>{if(r.released)return;audio.current.srcObject=e.streams[0]||new MediaStream([e.track]);audio.current.play().catch(()=>{if(mounted.current){setGreetingBlocked(true);setStatus('Tap Enable audio below to hear the assistant.');}});};
+      setStatus('Connecting…');r.pc=new RTCPeerConnection();r.pc.ontrack=e=>{if(r.released)return;audio.current.srcObject=e.streams[0]||new MediaStream([e.track]);audio.current.play().catch(()=>{if(mounted.current){setGreetingBlocked(true);setStatus('Tap Enable audio below to hear the assistant.');}});};
       r.stream.getAudioTracks().forEach(t=>r.pc.addTrack(t,r.stream));
       r.dc=r.pc.createDataChannel('oai-events');
       const send=x=>{if(!r.released && r.dc.readyState==='open')r.dc.send(JSON.stringify({event_id:crypto.randomUUID(),...x}));};
@@ -47,29 +55,31 @@ export default function LiveVoice({accessToken,meal,mode='log',recipes=[],recipe
         if(r.released||!mounted.current)return false;
         return callbacks.current.onSaveMeal?.(batch) ?? false;
       },onDraft:d=>{if(r.released)return;setPending(d);if(d){
-        const foods=d.foods.map(f=>`${f.matchedFood?.name||f.name}: ${f.portion}${f.matchedFood?" (source-based estimate)":" (nutrients unknown)"}`).join('; ');
-        send({type:'session.commentary.append',delegation_id:null,content:`Draft ready, not saved. For ${d.meal}${d.time?' at '+d.time:''}: ${foods}. Should I save that?`});
+        const foods=d.foods.map(foodReadback).join('; ');
+        send({type:'session.commentary.append',delegation_id:null,content:`Draft ready, not saved. For ${d.meal}${d.time?' at '+d.time:''}: ${foods}. Does that match what you ate, and should I save it?`});
       }},onSaved:result=>{
         if(r.released)return;send({type:'session.commentary.append',delegation_id:null,content:`Your ${result.meal.toLowerCase()} was saved successfully. What else did you eat today?`});setSaved(old=>[...old,result]);setStatus(`${result.meal} saved. Keep talking — I'm listening.`);
         // Saved entries retain the full transcript. Start a fresh bounded record for the next meal.
         r.prior=[];r.fragments=[];turnRef.current=[];setTurns([]);
       }});
-      const bridge=responseToolBridge({send,run:async(callId,name,args)=>(await guide.run(name,args))??recorder.run(callId,name,args),isActive:()=>!r.released&&!r.closing,onError:()=>{setStatus('I could not finish organizing that meal. Please ask me to try again.');send({type:'session.commentary.append',delegation_id:null,content:'I could not finish organizing that meal. Nothing new was saved. Would you like me to try again?'});}});
+      const bridge=responseToolBridge({send,run:async(callId,name,args)=>discovery ? runDiscoveryTool(mode,name,args,p=>callbacks.current.onPreferences?.(p)) : (await guide.run(name,args))??recorder.run(callId,name,args),isActive:()=>!r.released&&!r.closing,onError:()=>{setStatus('I could not finish organizing that meal. Please ask me to try again.');send({type:'session.commentary.append',delegation_id:null,content:'I could not finish organizing that meal. Nothing new was saved. Would you like me to try again?'});}});
       r.dc.onmessage=({data})=>{
         if(r.released)return;let e;try{e=JSON.parse(data);}catch{return;}
         if(e.type==='session.started'){
           clearTimeout(r.timeout);r.ready=true;r.startedAt=Date.now();setPhase('live');setStatus('Listening. You can speak naturally and interrupt me.');
-          const greeting=liveGreeting(meal,r.prior.length>0,mode);
+          const greeting=discovery ? (mode==='recipes' ? 'What would you like to eat?' : 'Which meals would you like to plan?') : liveGreeting(meal,r.prior.length>0,mode);
           const greetingFile=r.prior.length?'resume':mode==='choose'?'choose':mode==='cook'?'cook':meal.toLowerCase();
+          if (discovery) send({type:'session.commentary.append',delegation_id:null,content:greeting});
           r.prior=[...r.prior,{role:'assistant',content:greeting,source:'assistant',at:new Date().toISOString()}];
           turnRef.current=r.prior;setTurns(r.prior);
-          r.greeting=new Audio(`/audio/hello-${greetingFile}.mp3`);
+          if (!discovery) { r.greeting=new Audio(`/audio/hello-${greetingFile}.mp3`);
           r.greeting.play().catch(()=>{if(!r.released){setGreetingBlocked(true);setStatus('Tap Enable audio below to hear the opening question.');}});
+          }
           r.limit=setTimeout(()=>{void close();},300000);
           r.followup=setInterval(()=>{
             const last=turnRef.current.at(-1);
             if(!r.closing && last?.role==='user' && r.lastUserAt && Date.now()-r.lastUserAt>7000 && Date.now()-(r.lastSoundAt||0)>2000 && r.prompted!==r.lastUserAt){
-              r.prompted=r.lastUserAt;send({type:'session.instructions.append',delegation_id:null,content:'The user has finished their answer. Respond now and ask the next useful food-recall question, or delegate the meal preparation/confirmation if appropriate. Do not wait for a button.'});
+              r.prompted=r.lastUserAt;send({type:'session.instructions.append',delegation_id:null,content:discovery ? 'Respond to the discovery request. Clarify supported conditions or delegate draft preferences. Never log food.' : 'The user has finished their answer. Respond now and ask the next useful food-recall question, or delegate the meal preparation/confirmation if appropriate. Do not wait for a button.'});
             }
           },1000);
         } else if(e.type==='session.input_transcript.delta'||e.type==='session.output_transcript.delta'){
@@ -80,7 +90,7 @@ export default function LiveVoice({accessToken,meal,mode='log',recipes=[],recipe
           const next=[...r.prior,...liveTurns(r.fragments,r.startedAt)];turnRef.current=next;setTurns(next);
           if(next.length>=150 || r.fragments.reduce((n,f)=>n+f.text.length,0)>24000){setStatus('Please review this conversation before continuing.');void close();}
         } else if(e.type==='response.event'){void bridge(e).catch(()=>setStatus('Could not finish that record. Please ask me to try again.'));}
-        else if(e.type==='session.closed'){setStatus('Conversation ended. Check the save status above; unfinished details are kept below.');release(r);}
+        else if(e.type==='session.closed'){setStatus(discovery ? 'Conversation ended. Review and apply your conditions below.' : 'Conversation ended. Check the save status above; unfinished details are kept below.');release(r);}
         else if(e.type==='error'){setStatus('Voice encountered a problem. Your transcript is kept below; reconnect or review it.');void close();}
       };
       r.dc.onclose=()=>{if(!r.released){setStatus('Disconnected. Your transcript is kept below.');release(r);}};
@@ -96,26 +106,28 @@ export default function LiveVoice({accessToken,meal,mode='log',recipes=[],recipe
   }
   useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;const r=resource.current;if(r?.dc?.readyState==='open')r.dc.send(JSON.stringify({type:'session.close'}));release(r);};},[]);
   useEffect(()=>{const timer=setTimeout(()=>{if(autoStart&&!started.current){started.current=true;void start();}},0);return()=>clearTimeout(timer);},[autoStart]);
-  useEffect(()=>{const r=resource.current;if(!r?.ready)return;r.send?.({type:'session.instructions.append',delegation_id:null,content:mode==='cook'?'The user chose Find something to cook. Ask about their ingredients and use recipe tools. Do not record planned meals.':'The user chose Log what I ate. Ask what they actually ate and use food matching tools.'});},[mode]);
+  useEffect(()=>{const r=resource.current;if(!r?.ready || discovery)return;r.send?.({type:'session.instructions.append',delegation_id:null,content:mode==='cook'?'The user chose Find something to cook. Ask about their ingredients and use recipe tools. Do not record planned meals.':'The user chose Log what I ate. Ask what they actually ate and use food matching tools.'});},[mode]);
   async function review(){await close();callbacks.current.onReview?.(turnRef.current);}
   const busy=phase!=='idle';
-  return <div className="live-voice">
-    <p role="status" hidden={phase==='idle'&&status==='Start a natural voice conversation.'}>{status}</p>
+  return <div className={`live-voice ${immersive ? 'voice-immersive' : ''}`} data-phase={phase}>
+    <p role="status" hidden={(phase==='idle'&&status==='Start a natural voice conversation.') || (immersive && status==='Listening. You can speak naturally and interrupt me.')}>{status}</p>
+    {immersive && <div className="cloud-orb" aria-hidden="true" style={{'--voice-level': Math.max(...levels)/50}}><i/><i/><i/></div>}
     <div className="voice-composer">
-      <button type="button" className="voice-mic" aria-label="Start live conversation" disabled={busy||disabled} onClick={start}><Mic size={44}/></button>
+      <button type="button" hidden={immersive} className="voice-mic voice-orb" aria-label="Start live conversation" disabled={busy||disabled} onClick={start}><Mic size={44}/></button>
       <div className="voice-recording-label"><strong>{phase==='connecting'?'Connecting…':phase==='closing'?'Finishing…':busy?'Live conversation':'Talk with Nepholio'}</strong><span>{busy?'Speak naturally — I’m listening':'Tap the microphone to start'}</span></div>
       <div className="voice-waveform" aria-hidden="true">{levels.map((h,i)=><span key={i} style={{height:h}}/>)}</div>
       {phase==='live'&&<div className="voice-record-controls"><button type="button" className="voice-round" aria-label="End conversation" onClick={()=>void close()}><Square size={22}/><span>End</span></button></div>}
     </div>
+    {immersive && phase==='idle' && <button type="button" className="voice-retry" disabled={disabled} onClick={start}>Try again</button>}
     {greetingBlocked&&<button type="button" onClick={async()=>{try{await audio.current?.play();await resource.current?.greeting?.play();setGreetingBlocked(false);}catch{setStatus('Audio playback is blocked. Check your browser sound settings.');}}}>Enable audio</button>}
     <audio ref={audio} autoPlay aria-label="Assistant audio" hidden/>
-    <p className="voice-underbar">Confirm by voice to save. End stops the microphone. Up to five minutes per call.</p>
-    {!!saved.length&&<div role="status">{saved.map(s=><p key={s.draft_id}><Check size={18} aria-hidden="true"/> {s.meal} saved: {s.foods.map(f=>`${f.name} (${f.portion})`).join(', ')}</p>)}</div>}
-    {pending&&<p>Ready to confirm: {pending.foods.map(f=>`${f.name} (${f.portion})`).join(', ')}. Tell me if this is right.</p>}
+    <p className="voice-underbar">{discovery ? 'Review the conditions below, then apply. Nothing is logged. End stops the microphone.' : 'Confirm by voice to save. End stops the microphone.'} Up to five minutes per call.</p>
+    {!!saved.length&&<div role="status">{saved.map(s=><p key={s.draft_id}><Check size={18} aria-hidden="true"/> {s.meal} saved: {s.foods.map(foodReadback).join('; ')}</p>)}</div>}
+    {pending&&<div><p>Ready to confirm: {pending.foods.map(foodReadback).join('; ')}. Tell me if this is right.</p>{pending.foods.filter(f=>f.matchedFood?.fdcId).map((f,i)=><p key={i}>USDA FDC {f.matchedFood.fdcId}{f.matchedFood.dataType ? ` · ${f.matchedFood.dataType}` : ''}{f.matchedFood.sourceUrl && <> · <a href={f.matchedFood.sourceUrl} target="_blank" rel="noreferrer">Food source</a></>}</p>)}</div>}
     {pending&&!busy&&<button type="button" className="voice-send" disabled={manualSaving} onClick={savePending}>{manualSaving?'Saving…':'Confirm & save meal'}</button>}
     {cooking&&<article className="voice-recipe"><span>Cooking together · not logged</span><h3>{cooking.name}</h3><p>{cooking.servingSize} · Recipe makes {cooking.servings} servings</p><details><summary>Ingredients & steps</summary><ul>{cooking.ingredients?.map((x,i)=><li key={i}>{x}</li>)}</ul><ol>{cooking.steps?.map((x,i)=><li key={i}>{x}</li>)}</ol></details><p>Tell me when you've eaten, and how much. Changes to ingredients affect the nutrition estimate.</p></article>}
     {turns.filter(t=>t.role==='assistant').at(-1)?.content&&<p className="voice-current-question">{turns.filter(t=>t.role==='assistant').at(-1).content}</p>}
-    {!!turns.length&&<details className="voice-transcript"><summary><MessageSquare size={20} aria-hidden="true"/> Conversation <span>{turns.length} messages</span></summary>{turns.map((t,i)=><p key={i}><strong>{t.role==='user'?'You':'Nepholio'}:</strong> {t.content}</p>)}</details>}
-    {!busy&&turns.some(t=>t.role==='user')&&<button type="button" className="voice-send" disabled={phase==='connecting'||phase==='closing'||!turns.some(t=>t.role==='user')} onClick={review}><ArrowUp size={20}/> Review unfinished food</button>}
+    {!!turns.length&&<details className="voice-transcript"><summary><MessageSquare size={20} aria-hidden="true"/> Conversation <span>{turns.length} {turns.length === 1 ? 'message' : 'messages'}</span></summary>{turns.map((t,i)=><p key={i}><strong>{t.role==='user'?'You':'Nepholio'}:</strong> {t.content}</p>)}</details>}
+    {!discovery&&!busy&&turns.some(t=>t.role==='user')&&<button type="button" className="voice-send" disabled={phase==='connecting'||phase==='closing'||!turns.some(t=>t.role==='user')} onClick={review}><ArrowUp size={20}/> Review unfinished food</button>}
   </div>;
 }

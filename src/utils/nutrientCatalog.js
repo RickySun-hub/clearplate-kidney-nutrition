@@ -1,7 +1,7 @@
 export const NUTRIENTS = [
   ['calories', 'Energy', 'kcal'], ['protein', 'Protein', 'g'], ['sodium', 'Sodium', 'mg'],
   ['potassium', 'Potassium', 'mg'], ['phosphorus', 'Phosphorus', 'mg'],
-  ['carbs', 'Carbohydrate', 'g'], ['fat', 'Total fat', 'g'], ['fiber', 'Fiber', 'g'],
+  ['carbs', 'Carbohydrate', 'g'], ['fat', 'Total fat', 'g'], ['fiber', 'Dietary fiber', 'g'],
   ['sugars', 'Total sugars', 'g'], ['addedSugars', 'Added sugars', 'g'], ['saturatedFat', 'Saturated fat', 'g'],
   ['cholesterol', 'Cholesterol', 'mg'], ['calcium', 'Calcium', 'mg'], ['magnesium', 'Magnesium', 'mg'],
   ['iron', 'Iron', 'mg'], ['zinc', 'Zinc', 'mg'], ['selenium', 'Selenium', 'µg'],

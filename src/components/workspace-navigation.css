@@ -1,0 +1,13 @@
+.food-review-entry { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 6px 12px; padding: 8px 0; color: #686b75; font-size: 12px; }
+.food-review-entry-link { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 4px 0; border: 0; background: transparent; color: #465164; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.food-review-count { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: #edf2ff; color: #002fa7; font-weight: 700; }
+.food-review-entry-details { padding: 4px 0; }
+.food-review-entry-details summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+.food-review-entry-details summary::before { content: "▸"; margin-right: 5px; }
+.food-review-entry-details[open] summary::before { content: "▾"; }
+.food-review-entry-details p { max-width: 26rem; line-height: 1.5; margin: 8px 0 0; }
+.food-review-entry-link:focus-visible, .food-review-entry-details summary:focus-visible { outline: 2px solid #002fa7; outline-offset: 4px; }
+@media (max-width: 900px) {
+  .topbar > .food-review-entry { grid-column: 1 / -1; order: 4; padding: 0 0 8px; align-items: center; }
+  .topbar > .food-review-entry .food-review-entry-details[open] { flex: 1 1 100%; }
+}

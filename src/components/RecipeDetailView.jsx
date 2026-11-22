@@ -57,6 +57,7 @@ export default function RecipeDetailView({ recipe, details, servings = 1, backLa
               <span>{recipeMetadata[recipe.id]?.category || recipe.category} · {details ? "Cooking instructions" : "Nutrition data only"}</span>
               <h1 id="recipe-detail-title">{recipe.name}</h1>
               <p>{details ? `${details.servingSize} per serving · source recipe makes ${details.servings} servings` : `${formatAmount(servings, 1)} serving${servings === 1 ? "" : "s"} · no preparation source linked`}</p>
+              {details?.source && !details.source.imported && <p>Source: {details.source.publisher}, <em>{details.source.title}</em>, p. {details.source.printedPage} (preparation details paraphrased).</p>}
             </div>
           </div>
         </header>
@@ -89,7 +90,7 @@ export default function RecipeDetailView({ recipe, details, servings = 1, backLa
                 <button type="button" aria-pressed={ingredientUnits === "grams"} onClick={() => setIngredientUnits("grams")}>Grams</button>
               </div>
               <p className="scaling-note">Quantities below are for your cooking batch. Use these amounts with the original cooking steps.</p>
-              {ingredientUnits === "grams" && <p className="scaling-note">Grams use available USDA draft weights. Where a weight is unknown, the source amount stays visible. Pinches and to-taste amounts are not converted.</p>}
+              {ingredientUnits === "grams" && <p className="scaling-note">Grams use available USDA reference weights; these are estimates. Where a weight is unknown, the source amount stays visible. Pinches and to-taste amounts are not converted.</p>}
               <details className="ingredient-scaling-details"><summary>Serving and scaling details</summary>
                 <p className="scaling-note">Batch scale × {formatAmount(scaleFactor, 2)} = {formatAmount(cookServings, 2)} cooking servings ÷ {details.servings} source servings. Alternate amounts scale together; package sizes stay fixed.</p>
                 <p className="scaling-note">Workbook estimate for this batch: {formatAmount(batchNutrients.calories, 2)} kcal · {formatAmount(batchNutrients.sodium, 2)} mg sodium · {formatAmount(batchNutrients.protein, 2)} g protein · {formatAmount(batchNutrients.potassium, 2)} mg potassium.</p>
@@ -119,10 +120,10 @@ export default function RecipeDetailView({ recipe, details, servings = 1, backLa
                   {details.servingSuggestion && <div><strong>Serving suggestion</strong><p>{details.servingSuggestion}</p></div>}
                 </div>
               )}
-              <div className="recipe-source-disclosure">
+              {details.source.imported && <div className="recipe-source-disclosure">
                 <Info size={18} />
-                {details.source.imported ? <p>Imported from <a href={details.source.url} target="_blank" rel="noreferrer">{details.source.publisher} ↗</a>. You confirmed the source serving count; nutrition has not been calculated.</p> : <p><strong>Editorial draft:</strong> preparation details are paraphrased from {details.source.publisher}, <em>{details.source.title}</em>, printed page {details.source.printedPage}. Permission status is not cleared; clinical notes are informational and are not used as target-setting rules.</p>}
-              </div>
+                <p>Imported from <a href={details.source.url} target="_blank" rel="noreferrer">{details.source.publisher} ↗</a>. You confirmed the source serving count; nutrition has not been calculated.</p>
+              </div>}
             </section>
           </div>
         ) : (

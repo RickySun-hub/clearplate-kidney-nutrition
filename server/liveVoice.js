@@ -2,9 +2,16 @@ import { VoiceError, assertOrigin, authenticateVoice, voiceAllowed, readVoiceBod
 import { mealTools, mealBackendInstructions, guideInstructions } from './liveMealSchema.js';
 import { liveGreeting } from '../src/utils/liveVoice.js';
 import { validConversation, MEALS, dueMeals } from '../src/utils/mealConversation.js';
+import { isDiscoveryMode } from '../src/utils/discoveryVoice.js';
+import { discoveryInstructions, discoveryTools } from './discoveryVoice.js';
 export const LIVE_MODEL = 'gpt-live-1';
 export function liveConfig(body) {
+  if (body?.mode !== undefined && !['log','cook','choose','recipes','plan'].includes(body.mode)) throw new VoiceError(400,'invalid_session','Unsupported voice mode.');
   if (!body || typeof body.sdp !== 'string' || body.sdp.length > 64000 || !body.sdp.startsWith('v=0') || !MEALS.includes(body.meal) || !validConversation(body.conversation || [])) throw new VoiceError(400,'invalid_session','Invalid conversation request.');
+  if (isDiscoveryMode(body.mode)) {
+    const instructions = discoveryInstructions(body.mode);
+    return {model:LIVE_MODEL,store:false,audio:{output:{voice:'marin'}},instructions:instructions+' The application provides the opening question via commentary. Do not greet twice. Listen and respond after each answer.',delegation:{type:'responses',responses:{model:'gpt-6-sol',instructions,tools:discoveryTools(body.mode),parallel_tool_calls:false,max_output_tokens:1024}},input:(body.conversation || []).map(t=>({type:'message',role:t.role,content:[{type:t.role==='assistant'?'output_text':'input_text',text:t.content}]}))};
+  }
   return {
     model: LIVE_MODEL, store: false, audio: { output: { voice: 'marin' } }, delegation: { type: 'responses', responses: {model:'gpt-6-sol',instructions:mealBackendInstructions+guideInstructions,tools:mealTools,parallel_tool_calls:false,max_output_tokens:2048} },
     instructions: `${guideInstructions} Initial intent: ${["log","cook"].includes(body.mode)?body.mode:"ask the user"}. You are Nepholio, a warm, patient food-recall assistant for adults, including older adults. Speak natural, friendly English by default. Never switch language because of an accent, background noise, or a doubtful transcript. Switch only when the user explicitly requests another language. If speech is unclear, ask them to repeat rather than inventing words. Use short, varied sentences, contractions and a calm conversational pace. Do not read a checklist or repeat a stock acknowledgment every turn. Let the user finish and accept interruptions and corrections.
