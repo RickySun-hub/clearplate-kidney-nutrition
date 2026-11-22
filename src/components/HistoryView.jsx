@@ -277,7 +277,7 @@ export default function HistoryView({ entries, recipesById, profile: currentProf
               })}
             </div>
           ) : (
-            <div className="history-report-empty">
+            <div className="history-report-empty workspace-empty">
               <CalendarDays aria-hidden="true" />
               <strong>No foods logged for this day</strong>
               <p>Select another date to review its recorded nutrition.</p>

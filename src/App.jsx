@@ -527,16 +527,16 @@ function TodayView({ fluidRecords, today, onSaveFluids, profile, recipes, recipe
           <button className="today-date" onClick={onHistory}><CalendarDays size={20} /> {displayDate}<ChevronRight size={17} /></button>
           <div><h1>{greeting}{profile.name ? `, ${profile.name}` : ""}.</h1><p>A little awareness, one meal at a time.</p></div>
         </header>
+        <section className="record-entry" aria-label="Record what you ate">
+          <div className="record-entry-title"><h2>What did you eat?</h2><p>Speak or choose a food. Review before saving.</p></div>
+          <div className="record-entry-buttons"><button className="primary-button voice-entry-highlight" type="button" onClick={onVoice}><Mic size={20} /> Speak</button><button className="primary-button" type="button" onClick={() => onOpenMeal()}><Plus size={20} /> Record food</button></div>
+          <div className="record-entry-links"><button type="button" onClick={onUsda}>Search USDA foods</button><button type="button" onClick={onOpenCustom}>Enter a food label</button></div>
+        </section>
         <section className="today-overview tracked-nutrition-overview" aria-label="Today’s recorded nutrition">
           {preferences.trackedNutrients.includes('sodium') && <NutrientProgress empty={!entries.length} type="sodium" coverage={coverage.sodium} value={entries.length ? totals.sodium : null} target={profile.sodiumTargetMg} complete={complete} estimated={totals.estimatedCount > 0} />}
           {preferences.trackedNutrients.includes('protein') && <NutrientProgress empty={!entries.length} type="protein" coverage={coverage.protein} value={entries.length ? totals.protein : null} range={{ min: profile.proteinMinG, max: profile.proteinMaxG }} complete={complete} estimated={totals.estimatedCount > 0} />}
           {NUTRIENTS.filter(n=>preferences.trackedNutrients.includes(n.key)&&!['sodium','protein'].includes(n.key)).map(n=>{const info=coverage[n.key];const target=preferences.nutrientTargets[n.key];return <section className="additional-nutrient" key={n.key}><strong>{n.label}</strong><span>{formatNutrientCoverage(info,n.unit,2)}</span><small>{entries.length&&!info.complete?info.knownCount ? `Known subtotal ${formatAmount(info.knownSubtotal,2)} ${n.unit} · ${info.knownCount}/${info.itemCount} items have data` : 'No nutrient data for recorded foods':'Recorded foods only'}{target && ` · Saved target: ${target.min ?? '—'}–${target.max ?? '—'} ${n.unit}/day`}</small></section>;})}
           {!preferences.trackedNutrients.length && <p>No nutrients selected. <button type="button" className="text-button" onClick={onOpenProfile}>Choose nutrients in your profile</button></p>}
-        </section>
-        <section className="record-entry" aria-label="Record what you ate">
-          <div className="record-entry-title"><h2>What did you eat?</h2><p>Speak or choose a food. Review before saving.</p></div>
-          <div className="record-entry-buttons"><button className="primary-button voice-entry-highlight" type="button" onClick={onVoice}><Mic size={20} /> Speak</button><button className="primary-button" type="button" onClick={() => onOpenMeal()}><Plus size={20} /> Record food</button></div>
-          <div className="record-entry-links"><button type="button" onClick={onUsda}>Search USDA foods</button><button type="button" onClick={onOpenCustom}>Enter a food label</button></div>
         </section>
         <FluidTracker key={today} date={today} records={fluidRecords} entries={entries} targetMl={profile.fluidTargetMl} onSave={onSaveFluids} />
         <TodayMeals entries={entries} recipesById={recipesById} onAddMeal={(meal) => onOpenMeal(null, meal)} onOpenRecipe={onOpenRecipe} onRemove={onRemove} onReorder={onReorder} onEdit={onEdit} />

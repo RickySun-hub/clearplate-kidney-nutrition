@@ -13,8 +13,12 @@ export default function CareConnection({ onBack, backLabel="Back to Today", init
   const busyRef = useRef(false);
   const callbacks = useRef({ onReviewRecord, onSessionChange, onSignOut });
   callbacks.current = { onReviewRecord, onSessionChange, onSignOut };
-  const [authMode, setAuthMode] = useState('signin');
-  useEffect(()=>{if(['signin','signup','rd-signin'].includes(requestedMode)){setAuthMode(requestedMode==='signup'?'signup':'signin');setLoginMethod('email');setEmailStep(false);}},[requestedMode]);
+  const authMode = requestedMode === 'signup' ? 'signup' : 'signin';
+  useEffect(() => {
+    setLoginMethod('email');
+    setEmailStep(false);
+    setPassword('');
+  }, [requestedMode]);
   const [googleAvailable, setGoogleAvailable] = useState(false);
   const [loginMethod, setLoginMethod] = useState('email');
   const [emailStep, setEmailStep] = useState(false);
@@ -112,11 +116,11 @@ export default function CareConnection({ onBack, backLabel="Back to Today", init
     await action(async () => {
       let user;
       try { user = await client.current[signup ? 'signInOrSignUp' : 'signIn'](email, password); }
-      catch (error) { if (signup && mountedRef.current) setAuthMode('signin'); throw error; }
+      catch (error) { if (signup && mountedRef.current) onAuthModeChange?.('signin'); throw error; }
       finally { if (mountedRef.current) setPassword(''); }
       setAccount(user);
       if (!user) {
-        setAuthMode('signin');
+        onAuthModeChange?.('signin');
         setMessage('Check your inbox and spam folder if this is a new account, then sign in below after confirming your email. Already registered? Sign in with your original password or Google. Creating an account again does not reset your password. You do not need to submit registration again.');
         return;
       }
@@ -148,10 +152,9 @@ export default function CareConnection({ onBack, backLabel="Back to Today", init
       <p className="auth-intro">{requestedMode==='rd-signin'?'Use your Google account or work email. Patient access is managed separately.':authMode==='signup'?'Create an account, or use your existing email and password to return to your account.':'Welcome back. Sign in with your existing email and password or Google.'}</p>
       <button className="google-signin" type="button" disabled={busy || !googleAvailable} onClick={() => action(() => {try{if(requestedMode==='rd-signin')sessionStorage.setItem('renalsync-login-destination','rd');}catch{}return client.current.signInWithGoogle();})}><GoogleMark />Continue with Google</button>
       {!googleAvailable && <p className="care-help">Google sign-in is being set up. You can use email below.</p>}
-      <button className="google-signin phone-signin" type="button" disabled={busy} aria-expanded={loginMethod==='phone'} onClick={()=>{setLoginMethod(loginMethod==='phone'?'email':'phone');setMessage('');}}><Smartphone size={19} aria-hidden="true" />Continue with phone{!phoneAvailable && <small>Coming soon</small>}</button>
+      {phoneAvailable ? <button className="google-signin phone-signin" type="button" disabled={busy} aria-expanded={loginMethod==='phone'} onClick={()=>{setLoginMethod(loginMethod==='phone'?'email':'phone');setMessage('');}}><Smartphone size={19} aria-hidden="true" />Continue with phone</button> : <p className="care-help">Phone sign-in is coming soon.</p>}
       {loginMethod==='phone' ? <>
         <div className="auth-divider">use a text message code</div>
-        {!phoneAvailable && <p className="phone-notice" role="status">Phone sign-in is not available yet. Please continue with Google or email.</p>}
         <label>Mobile phone number<input type="tel" inputMode="tel" autoComplete="tel" placeholder="+1 555 123 4567" required disabled={!phoneAvailable || !!sentTo} value={phone} onChange={e=>setPhone(e.target.value)} /></label>
         <p className="care-help">Include your country code, such as +1 for the US and Canada. We will text you a sign-in code.</p>
         {sentTo && <label>Verification code<input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={otp} onChange={e=>setOtp(e.target.value.replace(/\D/g,''))} /></label>}
@@ -163,7 +166,7 @@ export default function CareConnection({ onBack, backLabel="Back to Today", init
         <label>Email<input autoComplete="username" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
         {emailStep && <><label>Password<input autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'} type="password" minLength="8" required value={password} onChange={(event) => setPassword(event.target.value)} /></label><p className="care-help">{authMode==='signup'?'Use at least 8 characters. We will email you a confirmation link.':'Enter the password for your Nepholio account.'}</p></>}
         <div className="care-actions"><button className="account-submit" disabled={busy} type="submit">{busy ? 'Please wait…' : !emailStep ? 'Continue with email' : authMode === 'signup' ? 'Create account' : 'Sign in'}</button></div>
-        <button className="auth-text-action" type="button" disabled={busy} onClick={()=>{setEmailStep(true);setAuthMode(authMode==='signup'?'signin':'signup');setMessage('');}}>{authMode==='signup'?'Already have an account? Sign in':'New here? Create an email account'}</button>
+        <button className="auth-text-action" type="button" disabled={busy} onClick={()=>{setMessage('');onAuthModeChange?.(authMode==='signup'?'signin':'signup');}}>{authMode==='signup'?'Already have an account? Sign in':'New here? Create an email account'}</button>
       </>}
       <p className="care-help auth-footnote">{isRD ? 'Patients choose which food records to share with you. Sign in to review records shared with your dietitian account.' : 'You choose when to share your food record with your care team.'}</p>
       {requestedMode==='rd-signin'&&<button className="auth-text-action" type="button" onClick={()=>onAuthModeChange?.('signin')}>Here to track your meals? Patient sign in →</button>}

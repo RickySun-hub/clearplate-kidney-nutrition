@@ -419,3 +419,25 @@ body:has(.local-preview-bar) .topbar { top:40px; height:calc(100dvh - 40px); }
   .flow-return::before { inset: 0 auto 10px 0; width: 10px; height: auto; border-width: 0 0 2px 2px; border-radius: 0 0 0 8px; }
   .flow-return::after { left: 5px; top: auto; bottom: 7px; transform: rotate(45deg); }
 }
+
+/* Shared patient and dietitian workspace controls. */
+.app-shell :is(.primary-button, .secondary-button),
+.rd-workbench :is(.primary-button, .secondary-button) {
+  min-height: 46px; border-radius: 9px; font-size: 15px; font-weight: 600;
+}
+.rd-workbench { --rd-accent: var(--green-800); --rd-rule: var(--border); }
+.rd-workbench .primary-button { background: var(--green-800); border-color: var(--green-800); color: white; }
+.rd-workbench .primary-button:hover:not(:disabled) { background: var(--green-900); }
+.rd-workbench .secondary-button { background: white; border-color: var(--border-strong); color: var(--green-800); }
+:is(.app-shell, .rd-workbench) :is(.primary-button, .secondary-button):focus-visible { outline: 3px solid var(--green-700); outline-offset: 3px; }
+:is(.app-shell, .rd-workbench) :is(.primary-button, .secondary-button):disabled { opacity: .55; cursor: not-allowed; }
+.patient-today .dashboard-heading h1, .library-page .page-heading h1, .history-page h1,
+.recipe-detail-page h1, .rd-workbench h1 { font: 500 clamp(30px, 3vw, 42px)/1.15 Georgia, serif; letter-spacing: -.035em; color: var(--text); }
+.patient-today .record-entry { margin-bottom: 22px; background: var(--green-100); }
+.app-shell .workspace-empty, .rd-workbench .workspace-empty {
+  padding: 24px; margin-block: 16px; background: var(--green-50); color: var(--text);
+  border: 1px solid var(--border); border-radius: 14px; text-align: left;
+}
+.workspace-empty h2, .workspace-empty strong { margin: 0; font-size: 18px; }
+.app-shell .workspace-empty p, .rd-workbench .workspace-empty p { margin: 6px 0 0; line-height: 1.55; color: var(--muted); }
+.workspace-empty button { margin-top: 14px; }

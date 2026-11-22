@@ -13,8 +13,12 @@ export default function RecipeLibrary({ accessToken, recipes, details = recipeDe
   const [snackOnly,setSnackOnly] = useState(false);
   const snackIdeas = new Set(['hummus','artichoke-dip','fresh-tzatziki','mango-salsa-wontons','apple-muffin']);
   const enriched = useMemo(() => recipes.map((recipe) => enrichRecipe(recipe, details[recipe.id], recipeMetadata[recipe.id])), [recipes,details]);
-  const categories = useMemo(() => [...new Set([...enriched.map((recipe) => recipe.category), "Smoothies"])].sort(), [enriched]);
+  const categories = useMemo(() => [...new Set(enriched.map((recipe) => recipe.category).filter(Boolean))].sort(), [enriched]);
   const filtered = filterRecipes(enriched, filters).filter(recipe=>!snackOnly||snackIdeas.has(recipe.id));
+  function clearFilters() {
+    setFilters({ ...DEFAULT_FILTERS });
+    setSnackOnly(false);
+  }
   const setFilter = (key) => (event) => setFilters((current) => ({ ...current, [key]: event.target.value }));
   const nutrient = (value, unit) => typeof value === "number" && Number.isFinite(value) && value >= 0 ? `${formatAmount(value, 1)} ${unit}` : "Unknown";
   const originalRecipe = (recipe) => recipes.find((item) => item.id === recipe.id);
@@ -39,8 +43,8 @@ export default function RecipeLibrary({ accessToken, recipes, details = recipeDe
         <p className="library-filter-help">Ceilings apply to workbook values per serving and exclude unknown values. Diet and preparation annotations are unreviewed drafts from available ingredients and steps; uncertain diets are excluded. No-cook assembly may require precooked ingredients. These filters do not indicate clinical suitability.</p>
         </details>
       </div>
-      <div className="library-filter-summary"><span role="status" aria-live="polite">{filtered.length} of {recipes.length} recipes</span><div className="library-display-actions"><button type="button" className="library-clear-filters" onClick={() => { setFilters({ ...DEFAULT_FILTERS }); setSnackOnly(false); }}>Clear filters</button><div className="view-switch" aria-label="Recipe display"><button type="button" aria-label="Card view" aria-pressed={view === 'cards'} onClick={() => setView('cards')}><LayoutGrid size={18} /></button><button type="button" aria-label="Table view" aria-pressed={view === 'table'} onClick={() => setView('table')}><List size={18} /></button></div></div></div>
-      {view === 'cards' ? <div className="recipe-card-grid">{filtered.map((recipe) => <article className="recipe-card" key={recipe.id}>
+      <div className="library-filter-summary"><span role="status" aria-live="polite">{filtered.length} of {recipes.length} recipes</span><div className="library-display-actions"><button type="button" className="library-clear-filters" onClick={clearFilters}>Clear filters</button><div className="view-switch" aria-label="Recipe display"><button type="button" aria-label="Card view" aria-pressed={view === 'cards'} onClick={() => setView('cards')}><LayoutGrid size={18} /></button><button type="button" aria-label="Table view" aria-pressed={view === 'table'} onClick={() => setView('table')}><List size={18} /></button></div></div></div>
+      {filtered.length > 0 && (view === 'cards' ? <div className="recipe-card-grid">{filtered.map((recipe) => <article className="recipe-card" key={recipe.id}>
         <button className="recipe-card-open" type="button" onClick={() => onOpenRecipe(originalRecipe(recipe))} aria-label={`View ${recipe.name} recipe`}>
           <div className="recipe-card-image">{recipeImages[recipe.id] ? <img src={recipeImages[recipe.id]} alt="" loading="lazy" /> : <div className="recipe-card-placeholder"><BookPlaceholder /></div>}<span className="recipe-card-category">{recipe.category}</span></div>
           <div className="recipe-card-title"><h2>{recipe.name}</h2><ArrowUpRight size={19} /><p>{recipe.sourceCompleteness === 'full' ? 'Ingredients & cooking instructions' : 'Nutrition information only'}</p></div>
@@ -55,8 +59,12 @@ export default function RecipeLibrary({ accessToken, recipes, details = recipeDe
             return <tr key={recipe.id}><td><button className="table-recipe table-recipe-button" type="button" onClick={() => onOpenRecipe(originalRecipe(recipe))} aria-label={`View ${recipe.name} recipe`}>{image ? <img src={image} alt="" loading="lazy" decoding="async" /> : <span className="recipe-placeholder">{recipe.name.slice(0, 1)}</span>}<span><strong>{recipe.name}</strong><small>{recipe.sourceCompleteness === "full" ? "Ingredients + steps" : "Nutrition only"}{recipe.diet !== "unknown" ? ` · ${recipe.diet} (draft)` : ""}</small>{recipe.preparation === "no-cook" && <small>No-cook assembly (draft){recipe.preparationNote ? ` · ${recipe.preparationNote}` : ""}</small>}</span><ArrowUpRight size={17} /></button></td><td>{recipe.category}</td><td>{nutrient(recipe.calories, "kcal")}</td><td>{nutrient(recipe.protein, "g")}</td><td><strong>{nutrient(recipe.sodium, "mg")}</strong></td><td>{nutrient(recipe.potassium, "mg")}</td><td><button type="button" className="table-add" onClick={() => onChoose(originalRecipe(recipe))} aria-label={`Add ${recipe.name}`}><Plus size={17} /> Add</button></td></tr>;
           })}</tbody>
         </table>
-      </div>}
-      {filtered.length === 0 && <p className="library-empty" role="status">{filters.category === 'Smoothies' ? 'Smoothie recipes are coming soon. This collection is waiting for recipes to be added.' : 'No recipes match these filters. Clear a filter or raise a ceiling to see more recipes.'}</p>}
+      </div>)}
+      {filtered.length === 0 && <section className="workspace-empty">
+        <h2>No matching recipes</h2>
+        <p>Try another name or clear your filters to browse the library.</p>
+        <button type="button" className="secondary-button" onClick={clearFilters}>Show all recipes</button>
+      </section>}
       <p className="library-note">Cookbook nutrition comes from <strong>AA_PKD Direct Study.xlsx</strong>. Imported recipes retain their own source and unknown nutrition. Snack ideas are an editorial grouping; confirm your portion.</p>
     </main>
   );
