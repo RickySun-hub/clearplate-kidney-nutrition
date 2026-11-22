@@ -1,3 +1,4 @@
+import DiscoveryVoice from './DiscoveryVoice';
 import { ArrowUpRight, Plus, Search, LayoutGrid, List, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 import { recipeImages } from "../data/seed";
@@ -6,7 +7,7 @@ import recipeMetadata from "../data/recipeMetadata.json";
 import { formatAmount } from "../utils/nutrition";
 import { DEFAULT_FILTERS, enrichRecipe, filterRecipes } from "../utils/recipeFilters";
 
-export default function RecipeLibrary({ recipes, details = recipeDetails, onChoose, onOpenRecipe }) {
+export default function RecipeLibrary({ accessToken, recipes, details = recipeDetails, onChoose, onOpenRecipe, onImport }) {
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [view, setView] = useState('cards');
   const [snackOnly,setSnackOnly] = useState(false);
@@ -20,10 +21,10 @@ export default function RecipeLibrary({ recipes, details = recipeDetails, onChoo
 
   return (
     <main className="library-page">
-      <header className="page-heading"><div><h1>Recipe library</h1><p>Find a recipe. Compare nutrition. Make it your own portion.</p></div><div className="library-count"><strong>{recipes.length}</strong><span>recipes in your library</span></div></header>
-      <button type="button" className="smoothie-category" aria-pressed={filters.category === 'Smoothies'} onClick={()=>{setFilters({...DEFAULT_FILTERS,category:'Smoothies'});setSnackOnly(false);}}><span><strong>Smoothies</strong><small>Recipes coming soon</small></span><ArrowUpRight size={20} /></button>
+      <header className="page-heading"><div><h1>Recipe library</h1><p>Browse ingredients and cooking instructions. Choose a portion when you are ready to log what you ate.</p></div><div className="discovery-heading-actions"><DiscoveryVoice accessToken={accessToken} kind="recipes" onApply={({search}) => {setFilters({...DEFAULT_FILTERS,search});setSnackOnly(false);}} /><button className="secondary-button" onClick={onImport}>Import a recipe</button></div></header>
+      <div className="recipe-category-tabs" role="group" aria-label="Browse recipe collections"><button aria-pressed={!filters.category && !filters.source && !snackOnly} onClick={() => {setFilters({...DEFAULT_FILTERS});setSnackOnly(false);}}>All recipes <span>{recipes.length}</span></button><button aria-pressed={snackOnly} onClick={() => {setFilters({...DEFAULT_FILTERS});setSnackOnly(true);}}>Small plates & snacks</button><button aria-pressed={filters.source === 'full'} onClick={() => {setFilters({...DEFAULT_FILTERS,source:'full'});setSnackOnly(false);}}>With cooking instructions</button></div>
       <div className="library-filter-panel">
-        <label className="snack-filter"><input type="checkbox" checked={snackOnly} onChange={event=>setSnackOnly(event.target.checked)} />Snack ideas & small plates</label>
+
         <div className="library-toolbar">
           <label className="search-field"><Search size={20} /><input aria-label="Search recipe names and ingredients" value={filters.search} onChange={setFilter("search")} placeholder="Search names or ingredients" /></label>
           <label className="library-filter-field">Category<select value={filters.category} onChange={setFilter("category")}><option value="">All categories</option>{categories.map((item) => <option key={item}>{item}</option>)}</select></label>
@@ -45,7 +46,7 @@ export default function RecipeLibrary({ recipes, details = recipeDetails, onChoo
           <div className="recipe-card-title"><h2>{recipe.name}</h2><ArrowUpRight size={19} /><p>{recipe.sourceCompleteness === 'full' ? 'Ingredients & cooking instructions' : 'Nutrition information only'}</p></div>
         </button>
         <dl className="recipe-card-nutrients"><div><dt>Calories</dt><dd>{nutrient(recipe.calories, 'kcal')}</dd></div><div><dt>Sodium</dt><dd>{nutrient(recipe.sodium, 'mg')}</dd></div><div><dt>Protein</dt><dd>{nutrient(recipe.protein, 'g')}</dd></div></dl>
-        <div className="recipe-card-footer"><span>Per serving</span><button type="button" onClick={() => onChoose(originalRecipe(recipe))} aria-label={`Add ${recipe.name}`}><Plus size={16} /> Add to meal</button></div>
+        <div className="recipe-card-footer"><span>Per serving</span><button type="button" onClick={() => onChoose(originalRecipe(recipe))} aria-label={`Add ${recipe.name}`}><Plus size={16} /> Log a portion</button></div>
       </article>)}</div> : <div className="recipe-table-wrap">
         <table className="recipe-table">
           <thead><tr><th>Recipe</th><th>Category</th><th>Calories</th><th>Protein</th><th>Sodium</th><th>Potassium</th><th><span className="sr-only">Action</span></th></tr></thead>

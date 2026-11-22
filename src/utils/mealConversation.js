@@ -1,5 +1,5 @@
-export const MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
-export function dueMeals(hour = new Date().getHours()) {return hour < 11 ? ['Breakfast'] : hour < 17 ? ['Breakfast', 'Lunch'] : MEALS;}
+export const MEALS = ['Breakfast', 'Brunch', 'Lunch', 'Dinner', 'Snack'];
+export function dueMeals(hour = new Date().getHours()) {return hour < 11 ? ['Breakfast'] : hour < 17 ? ['Breakfast', 'Lunch'] : ['Breakfast', 'Lunch', 'Dinner', 'Snack'];}
 export function nextMeal(entries, reviews = {}, date, hour = new Date().getHours()) {
   const due = dueMeals(hour);
   return due.find(meal => !reviews[meal] && !entries.some(e => e.date === date && e.meal === meal)) || 'Snack';

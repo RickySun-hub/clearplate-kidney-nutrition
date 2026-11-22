@@ -74,38 +74,59 @@ test("an upper-compatible plan may transparently leave a protein gap", () => {
   assert.match(result.plans[0].reason, /remains to reach/);
 });
 
-test("when every nonzero option exceeds an upper limit, plans are labeled over-limit", () => {
-  const recipes = [recipe("only", { calories: 200, protein: 4, sodium: 10 })];
+test("no fitting option returns no recommendations instead of an over-limit fallback", () => {
   const result = optimizeRemainingDay({
-    recipes,
-    detailsById: details(recipes),
+    recipes: [recipe("only", { calories: 200, protein: 4, sodium: 10 })],
     loggedTotals: { calories: 1000, protein: 70, sodium: 1999, potassium: 0, phosphorus: 0 },
     targets: baseTargets,
     selectedMeals: ["Snack"],
   });
-  assert.equal(result.status, "over-limit");
-  assert.equal(result.plans[0].withinUpperLimits, false);
-  assert.ok(result.plans[0].violations.some((item) => item.nutrient === "protein"));
+  assert.equal(result.status, "empty");
+  assert.deepEqual(result.plans, []);
+  assert.match(result.message, /within.*remaining.*limits/i);
 });
 
-test("closest fallback minimizes upper-limit overage before trying to close the protein gap", () => {
-  const recipes = [
-    recipe("lower-overage", { calories: 100, protein: 1, sodium: 6 }),
-    recipe("higher-protein", { calories: 100, protein: 20, sodium: 40 }),
-  ];
-  const result = optimizeRemainingDay({
-    recipes,
-    detailsById: details(recipes),
-    loggedTotals: { protein: 0, sodium: 9 },
-    targets: { sodiumMax: 10, proteinMin: 20, proteinMax: 60 },
-    selectedMeals: ["Dinner"],
-    calorieReference: 100,
-    maxRecipes: 1,
-  });
+test("every enabled ceiling uses today's remaining budget for the whole plan", () => {
+  for (const [nutrient, limitKey] of [["sodium", "sodiumMax"], ["protein", "proteinMax"], ["potassium", "potassiumMax"], ["phosphorus", "phosphorusMax"]]) {
+    const recipes = ["a", "b", "c"].map(id => recipe(id, { calories: 300, protein: 2, sodium: 2, potassium: 2, phosphorus: 2, [nutrient]: 20 }));
+    const targets = { ...baseTargets, proteinMin: 0, [limitKey]: 100 };
+    const loggedTotals = { calories: 0, protein: 0, sodium: 0, potassium: 0, phosphorus: 0, [nutrient]: 80 };
+    const result = optimizeRemainingDay({ recipes, targets, loggedTotals, selectedMeals: ["Lunch", "Dinner"] });
+    assert.equal(result.status, "compatible", nutrient);
+    for (const plan of result.plans) {
+      assert.ok(plan.withinUpperLimits, nutrient);
+      assert.ok(loggedTotals[nutrient] + plan.totals[nutrient] <= targets[limitKey], nutrient);
+      assert.deepEqual(plan.violations, []);
+    }
+    // Each meal fits separately, but the two meals together cannot fit.
+    const noFit = optimizeRemainingDay({ recipes, targets, loggedTotals: { ...loggedTotals, [nutrient]: 85 }, selectedMeals: ["Lunch", "Dinner"] });
+    assert.equal(noFit.status, "empty", nutrient);
+    assert.deepEqual(noFit.plans, []);
+    const alreadyOver = optimizeRemainingDay({ recipes, targets, loggedTotals: { ...loggedTotals, [nutrient]: 101 }, selectedMeals: ["Lunch"] });
+    assert.deepEqual(alreadyOver.plans, [], nutrient);
+  }
+});
 
-  assert.equal(result.status, "over-limit");
-  assert.equal(result.plans[0].items[0].recipeId, "lower-overage");
-  assert.equal(result.plans[0].violations[0].unit, "mg");
+test("estimated intake uses the upper bound and does not recommend beyond it", () => {
+  const result = optimizeRemainingDay({
+    recipes: [recipe("only", { calories: 300, protein: 10, sodium: 40 })],
+    loggedTotals: { protein: 10, sodium: 80, upper: { protein: 10, sodium: 95 }, lower: { protein: 10 } },
+    targets: { ...baseTargets, sodiumMax: 100 },
+    selectedMeals: ["Lunch"],
+  });
+  assert.equal(result.status, "empty");
+  assert.deepEqual(result.plans, []);
+});
+
+test("sub-decimal nutrient amounts cannot be rounded down to pass a ceiling", () => {
+  const result = optimizeRemainingDay({
+    recipes: [recipe("only", { calories: 300, protein: 10, sodium: 20.08 })],
+    loggedTotals: { protein: 0, sodium: 89.97 },
+    targets: { ...baseTargets, sodiumMax: 100 },
+    selectedMeals: ["Lunch"],
+  });
+  assert.equal(result.status, "empty");
+  assert.deepEqual(result.plans, []);
 });
 
 test("invalid care-team targets fail closed", () => {

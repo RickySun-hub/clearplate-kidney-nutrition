@@ -22,3 +22,21 @@ test('relaxed search discloses differences and caps repeated lookups',async()=>{
  const result=await guide.run('search_foods',{query:'plain egg without salt'});assert.equal(result.relaxed,true);assert.equal(result.foods.length,1);assert.deepEqual(queries,['plain egg without salt','egg']);
  for(let i=0;i<10;i++)await guide.run('search_foods',{query:'missing'});assert.equal(queries.length,8);assert.match((await guide.run('search_foods',{query:'egg'})).instruction,/limit reached/);
 });
+
+test('voice retains source household amounts, unspecified candidate status and immutable nutrition snapshots',async()=>{
+ const source={...food,dataType:'Survey (FNDDS)',description:'Egg dish, NFS',portions:[{amount:2,gramWeight:100,description:'large eggs',sourcePortionId:'p'}]};
+ const guide=createFoodGuide({fetcher:async url=>({ok:true,json:async()=>url.includes('fdc-search')?{foods:[source]}:{food:source}})});
+ const search=await guide.run('search_foods',{query:'egg dish'});assert.equal(search.foods[0].matchType,'unspecified');
+ await guide.run('inspect_food',{fdc_id:1});
+ const match=await guide.run('match_food',{fdc_id:1,grams:null,portion_index:0,quantity:1.5});
+ const saved=guide.resolve(match.source_ref);assert.equal(saved.grams,150);assert.equal(saved.portionSelection.sourceAmount,2);assert.match(saved.servingDescription,/1.5 × 2 large eggs/);assert.equal(saved.sourceSnapshot.fdcId,1);
+ assert.equal(match.requires_match_confirmation,true);source.nutrients.calories=999;assert.equal(saved.sourceSnapshot.nutrients.calories,150);
+});
+
+test('voice recipe matching works for eaten cookbook food without requiring cooking steps',async()=>{
+ const guide=createFoodGuide({recipes:[recipe],details:{eggs:{servingSize:'half the recipe',ingredients:['2 eggs','1 tomato']}}});
+ assert.equal((await guide.run('recipe_portion',{recipe_id:'eggs',servings:1,eaten:true,modified:false})).status,'needs_clarification');
+ await guide.run('find_recipes',{query:'tomato'});
+ const result=await guide.run('recipe_portion',{recipe_id:'eggs',servings:0.5,eaten:true,modified:false});
+ const source=guide.resolve(result.source_ref);assert.equal(source.calories,100);assert.equal(source.recipeSnapshot.id,'eggs');assert.equal(source.recipeSnapshot.nutrients.calories,200);
+});

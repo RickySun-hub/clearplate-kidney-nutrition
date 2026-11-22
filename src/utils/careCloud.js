@@ -1,4 +1,6 @@
 import { validConversation, MEALS } from './mealConversation.js';
+import { validateFluidRecords } from './fluids.js';
+import { validateActivitySurvey } from './activitySurvey.js';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const isAccountId = (value) => typeof value === 'string' && UUID.test(value.trim());
 import { NUTRIENT_KEYS, validNutrientValue } from './nutrientCatalog.js';
@@ -8,6 +10,8 @@ const nutrientFields = (value) => NUTRIENT_KEYS.every((key) => value[key] == nul
 const profileValid = (profile) => object(profile)
   && textFields(profile, ['name', 'condition', 'stage', 'treatment', 'reviewedAt'])
   && ['weightKg', 'heightCm', 'sodiumTargetMg', 'proteinMinG', 'proteinMaxG'].every((key) => profile[key] == null || validNutrientValue(profile[key]))
+  && (profile.fluidTargetMl == null || (validNutrientValue(profile.fluidTargetMl) && Number(profile.fluidTargetMl) > 0))
+  && !validateActivitySurvey(profile.activitySurvey)
   && (profile.trackedNutrients === undefined || (Array.isArray(profile.trackedNutrients) && profile.trackedNutrients.every((key) => NUTRIENT_KEYS.includes(key))))
   && (profile.nutrientTargets === undefined || (object(profile.nutrientTargets) && Object.entries(profile.nutrientTargets).every(([key, target]) => NUTRIENT_KEYS.includes(key) && object(target) && ['min','max'].every((bound) => target[bound] == null || validNutrientValue(target[bound])))));
 const validDate = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
@@ -27,6 +31,7 @@ export function validateCareRecord(value) {
     }
   }
   for (const [date, day] of Object.entries(value.dayRecords)) {
+    if (!validateFluidRecords(day?.fluids)) invalid();
     if (day?.mealReviews !== undefined && (!object(day.mealReviews) || Object.entries(day.mealReviews).some(([meal,r])=> !MEALS.includes(meal) || !object(r) || !['reviewed','not-eaten'].includes(r.status) || !validConversation(r.conversation) || typeof r.reviewedAt !== 'string' || !Number.isFinite(Date.parse(r.reviewedAt))))) invalid();
     if (!validDate(date) || (day !== null && (!object(day) || !textFields(day, ['completedAt','signature']) || (day.profile !== undefined && !profileValid(day.profile))))) invalid();
   }
@@ -50,57 +55,114 @@ export function createCareCloud(config, fetcher = fetch) {
   let session = null;
   let disposed = false;
   let generation = 0;
+  let googleStarting = false;
+  let restoring = null;
+  const storageKey = `nepholio-auth:${base.hostname}`;
+  let persistedSnapshot;
+  const storedSnapshot = () => { try { return globalThis.localStorage ? globalThis.localStorage.getItem(storageKey) : undefined; } catch { return undefined; } };
+  function syncPersistedSession() {
+    const stored = storedSnapshot();
+    if (session?.verified && persistedSnapshot !== undefined && stored !== undefined && stored !== persistedSnapshot) { generation++; session = null; persistedSnapshot = undefined; }
+  }
+  const readStored = () => { try { return JSON.parse(globalThis.localStorage?.getItem(storageKey) || 'null'); } catch { return null; } };
+  const clearStored = () => { try { globalThis.localStorage?.removeItem(storageKey); } catch {} };
+  function persistSession() { try { if (session?.verified) { globalThis.localStorage?.setItem(storageKey, JSON.stringify({token:session.token,refreshToken:session.refreshToken,expiresAt:session.expiresAt})); persistedSnapshot = storedSnapshot(); } } catch {} }
+  async function restoreSession() {
+    if (disposed) return null;
+    syncPersistedSession();
+    if (session?.verified && session.expiresAt > Date.now()+60000) return account();
+    if (restoring) return restoring;
+    const authGeneration = generation;
+    const run = async () => {
+      if (disposed || generation !== authGeneration) return null;
+      const restoreSnapshot = storedSnapshot();
+      const stored = readStored() || session;
+      if (!stored || typeof stored.token !== 'string' || !Number.isFinite(stored.expiresAt)) return null;
+      let result;
+      if (stored.expiresAt > Date.now()+60000) result = {access_token:stored.token,refresh_token:stored.refreshToken,expires_in:(stored.expiresAt-Date.now())/1000};
+      else if (typeof stored.refreshToken === 'string' && stored.refreshToken) {
+        result = await request('/auth/v1/token?grant_type=refresh_token', {method:'POST',authenticated:false,body:{refresh_token:stored.refreshToken}});
+      } else { clearStored(); session=null; return null; }
+      return acceptSession(result,authGeneration,restoreSnapshot);
+    };
+    const locks = globalThis.navigator?.locks;
+    restoring = (locks ? locks.request(storageKey,run) : run()).finally(()=>{restoring=null;});
+    return restoring;
+  }
   async function request(path, { method = 'GET', body, prefer, authenticated = true } = {}) {
     if (disposed) throw new Error('Cloud connection was closed.');
+    syncPersistedSession();
     const requestGeneration = generation;
-    if (authenticated && (!session || session.expiresAt <= Date.now())) { session = null; throw new Error('Please sign in again.'); }
+    if (authenticated && session?.expiresAt <= Date.now()) await restoreSession();
+    if (authenticated && (!session || session.expiresAt <= Date.now())) throw new Error('Please sign in again.');
     const headers = { apikey: key, 'Content-Type': 'application/json' };
     if (authenticated) headers.Authorization = `Bearer ${session.token}`;
     if (prefer) headers.Prefer = prefer;
     let response;
     try { response = await fetcher(`${origin}${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), cache: 'no-store', credentials: 'omit',signal:AbortSignal.timeout(20000) }); }
     catch { throw new Error('Cloud connection failed. Please try again.'); }
+    syncPersistedSession();
     if (disposed) throw new Error('Cloud connection was closed.');
     if (generation !== requestGeneration) throw new Error('Account changed. Please retry.');
     if (!response.ok) {
       let problem = {}; try { problem = await response.json(); } catch {}
+      syncPersistedSession();
       // Reading the error body is asynchronous too; it may belong to a prior account.
       if (disposed) throw new Error('Cloud connection was closed.');
       if (generation !== requestGeneration) throw new Error('Account changed. Please retry.');
       if (!authenticated && problem.code === 'email_not_confirmed') throw new Error('Confirm your email before signing in. Open the confirmation message, then return here.');
-      if (!authenticated && problem.code === 'invalid_credentials') throw new Error('Email or password is incorrect. New here? Choose Create account first.');
-      if (!authenticated && ['email_address_not_authorized','over_email_send_rate_limit'].includes(problem.code)) throw new Error('Confirmation email could not be sent. The email service needs configuration or has reached its sending limit.');
-      if (response.status === 401) { session = null; throw new Error('Please sign in again. Check your email and password.'); }
+      if (!authenticated && problem.code === 'invalid_credentials') throw Object.assign(new Error('Email or password is incorrect. New here? Choose Create account first.'), { code: 'invalid_credentials' });
+      if (!authenticated && problem.code === 'email_address_not_authorized') throw new Error('The email service cannot send to this address yet. Please contact Nepholio support or use Google sign-in.');
+      if (!authenticated && problem.code === 'over_email_send_rate_limit') throw new Error('The email sending limit was reached. Wait before requesting another message. If this continues, contact Nepholio support.');
+      if ((path.includes('grant_type=refresh_token') && [400,401,403].includes(response.status)) || (authenticated && response.status === 401)) { clearStored(); session = null; throw new Error('Please sign in again. Check your email and password.'); }
       if (!authenticated && problem.code === 'otp_expired') throw new Error('This code is invalid or expired. Please request a new code.');
       if (response.status === 429) throw new Error('Too many requests. Please wait and try again.');
+      if (path === '/rest/v1/rpc/rd_access_action' && problem.code === 'PGRST202') throw new Error('Dietitian access is not available yet. The service needs to be set up by the Nepholio administrator. Your account has not been rejected.');
       throw new Error(authenticated ? 'Cloud action could not be completed. Check account access and try again.' : 'Account action failed. Check your email, password and confirmation email.');
     }
     if (response.status === 204) return null;
     const text = await response.text();
+    syncPersistedSession();
     if (disposed) throw new Error('Cloud connection was closed.');
     if (generation !== requestGeneration) throw new Error('Account changed. Please retry.');
     try { return text ? JSON.parse(text) : null; } catch { throw new Error('Cloud returned an unexpected response.'); }
   }
-  const account = () => session?.verified ? { id: session.user.id, email: session.user.email, ...(session.user.phone ? {phone:session.user.phone} : {}) } : null;
-  async function acceptSession(result, authGeneration) {
+  const account = () => { syncPersistedSession(); return session?.verified ? { id: session.user.id, email: session.user.email, ...(session.user.phone ? {phone:session.user.phone} : {}) } : null; };
+  async function acceptSession(result, authGeneration, restoreSnapshot) {
+    if (disposed || generation !== authGeneration) throw new Error('Account changed. Please retry.');
+    const checkRestoration = () => { if (restoreSnapshot !== undefined && storedSnapshot() !== restoreSnapshot) { generation++; session = null; throw new Error('Account changed. Please sign in again.'); } };
+    checkRestoration();
     if (!result?.access_token) return null;
-    session = { token: result.access_token, expiresAt: Date.now() + Math.min(Number(result.expires_in) || 3600, 3600) * 1000 };
+    session = { token: result.access_token, refreshToken: result.refresh_token, expiresAt: Date.now() + Math.min(Number(result.expires_in) || 3600, 3600) * 1000 };
     try {
       const user = await request('/auth/v1/user');
       if (!isAccountId(user?.id)) throw new Error('Account response could not be verified.');
       if (generation !== authGeneration) throw new Error('Account changed. Please retry.');
+      checkRestoration();
       session.user = { id: user.id, email: typeof user.email === 'string' ? user.email : undefined, phone: typeof user.phone === 'string' ? user.phone : undefined }; session.verified = true;
+      persistSession();
       return account();
     } catch (error) { if (generation === authGeneration) session = null; throw error; }
   }
   async function authenticate(email, password, signup) {
     session = null;
     const authGeneration = ++generation;
-    const result = await request(signup ? '/auth/v1/signup' : '/auth/v1/token?grant_type=password', { method: 'POST', authenticated: false, body: { email: email.trim(), password } });
+    const result = await request(signup ? '/auth/v1/signup?redirect_to=https%3A%2F%2Fnepholio.com%2F%23signin' : '/auth/v1/token?grant_type=password', { method: 'POST', authenticated: false, body: { email: email.trim(), password } });
     return acceptSession(result, authGeneration);
   }
   return {
     account,
+    restoreSession,
+    storageKey,
+    forgetSession: () => { generation++; session = null; },
+    async foodReview(action, payload = {}) {
+      if (!['status', 'search', 'list', 'submit', 'approve', 'needs-info', 'reject', 'merge'].includes(action)) throw new Error('Invalid food review action.');
+      return request('/rest/v1/rpc/food_review_action', { method: 'POST', body: { action, payload } });
+    },
+    async rdAccess(action='status', payload={}) {
+      if (!['status','submit','list','audit','decide','invite','invitations','cancel_invite','accept_invite'].includes(action)) throw new Error('Invalid RD access action.');
+      return request('/rest/v1/rpc/rd_access_action',{method:'POST',body:{action,payload}});
+    },
     async invitations(action='list',payload={}) {
       if(!['list','create','get','accept','decline','cancel'].includes(action))throw new Error('Invalid invitation action.');
       try{return await request('/rest/v1/rpc/care_invitation_action',{method:'POST',body:{action,payload}});}
@@ -139,15 +201,22 @@ export function createCareCloud(config, fetcher = fetch) {
       return settings?.external?.google === true;
     },
     async signInWithGoogle(browser = window) {
+      if (googleStarting) return;
+      googleStarting = true;
+      const authGeneration = generation;
+      try {
       if (!await this.googleAvailable()) throw new Error('Google sign-in is being set up. Please use email for now.');
       const verifier = Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
       const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
       const challenge = btoa(String.fromCharCode(...digest)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
       const redirect = new URL('/', browser.location.href);
-      browser.sessionStorage.setItem('clearplate-google-pkce', JSON.stringify({ verifier, createdAt: Date.now(), origin: redirect.origin }));
+      if (disposed) throw new Error('Cloud connection was closed.');
+      if (authGeneration !== generation) throw new Error('Account changed. Please retry.');
+      browser.sessionStorage.setItem('clearplate-google-pkce', JSON.stringify({ verifier, createdAt: Date.now(), origin: redirect.origin, returnHash: new URL(browser.location.href).hash }));
       const url = new URL('/auth/v1/authorize', origin);
       url.search = new URLSearchParams({ provider: 'google', redirect_to: redirect.href, code_challenge: challenge, code_challenge_method: 's256', prompt: 'select_account' }).toString();
       browser.location.assign(url.href);
+      } finally { googleStarting = false; }
     },
     async finishGoogleSignIn(browser = window) {
       const url = new URL(browser.location.href);
@@ -155,11 +224,15 @@ export function createCareCloud(config, fetcher = fetch) {
       const code = url.searchParams.get('code');
       const denied = url.searchParams.has('error');
       for (const name of ['code', 'error', 'error_code', 'error_description']) url.searchParams.delete(name);
-      browser.history.replaceState(null, '', url.pathname + url.search);
       let pending;
       try { pending = JSON.parse(browser.sessionStorage.getItem('clearplate-google-pkce')); } catch {}
       browser.sessionStorage.removeItem('clearplate-google-pkce');
+      // Restore only a local hash; never navigate to an origin supplied by callback parameters.
+      const returnHash = pending?.origin === url.origin && typeof pending.returnHash === 'string' && /^#(?:rd-signin|care-invite\/[0-9a-f-]{36})$/i.test(pending.returnHash) ? pending.returnHash : url.hash;
+      browser.history.replaceState(null, '', url.pathname + url.search + returnHash);
+      if (returnHash !== url.hash) browser.dispatchEvent?.(new Event('hashchange'));
       if (denied) throw new Error('Google sign-in was not completed. Please try again or use email.');
+      if (!pending || pending.origin !== url.origin) throw new Error('Google sign-in state is missing on this website. Start Google sign-in again in this tab on the same website where you began. If this repeats, the sign-in redirect configuration needs review.');
       if (!pending || !/^[a-f0-9]{64}$/.test(pending.verifier) || pending.origin !== url.origin || !Number.isFinite(pending.createdAt) || Date.now() - pending.createdAt > 600000 || pending.createdAt > Date.now()) throw new Error('This sign-in link has expired. Start Google sign-in again in this tab.');
       session = null;
       const authGeneration = ++generation;
@@ -168,17 +241,26 @@ export function createCareCloud(config, fetcher = fetch) {
       if (!user) throw new Error('Google sign-in could not be completed. Please try again.');
       return user;
     },
-    accessToken: () => session?.verified && session.expiresAt > Date.now() ? session.token : null,
-    clearSession: () => { generation++; session = null; },
+    accessToken: () => { syncPersistedSession(); return session?.verified && session.expiresAt > Date.now() ? session.token : null; },
+    clearSession: () => { generation++; session = null; clearStored(); },
     dispose: () => { generation++; disposed = true; session = null; },
     signIn: (email, password) => authenticate(email, password, false),
     signUp: (email, password) => authenticate(email, password, true),
+    async signInOrSignUp(email, password) {
+      // Authenticate existing users before requesting any registration email.
+      // Only invalid credentials permit signup; outages and rate limits do not.
+      try { return await authenticate(email, password, false); }
+      catch (error) {
+        if (error.code !== 'invalid_credentials') throw error;
+      }
+      return authenticate(email, password, true);
+    },
     async signOut() {
       const token = session?.token;
-      generation++; session = null;
+      generation++; session = null; clearStored();
       if (!token || disposed) return;
       let response;
-      try { response = await fetcher(`${origin}/auth/v1/logout`, { method: 'POST', headers: { apikey: key, Authorization: `Bearer ${token}` }, cache: 'no-store', credentials: 'omit' }); }
+      try { response = await fetcher(`${origin}/auth/v1/logout?scope=local`, { method: 'POST', headers: { apikey: key, Authorization: `Bearer ${token}` }, cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(20000) }); }
       catch { throw new Error('Signed out on this device. Cloud logout could not be confirmed.'); }
       if (!response.ok) throw new Error('Signed out on this device. Cloud logout could not be confirmed.');
     },

@@ -1,45 +1,11 @@
 import { Check, CircleAlert, Drumstick } from "lucide-react";
-import { formatAmount } from "../utils/nutrition";
+import { formatAmount, nutrientProgressState } from "../utils/nutrition";
 
-export default function NutrientProgress({ type, value, target, range, complete = false, estimated = false }) {
+export default function NutrientProgress({ type, value, coverage, target, range, complete = false, estimated = false, empty = false }) {
   const isSodium = type === "sodium";
-  const numericValue = value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value)) ? Number(value) : null;
-  const hasValidTarget = isSodium
-    ? Number.isFinite(Number(target)) && Number(target) > 0
-    : Number.isFinite(Number(range?.min)) && Number(range.min) > 0
-      && Number.isFinite(Number(range?.max)) && Number(range.max) >= Number(range.min);
-  const maximum = hasValidTarget ? Number(isSodium ? target : range.max) : null;
-  const ratio = maximum > 0 && numericValue !== null ? Math.max(0, Math.min((numericValue / maximum) * 100, 100)) : 0;
-  let status = isSodium ? "Below saved limit" : "Within saved range";
-  let tone = "good";
-
-  if (!hasValidTarget) {
-    status = "Targets need review";
-    tone = "warning";
-  } else if (isSodium) {
-    if (numericValue > target) {
-      status = "Over target";
-      tone = "danger";
-    } else if (numericValue > target * 0.8) {
-      status = "Near limit";
-      tone = "warning";
-    }
-  } else if (numericValue > range.max) {
-    status = "Over range";
-    tone = "danger";
-  } else if (numericValue < range.min) {
-    status = "Below range";
-    tone = "warning";
-  }
-
-  if (hasValidTarget && !complete && tone !== "danger") {
-    status = "Recording in progress";
-    tone = "neutral";
-  }
-  if (numericValue === null) {
-    status = "Incomplete nutrient data";
-    tone = "neutral";
-  }
+  const { numericValue, hasValidTarget, maximum, ratio, status, tone, partial } = nutrientProgressState({
+    type, value, coverage, target, range, complete, empty,
+  });
 
   const Icon = isSodium ? SaltShaker : Drumstick;
   const StatusIcon = tone === "good" ? Check : CircleAlert;
@@ -54,20 +20,21 @@ export default function NutrientProgress({ type, value, target, range, complete 
         <div className="nutrient-heading">
           <strong>{isSodium ? "Sodium" : "Protein"}</strong>
           <span className="nutrient-current">
-            {formatAmount(numericValue, 1)}
+            {empty ? '—' : formatAmount(numericValue, 1)}
             <small>
-              {isSodium
+              {!hasValidTarget ? ` ${unit}` : isSodium
                 ? ` / ${formatAmount(target)} ${unit}`
                 : ` / ${formatAmount(range.min)}–${formatAmount(range.max)} ${unit}`}
             </small>
+            {partial && <small> · known subtotal</small>}
           </span>
         </div>
-        <div
+        {hasValidTarget && numericValue !== null && <div
           className="progress-track"
           role="progressbar"
           aria-label={isSodium ? "Recorded sodium relative to upper limit" : "Recorded protein relative to target range"}
           aria-valuenow={maximum === null || numericValue === null ? undefined : Math.min(maximum, Math.max(0, Math.round(numericValue)))}
-          aria-valuetext={`${formatAmount(numericValue, 1)} ${unit} recorded; ${status}${estimated ? "; includes estimates" : ""}`}
+          aria-valuetext={`${formatAmount(numericValue, 1)} ${unit} ${partial ? 'known subtotal' : 'recorded'}; ${status}${estimated ? "; includes estimates" : ""}`}
           aria-valuemin="0"
           aria-valuemax={maximum ?? undefined}
         >
@@ -75,16 +42,16 @@ export default function NutrientProgress({ type, value, target, range, complete 
           {!isSodium && hasValidTarget && (
             <i className="range-marker" style={{ left: `${(range.min / range.max) * 100}%` }} />
           )}
-        </div>
-        <div className="progress-labels">
+        </div>}
+        {hasValidTarget && numericValue !== null && <div className="progress-labels">
           <span>0 {unit}</span>
           <span>{isSodium ? `${formatAmount(target / 2)} ${unit}` : `${formatAmount(range.min)} ${unit} min`}</span>
           <span>{formatAmount(maximum)} {unit}{isSodium ? " upper limit" : ""}</span>
-        </div>
+        </div>}
       </div>
       <div className="nutrient-status">
         <StatusIcon size={22} strokeWidth={1.8} aria-hidden="true" />
-        <span>{status}{estimated && <small>Includes estimates</small>}</span>
+        <span>{status}{partial && <small>{coverage.knownCount}/{coverage.itemCount} items have data</small>}{estimated && <small>Includes estimates</small>}</span>
       </div>
     </section>
   );

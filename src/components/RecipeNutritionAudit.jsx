@@ -4,7 +4,7 @@ import RecipeAuditEditor from './RecipeAuditEditor';
 import { auditNutrients, auditUnits } from '../utils/recipeAudit';
 import { formatAmount } from '../utils/nutrition';
 
-const nutrientNames = { calories: 'Energy', protein: 'Protein', sodium: 'Sodium', potassium: 'Potassium', phosphorus: 'Phosphorus', carbs: 'Carbohydrate', fat: 'Fat', fiber: 'Fiber', calcium: 'Calcium' };
+const nutrientNames = { calories: 'Energy', protein: 'Protein', sodium: 'Sodium', potassium: 'Potassium', phosphorus: 'Phosphorus', carbs: 'Carbohydrate', fat: 'Fat', fiber: 'Dietary fiber', calcium: 'Calcium' };
 const known = (value) => typeof value === 'number' && Number.isFinite(value) && value >= 0;
 
 export function formatAuditGrams(ingredient, factor = 1) {

@@ -8,7 +8,11 @@ test('patient deep links accept only actual primary pages and never RD/auth rout
 });
 test('navigation preserves query parameters, replaces login location and avoids duplicate history',()=>{
  const calls=[];const browser={location:{hash:'#signin',pathname:'/',search:'?test=1'},history:{pushState:(_,__,url)=>calls.push(['push',url]),replaceState:(_,__,url)=>calls.push(['replace',url])}};
- writePatientPage('history',browser,true);writePatientPage('planner',browser);
- assert.deepEqual(calls,[['replace','/?test=1#patient/history'],['push','/?test=1#patient/planner']]);
- browser.location.hash='#patient/planner';assert.equal(writePatientPage('planner',browser),false);assert.equal(calls.length,2);
+ writePatientPage('history',browser,true);writePatientPage('today',browser);
+ assert.deepEqual(calls,[['replace','/?test=1#patient/history'],['push','/?test=1#patient/today']]);
+ browser.location.hash='#patient/today';assert.equal(writePatientPage('today',browser),false);assert.equal(calls.length,2);
+});
+test('retired Plan links resolve to Today without exposing a Plan page',()=>{
+ assert.equal(patientPageFromHash('#patient/planner'),'today');
+ assert.throws(()=>patientPageHash('planner'));
 });

@@ -8,8 +8,8 @@ import { recordingToWav } from '../utils/voiceAudio';
 import { transcriptAfterInterpretation } from '../utils/voiceTranscript.js';
 import { createUsdaSelection, portionDescription } from '../utils/usdaSelection.js';
 const emptyNutrients = { calories: '', protein: '', sodium: '', potassium: '', phosphorus: '' };
-export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profile = {}, recipe = null, details = null, accessToken = null, autoStart = false, entries = [], date, mealReviews = {}, onReviewMeal, onSignIn, onClose, onSaveMeal, onAddFood }) {
-  const [mode,setMode]=useState('choose');
+export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profile = {}, recipe = null, details = null, accessToken = null, autoStart = false, fullScreen = false, logOnly = false, entries = [], date, mealReviews = {}, onReviewMeal, onSignIn, onClose, onSaveMeal, onAddFood }) {
+  const [mode,setMode]=useState(logOnly ? 'log' : 'choose');
   const [meal, setMeal] = useState(() => nextMeal(entries, mealReviews, date));
   const [conversation, setConversation] = useState([]);
   const [reply, setReply] = useState(() => mealQuestion(nextMeal(entries, mealReviews, date)));
@@ -61,7 +61,7 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
   const foodSelection = useRef(null);
   if (!foodSelection.current) foodSelection.current = createUsdaSelection({
     onStart: () => { setUsdaFood(null); setGrams(''); setSearching(true); setMessage('Loading USDA food details…'); },
-    onFood: data => { setUsdaFood(data.food); setUsdaSource(data.provenance?.live ? 'USDA live food data' : 'USDA public-download snapshot'); setMessage('Confirm the source portion or measured grams before saving.'); },
+    onFood: data => { setUsdaFood(data.food); setUsdaSource(data.provenance?.live === true ? 'USDA live food data' : data.provenance?.live === false ? 'USDA public-download snapshot' : 'USDA food data · source mode not supplied'); setMessage('Confirm the source portion or measured grams before saving.'); },
     onError: setMessage,
     onEnd: () => setSearching(false),
   });
@@ -77,7 +77,7 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
       if (!response.ok) throw new Error(data.error?.message || 'USDA search unavailable.');
       if (!alive.current || generation.current !== sessionGeneration || searchVersion.current !== version) return;
       setCandidates((data.foods || []).filter(food => food.basis === 'per100g'));
-      setUsdaSource(data.provenance?.live ? 'USDA live food data' : 'USDA public-download snapshot');
+      setUsdaSource(data.provenance?.live === true ? 'USDA live food data' : data.provenance?.live === false ? 'USDA public-download snapshot' : 'USDA food data · source mode not supplied');
       setMessage(data.foods?.length ? 'Select the closest USDA match, confirm its portion weight, then save.' : 'No USDA match. Try a simpler food name or use label values.');
     } catch(error) { if (alive.current && generation.current === sessionGeneration && searchVersion.current === version) setMessage(error.message || 'USDA search unavailable. Use label values instead.'); }
     finally { if (alive.current && generation.current === sessionGeneration && searchVersion.current === version) setSearching(false); }
@@ -216,8 +216,8 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
     finally { saving.current = false; setPending(false); }
   }
   return <section className="voice-assistant" aria-label="Voice and typed assistant">
-    <header className="voice-heading">{onClose && <button className="voice-close" type="button" aria-label="Close voice assistant" onClick={onClose}><X size={24}/></button>}<h2>{mode==='cook'?'Let’s find something to cook.':mode==='log'?'What did you eat?':'How can I help with your meal?'}</h2><p>Talk naturally. I’ll help with the details.</p>{!accessToken && <button className="voice-sign-in" type="button" onClick={onSignIn}>Sign in or create an account</button>}</header>
-    {!recipe && <div className="voice-intents" aria-label="Choose how to use the assistant">
+    <header className="voice-heading" hidden={fullScreen}>{onClose && <button className="voice-close" type="button" aria-label="Close voice assistant" onClick={onClose}><X size={24}/></button>}<h2>{mode==='cook'?'Let’s find something to cook.':mode==='log'?'What did you eat?':'How can I help with your meal?'}</h2><p>Talk naturally. I’ll help with the details.</p>{!accessToken && <button className="voice-sign-in" type="button" onClick={onSignIn}>Sign in or create an account</button>}</header>
+    {!recipe && !logOnly && <div className="voice-intents" aria-label="Choose how to use the assistant">
       <button type="button" aria-pressed={mode==='log'} disabled={pending} onClick={()=>{setMode('log');if(!liveBusy)setLiveVersion(v=>v+1);}}><Utensils size={26}/><span><strong>Log what I ate</strong><small>Any meal, from anywhere</small></span></button>
       <button type="button" aria-pressed={mode==='cook'} disabled={pending} onClick={()=>{setMode('cook');if(!liveBusy)setLiveVersion(v=>v+1);}}><BookOpen size={26}/><span><strong>Find something to cook</strong><small>Ideas using what you have</small></span></button>
     </div>}
@@ -227,8 +227,9 @@ export default function VoiceAssistant({ recipes = [], recipeDetails = {}, profi
       {!!conversation.length && <details><summary>Conversation for this food</summary>{conversation.map((t,i)=><p key={i}><strong>{t.role==='user'?'You':'Nepholio'}:</strong> {t.content}</p>)}</details>}
       <div className="voice-actions"><button type="button" disabled={pending || recording || liveBusy || !!draft} onClick={()=>finishMeal('reviewed')}>Meal finished</button><button type="button" disabled={pending || recording || liveBusy || !!draft || entries.some(e=>e.date===date && e.meal===meal)} onClick={()=>finishMeal('not-eaten')}>I did not eat this meal</button><button type="button" disabled={pending || recording || liveBusy} onClick={()=>chooseMeal(MEALS[(MEALS.indexOf(meal)+1)%MEALS.length])}>Skip for now</button></div>
     </div>}
-    {!liveBusy && (!available || typing || draft) && <p className="voice-status" role="status">{message}</p>}
-    {!recipe && available && <LiveVoice key={`${meal}-${liveVersion}`} accessToken={accessToken} meal={meal} mode={mode} recipes={recipes} recipeDetails={recipeDetails} entries={entries} date={date} profile={profile} conversation={conversation} disabled={pending} autoStart={(autoStart && liveVersion===0)||mode!=='choose'} onSaveMeal={onSaveMeal} onBusy={setLiveBusy} onReview={turns=>{setMode('choose');setTyping(true);setConversation(turns);setLiveVersion(v=>v+1);interpret({transcript:"Prepare a draft of the first food described in the conversation. Keep other foods in the transcript for separate review; do not combine foods. Do not invent missing details."},turns);}} />}
+    {!liveBusy && ((!available && !fullScreen) || typing || draft) && <p className="voice-status" role="status">{message}</p>}
+    {logOnly && !available && !fullScreen && <div className="voice-unavailable"><Mic size={36} aria-hidden="true" /><strong>Microphone is off</strong><span>Voice service is unavailable. You can type a description or close this panel and choose a food.</span></div>}
+    {!recipe && (available || fullScreen) && <LiveVoice immersive={fullScreen} key={`${meal}-${liveVersion}`} accessToken={accessToken} meal={meal} mode={mode} recipes={recipes} recipeDetails={recipeDetails} entries={entries} date={date} profile={profile} conversation={conversation} disabled={pending} autoStart={fullScreen ? autoStart && liveVersion===0 : !logOnly && ((autoStart && liveVersion===0)||mode!=='choose')} onSaveMeal={onSaveMeal} onBusy={setLiveBusy} onReview={turns=>{setMode(logOnly ? 'log' : 'choose');setTyping(true);setConversation(turns);setLiveVersion(v=>v+1);interpret({transcript:"Prepare a draft of the first food described in the conversation. Keep other foods in the transcript for separate review; do not combine foods. Do not invent missing details."},turns);}} />}
     <div hidden={!recipe} className={`voice-composer ${paused ? 'is-paused' : ''}`}>
       <button className="voice-mic" type="button" aria-label="Start microphone" disabled={!available || pending || recording} onClick={start}><Mic size={44} strokeWidth={1.8} /></button>
       <div className="voice-recording-label"><strong>{pending ? 'Please wait…' : recording ? paused ? 'Paused' : 'Listening…' : 'Tap to speak'}</strong><span>{recording ? `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, '0')}` : 'Up to 60 seconds'}</span></div>

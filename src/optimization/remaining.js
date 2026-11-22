@@ -1,15 +1,14 @@
-import { round } from "../utils/nutrition.js";
-
+// Keep calculation precision for hard ceilings; round only when displaying values.
 export const nutrientKeys = ["calories", "protein", "sodium", "potassium", "phosphorus"];
 
 export const emptyNutrition = () => Object.fromEntries(nutrientKeys.map((key) => [key, 0]));
 
 export function addNutrition(left = {}, right = {}) {
-  return Object.fromEntries(nutrientKeys.map((key) => [key, round((Number(left[key]) || 0) + (Number(right[key]) || 0), 1)]));
+  return Object.fromEntries(nutrientKeys.map((key) => [key, (Number(left[key]) || 0) + (Number(right[key]) || 0)]));
 }
 
 export function scaleNutrition(recipe, servings) {
-  return Object.fromEntries(nutrientKeys.map((key) => [key, round(Number(recipe[key]) * servings, 1)]));
+  return Object.fromEntries(nutrientKeys.map((key) => [key, Number(recipe[key]) * servings]));
 }
 
 export function calculateRemainingBudget(loggedTotals, targets) {
@@ -29,16 +28,16 @@ export function calculateRemainingBudget(loggedTotals, targets) {
     if (maximum === null) return null;
     const consumed = loggedValue(key, "upper");
     if (consumed === null || consumed === undefined || consumed === "" || !Number.isFinite(Number(consumed))) return null;
-    return round(maximum - Number(consumed), 1);
+    return maximum - Number(consumed);
   };
 
   return {
     calories: Number.isFinite(Number(targets.calorieTarget))
-      ? round(Number(targets.calorieTarget) - (Number(loggedTotals.calories) || 0), 1)
+      ? Number(targets.calorieTarget) - (Number(loggedTotals.calories) || 0)
       : null,
-    sodiumMax: round(sodiumMax - (Number(loggedTotals.upper?.sodium ?? loggedTotals.sodium) || 0), 1),
-    proteinMin: round(Math.max(0, proteinMin - (Number(loggedTotals.lower?.protein ?? loggedTotals.protein) || 0)), 1),
-    proteinMax: round(proteinMax - (Number(loggedTotals.upper?.protein ?? loggedTotals.protein) || 0), 1),
+    sodiumMax: sodiumMax - (Number(loggedTotals.upper?.sodium ?? loggedTotals.sodium) || 0),
+    proteinMin: Math.max(0, proteinMin - (Number(loggedTotals.lower?.protein ?? loggedTotals.protein) || 0)),
+    proteinMax: proteinMax - (Number(loggedTotals.upper?.protein ?? loggedTotals.protein) || 0),
     potassiumMax: remainingOptionalMaximum("potassium", potassiumMax),
     phosphorusMax: remainingOptionalMaximum("phosphorus", phosphorusMax),
   };
@@ -46,11 +45,11 @@ export function calculateRemainingBudget(loggedTotals, targets) {
 
 export function remainingAfterPlan(remainingBefore, planTotals) {
   return {
-    calories: remainingBefore.calories === null ? null : round(remainingBefore.calories - planTotals.calories, 1),
-    sodiumMax: round(remainingBefore.sodiumMax - planTotals.sodium, 1),
-    proteinMin: round(Math.max(0, remainingBefore.proteinMin - planTotals.protein), 1),
-    proteinMax: round(remainingBefore.proteinMax - planTotals.protein, 1),
-    potassiumMax: remainingBefore.potassiumMax === null ? null : round(remainingBefore.potassiumMax - planTotals.potassium, 1),
-    phosphorusMax: remainingBefore.phosphorusMax === null ? null : round(remainingBefore.phosphorusMax - planTotals.phosphorus, 1),
+    calories: remainingBefore.calories === null ? null : remainingBefore.calories - planTotals.calories,
+    sodiumMax: remainingBefore.sodiumMax - planTotals.sodium,
+    proteinMin: Math.max(0, remainingBefore.proteinMin - planTotals.protein),
+    proteinMax: remainingBefore.proteinMax - planTotals.protein,
+    potassiumMax: remainingBefore.potassiumMax === null ? null : remainingBefore.potassiumMax - planTotals.potassium,
+    phosphorusMax: remainingBefore.phosphorusMax === null ? null : remainingBefore.phosphorusMax - planTotals.phosphorus,
   };
 }

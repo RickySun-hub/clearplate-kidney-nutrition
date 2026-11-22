@@ -1,17 +1,19 @@
 import { Apple, Check, Coffee, MoonStar, Pencil, Plus, Sun } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
-import { mealSections, sortMealEntries } from "../utils/meals";
-import { formatAmount, mealTotals } from "../utils/nutrition";
+import { mealSections, sortMealEntries, mealLabel } from "../utils/meals";
+import { formatNutrientCoverage, nutrientCoverage } from "../utils/nutrition";
 import MealRow from "./MealRow";
 
 const mealIcons = {
   Breakfast: Coffee,
+  Brunch: Sun,
   Lunch: Sun,
   Snack: Apple,
   Dinner: MoonStar,
+  'Other meals': Apple,
 };
 
-export default function TodayMeals({ entries, recipesById, onAddMeal, onOpenRecipe, onRemove, onReorder }) {
+export default function TodayMeals({ entries, recipesById, onAddMeal, onOpenRecipe, onRemove, onReorder, onEdit }) {
   const [editMode, setEditMode] = useState(false);
   const [dragState, setDragState] = useState(null);
   const dragStateRef = useRef(null);
@@ -22,9 +24,10 @@ export default function TodayMeals({ entries, recipesById, onAddMeal, onOpenReci
     setDragState(nextState);
   };
 
-  const groups = useMemo(() => Object.fromEntries(mealSections.map(({ name }) => [
+  const sections = [...mealSections, { name: 'Other meals' }];
+  const groups = useMemo(() => Object.fromEntries([...mealSections, { name: 'Other meals' }].map(({ name }) => [
     name,
-    sortMealEntries(entries.filter((entry) => entry.meal === name)),
+    sortMealEntries(entries.filter((entry) => mealLabel(entry) === name)),
   ])), [entries]);
 
   const pointerTarget = (event) => {
@@ -94,28 +97,28 @@ export default function TodayMeals({ entries, recipesById, onAddMeal, onOpenReci
       </header>
 
       <div className="meal-groups">
-        {mealSections.map((section) => {
+        {sections.filter(section => groups[section.name].length || editMode && section.name !== 'Other meals').map((section) => {
           const groupEntries = groups[section.name];
-          const totals = mealTotals(groupEntries, recipesById);
+          const coverage = nutrientCoverage(groupEntries, recipesById);
           const Icon = mealIcons[section.name];
           return (
             <section
               className={`meal-group${dragState?.targetMeal === section.name ? " drop-target" : ""}`}
               key={section.name}
               aria-labelledby={`meal-group-${section.name}`}
-              data-meal-drop={section.name}
+              data-meal-drop={section.name === 'Other meals' ? undefined : section.name}
             >
               <header className="meal-group-header">
                 <div className="meal-group-title">
                   <span><Icon size={19} strokeWidth={1.8} /></span>
-                  <div><h3 id={`meal-group-${section.name}`}>{section.name}</h3><small>{section.time}</small></div>
+                  <div><h3 id={`meal-group-${section.name}`}>{section.name}</h3><small>{groupEntries.length} food{groupEntries.length === 1 ? '' : 's'} recorded</small></div>
                 </div>
-                <div className="meal-group-summary" aria-label={`${section.name} nutrition total`}>
-                  <span><strong>{formatAmount(totals.calories, 1)} kcal</strong></span>
-                  <span><strong>{formatAmount(totals.sodium, 1)} mg</strong> sodium</span>
-                  <span><strong>{formatAmount(totals.protein, 1)} g</strong> protein</span>
-                </div>
-                <button className="meal-group-add" type="button" onClick={() => onAddMeal(section.name)}><Plus size={16} /> Add</button>
+                {groupEntries.length > 0 && <div className="meal-group-summary" aria-label={`${section.name} recorded nutrition`}>
+                  <span><strong>{formatNutrientCoverage(coverage.calories, 'kcal')}</strong></span>
+                  <span><strong>{formatNutrientCoverage(coverage.sodium, 'mg')}</strong> sodium</span>
+                  <span><strong>{formatNutrientCoverage(coverage.protein, 'g')}</strong> protein</span>
+                </div>}
+                {section.name !== 'Other meals' && <button className="meal-group-add" type="button" onClick={() => onAddMeal(section.name)}><Plus size={16} /> Add</button>}
               </header>
 
               <div className="meal-group-list">
@@ -127,25 +130,24 @@ export default function TodayMeals({ entries, recipesById, onAddMeal, onOpenReci
                     editMode={editMode}
                     isDragging={draggedId === entry.id}
                     isDropTarget={dragState?.targetEntryId === entry.id}
-                    onOpenDetails={entry.source === "recipe" ? () => onOpenRecipe(entry) : null}
+                    onOpenDetails={entry.recipeId && recipesById[entry.recipeId] ? () => onOpenRecipe(entry) : null}
                     onRemove={onRemove}
+                    onEdit={onEdit}
                     onDragPointerDown={(event) => startDrag(event, entry.id)}
                     onDragPointerMove={updateDrag}
                     onDragPointerUp={finishDrag}
                     onDragPointerCancel={cancelDrag}
                   />
                 )) : (
-                  <button className="meal-group-empty" type="button" onClick={() => onAddMeal(section.name)}>
-                    <span>Nothing logged yet</span><small>Add {section.name.toLowerCase()}</small>
-                  </button>
+                  <p className="meal-empty-note">Not recorded yet</p>
                 )}
               </div>
             </section>
           );
         })}
       </div>
-
-      <button className="add-another" type="button" onClick={() => onAddMeal(null)}><span><Plus size={20} /></span> Add another meal</button>
+      {!entries.length && !editMode && <p className="meal-empty-note">Your meals will appear here. Start with what you ate today.</p>}
+      <button className="add-another" type="button" onClick={() => onAddMeal(null)}><span><Plus size={20} /></span> Record food</button>
     </section>
   );
 }

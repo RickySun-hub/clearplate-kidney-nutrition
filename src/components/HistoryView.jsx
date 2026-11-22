@@ -11,15 +11,23 @@ import {
   SunMedium,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { buildCalendarMonth, historyDayStatus, historyNutritionState } from "../utils/history";
-import { formatAmount, localDateKey, mealTotals } from "../utils/nutrition";
+import { buildCalendarMonth, historyDayStatus } from "../utils/history";
+import { formatAmount, formatNutrientCoverage, localDateKey, mealTotals, nutrientCoverage, nutrientDisplay, nutrientProgressState } from "../utils/nutrition";
+import { NUTRIENTS, normalizeNutrientPreferences } from '../utils/nutrientCatalog';
+import { mealSections, mealLabel } from '../utils/meals';
+import { ingredientAmount } from '../utils/recipeRecording';
 
+import { isEstimatedFoodEntry, reviewDays } from '../utils/rdReview';
 import { isDayComplete } from "../utils/recording";
+import FluidTracker from './FluidTracker';
+import { profileForDate } from '../utils/historicalProfile.js';
+import './nutrient-profile.css';
 
 const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const mealOrder = ["Breakfast", "Lunch", "Dinner", "Snack"];
+const mealOrder = [...mealSections.map(({name}) => name), 'Other meals'];
 const mealIcons = {
   Breakfast: Coffee,
+  Brunch: SunMedium,
   Lunch: SunMedium,
   Dinner: MoonStar,
   Snack: Apple,
@@ -68,8 +76,10 @@ function NutritionCard({ label, value, progress, status }) {
   );
 }
 
-export default function HistoryView({ entries, recipesById, profile: currentProfile, dayRecords = {} }) {
+export default function HistoryView({ entries, recipesById, profile: currentProfile, dayRecords = {}, onEdit, onSaveFluids }) {
   const today = localDateKey();
+  const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - 6);
+  const recentDays = reviewDays(entries, recipesById, currentProfile, dayRecords, localDateKey(weekStart), today);
   const latestLoggedDate = useMemo(
     () => entries.reduce((latest, entry) => (entry.date > latest ? entry.date : latest), ""),
     [entries],
@@ -78,7 +88,9 @@ export default function HistoryView({ entries, recipesById, profile: currentProf
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [visibleMonth, setVisibleMonth] = useState(() => monthStartFor(initialDate));
   const selectedComplete = isDayComplete(dayRecords, entries, selectedDate);
-  const profile = selectedComplete ? (dayRecords[selectedDate]?.profile || currentProfile) : currentProfile;
+  const profile = profileForDate(currentProfile, dayRecords, selectedDate, today);
+  const preferences = normalizeNutrientPreferences(profile);
+  const review = reviewDays(entries, recipesById, currentProfile, dayRecords, selectedDate, selectedDate)[0];
 
   const entriesByDate = useMemo(() => entries.reduce((byDate, entry) => {
     (byDate[entry.date] ??= []).push(entry);
@@ -87,15 +99,18 @@ export default function HistoryView({ entries, recipesById, profile: currentProf
 
   const dayReports = useMemo(() => Object.fromEntries(Object.entries(entriesByDate).map(([dateKey, items]) => {
     const totals = mealTotals(items, recipesById);
+    const coverage = nutrientCoverage(items, recipesById);
     const complete = isDayComplete(dayRecords, entries, dateKey);
-    const estimated = items.some((item) => item.customFood?.method === "unpackaged");
-    const targets = complete ? (dayRecords[dateKey]?.profile || currentProfile) : currentProfile;
+    const estimated = items.some(item => isEstimatedFoodEntry(item, recipesById));
+    const targets = profileForDate(currentProfile, dayRecords, dateKey, today);
+    const trackedComplete = normalizeNutrientPreferences(targets).trackedNutrients.every(key => coverage[key].complete);
     return [dateKey, {
       items,
       totals,
-      status: complete && !estimated ? historyDayStatus(totals, items.length, targets) : "review",
+      coverage,
+      status: complete && !estimated && trackedComplete ? historyDayStatus(totals, items.length, targets) : "review",
     }];
-  })), [entriesByDate, currentProfile, recipesById, dayRecords, entries]);
+  })), [entriesByDate, currentProfile, recipesById, dayRecords, entries, today]);
 
   const calendarCells = useMemo(
     () => buildCalendarMonth(visibleMonth.getFullYear(), visibleMonth.getMonth()),
@@ -104,11 +119,12 @@ export default function HistoryView({ entries, recipesById, profile: currentProf
   const selectedReport = dayReports[selectedDate] || {
     items: [],
     totals: mealTotals([], recipesById),
+    coverage: nutrientCoverage([], recipesById),
     status: "empty",
   };
   const selectedMeals = useMemo(() => mealOrder.map((meal) => {
-    const items = selectedReport.items.filter((entry) => entry.meal === meal);
-    return items.length ? { meal, items, totals: mealTotals(items, recipesById) } : null;
+    const items = selectedReport.items.filter((entry) => mealLabel(entry) === meal);
+    return items.length ? { meal, items, coverage: nutrientCoverage(items, recipesById) } : null;
   }).filter(Boolean), [recipesById, selectedReport.items]);
 
   const visibleReports = calendarCells
@@ -130,12 +146,11 @@ export default function HistoryView({ entries, recipesById, profile: currentProf
     setVisibleMonth(monthStartFor(today));
   };
 
-  const { sodiumProgress, proteinProgress, sodiumStatus, proteinStatus } = historyNutritionState(
-    selectedReport.totals, selectedReport.items.length, profile,
-  );
+  const sodiumState = nutrientProgressState({ type: 'sodium', coverage: selectedReport.coverage.sodium, target: profile.sodiumTargetMg, complete: selectedComplete });
+  const proteinState = nutrientProgressState({ type: 'protein', coverage: selectedReport.coverage.protein, range: { min: profile.proteinMinG, max: profile.proteinMaxG }, complete: selectedComplete });
 
   return (
-    <main className="history-page history-calendar-page">
+    <main className="history-page history-calendar-page readable-nutrition-history">
       <section className="history-calendar-panel" aria-labelledby="history-title">
         <header className="history-panel-heading">
           <h1 id="history-title">Food history</h1>
@@ -178,9 +193,10 @@ export default function HistoryView({ entries, recipesById, profile: currentProf
                 </span>
                 {report ? (
                   <span className="history-calendar-values">
-                    <small>{formatAmount(report.totals.calories, 0)} kcal</small>
-                    <small>{formatAmount(report.totals.sodium, 0)} mg</small>
-                    <small>{formatAmount(report.totals.protein, 1)} g</small>
+                    <small title={formatNutrientCoverage(report.coverage.calories, 'kcal', 0)}>{formatNutrientCoverage(report.coverage.calories, 'kcal', 0)}</small>
+                    <small title={formatNutrientCoverage(report.coverage.sodium, 'mg', 0)}>{formatNutrientCoverage(report.coverage.sodium, 'mg', 0)}</small>
+                    <small title={formatNutrientCoverage(report.coverage.protein, 'g', 1)}>{formatNutrientCoverage(report.coverage.protein, 'g', 1)}</small>
+                    {['calories', 'sodium', 'protein'].some(key => nutrientDisplay(report.coverage[key]).partial) && <small style={{ whiteSpace: 'normal' }}>Incomplete data</small>}
                   </span>
                 ) : (
                   <span className="history-calendar-values history-calendar-empty-values" aria-hidden="true"><small>—</small><small>—</small><small>—</small></span>
@@ -196,6 +212,7 @@ export default function HistoryView({ entries, recipesById, profile: currentProf
           <span><StatusIcon status="empty" size="legend" /> No foods logged</span>
         </div>
 
+        <details className="history-recent-trend"><summary>Last 7 days · recorded nutrition</summary><p>Missing days and unknown values are not zero. Unconfirmed days contain only part of the record. Subtotals include only foods with nutrient data.</p><table><thead><tr><th>Date</th><th>Sodium (mg)</th><th>Protein (g)</th><th>Record</th></tr></thead><tbody>{recentDays.map(day => <tr key={day.date}><th>{day.date.slice(5)}</th><td>{formatNutrientCoverage(day.nutrients.sodium)}</td><td>{formatNutrientCoverage(day.nutrients.protein)}</td><td>{!day.items.length ? 'No records' : day.confirmedComplete ? 'Confirmed' : 'Partial'}</td></tr>)}</tbody></table></details>
         <div className="history-month-summary">
           <span><CalendarDays aria-hidden="true" /><strong>{monthSummary.logged}</strong><small>days logged</small></span>
           <span><StatusIcon status="within" size="summary" /><strong>{monthSummary.within}</strong><small>within limits</small></span>
@@ -207,28 +224,37 @@ export default function HistoryView({ entries, recipesById, profile: currentProf
         <header className="history-report-heading">
           <span>{selectedDate === today ? "Today" : "Daily report"}</span>
           <h2 id="history-report-title">{dateFromKey(selectedDate).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</h2>
-          <p>{selectedComplete ? "Recording confirmed · targets saved at confirmation" : "Recording not confirmed · current targets shown for reference"}</p>
+          <p>{selectedComplete ? (dayRecords[selectedDate]?.profile ? "Recording confirmed · targets saved at confirmation" : "Recording confirmed · no target snapshot") : "Recording not confirmed · recorded foods only"}</p>
         </header>
 
+        <p className="field-note">Targets: {review?.targetSource}. {selectedComplete ? 'You confirmed this day’s food record.' : 'This day is not confirmed complete; amounts describe recorded foods only.'}</p>
+        {selectedReport.items.some(e => e.source === 'recipe') && <p className="field-note">Older recipe records use the current recipe values. Their original nutrition was not saved separately.</p>}
         <div className="history-nutrition-grid">
-          <NutritionCard
+          {preferences.trackedNutrients.includes('calories') && <NutritionCard
             label="Calories"
-            value={`${formatAmount(selectedReport.totals.calories, 0)} kcal`}
-            status={selectedReport.items.length ? "Recorded total" : "No foods recorded"}
-          />
-          <NutritionCard
+            value={formatNutrientCoverage(selectedReport.coverage.calories, 'kcal', 0)}
+            status={nutrientDisplay(selectedReport.coverage.calories).note}
+          />}
+          {preferences.trackedNutrients.includes('sodium') && <NutritionCard
             label="Sodium"
-            value={`${formatAmount(selectedReport.totals.sodium, 0)} / ${formatAmount(profile.sodiumTargetMg, 0)} mg`}
-            progress={sodiumProgress}
-            status={sodiumStatus}
-          />
-          <NutritionCard
+            value={formatNutrientCoverage(selectedReport.coverage.sodium, 'mg', 0)}
+            progress={sodiumState.ratio}
+            status={`${sodiumState.status}${sodiumState.hasValidTarget ? ` · Saved limit: ${formatAmount(profile.sodiumTargetMg)} mg` : ''}`}
+          />}
+          {preferences.trackedNutrients.includes('protein') && <NutritionCard
             label="Protein"
-            value={`${formatAmount(selectedReport.totals.protein, 1)} / ${formatAmount(profile.proteinMinG, 0)}–${formatAmount(profile.proteinMaxG, 0)} g`}
-            progress={proteinProgress}
-            status={proteinStatus}
-          />
+            value={formatNutrientCoverage(selectedReport.coverage.protein, 'g', 1)}
+            progress={proteinState.ratio}
+            status={`${proteinState.status}${proteinState.hasValidTarget ? ` · Saved range: ${formatAmount(profile.proteinMinG)}–${formatAmount(profile.proteinMaxG)} g` : ''}`}
+          />}
+          {NUTRIENTS.filter(nutrient => preferences.trackedNutrients.includes(nutrient.key) && !['calories', 'sodium', 'protein'].includes(nutrient.key)).map(nutrient => {
+            const info = selectedReport.coverage[nutrient.key];
+            const target = preferences.nutrientTargets[nutrient.key];
+            return <NutritionCard key={nutrient.key} label={nutrient.label} value={formatNutrientCoverage(info, nutrient.unit, 2)} status={`${nutrientDisplay(info).note}${target ? ` · Saved target: ${target.min ?? '—'}–${target.max ?? '—'} ${nutrient.unit}/day` : ''}`} />;
+          })}
         </div>
+
+        <FluidTracker key={selectedDate} date={selectedDate} records={dayRecords[selectedDate]?.fluids || []} entries={selectedReport.items} targetMl={profile.fluidTargetMl} onSave={onSaveFluids} />
 
         <section className="history-meals-report" aria-labelledby="history-meals-title">
           <header>
@@ -237,15 +263,15 @@ export default function HistoryView({ entries, recipesById, profile: currentProf
           </header>
           {selectedMeals.length ? (
             <div className="history-meal-report-list">
-              {selectedMeals.map(({ meal, items, totals }) => {
+              {selectedMeals.map(({ meal, items, coverage }) => {
                 const MealIcon = mealIcons[meal] || Package;
                 return (
                   <article className="history-meal-report-row" key={meal}>
                     <span className="history-meal-report-icon"><MealIcon aria-hidden="true" /></span>
                     <div><strong>{meal}</strong><small>{items.length} item{items.length === 1 ? "" : "s"}</small></div>
-                    <span><strong>{formatAmount(totals.calories, 0)} kcal</strong><small>calories</small></span>
-                    <span><strong>{formatAmount(totals.sodium, 0)} mg</strong><small>sodium</small></span>
-                    <span><strong>{formatAmount(totals.protein, 1)} g</strong><small>protein</small></span>
+                    <span><strong>{formatNutrientCoverage(coverage.calories, 'kcal', 0)}</strong><small>calories</small></span>
+                    <span><strong>{formatNutrientCoverage(coverage.sodium, 'mg', 0)}</strong><small>sodium</small></span>
+                    <span><strong>{formatNutrientCoverage(coverage.protein, 'g', 1)}</strong><small>protein</small></span>
                   </article>
                 );
               })}
@@ -259,6 +285,7 @@ export default function HistoryView({ entries, recipesById, profile: currentProf
           )}
         </section>
 
+        {selectedReport.items.length > 0 && <section className="history-food-items" aria-label="Foods recorded on selected date"><h3>Food details & corrections</h3>{selectedReport.items.map(entry => { const food = entry.source === 'custom' ? entry.customFood : recipesById[entry.recipeId]; const model = food?.recipeCustomization; return <article key={entry.id}><div><strong>{food?.name || 'Unresolved food'}</strong><small>{mealLabel(entry)} · {entry.time || 'Time not recorded'}{entry.time && entry.timeSource !== 'user-recorded' ? entry.timeSource === 'recording-time' ? ' (logging time)' : ' (scheduled time)' : ''} · {formatAmount(entry.servings, 2)} servings</small>{model && Object.keys(model.overrides).length > 0 && <details className="recorded-ingredients-preview"><summary>Ingredients recorded for this meal</summary><ul>{model.ingredients.map((row, index) => { const current = ingredientAmount(row, model.overrides[index], entry.servings); return <li key={index}>{row.text}: {formatAmount(current.amount, 2)} {current.unit === 'count' ? 'pieces' : current.unit}</li>; })}</ul></details>}</div><button className="secondary-button" onClick={() => onEdit?.(entry)}>Edit<span className="sr-only"> {food?.name || 'food'}</span></button></article>; })}</section>}
         <p className="history-report-note"><Info aria-hidden="true" /> Totals describe recorded food only. Review includes incomplete logs, estimated food, or values outside saved targets. A green mark does not certify nutritional adequacy.</p>
         <p className="history-privacy">Confirmed food records are saved to your private cloud account. Care-team accounts can read them only when you grant access.</p>
       </section>
